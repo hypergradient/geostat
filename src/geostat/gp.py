@@ -4,7 +4,6 @@ import pandas as pd
 import geopandas as gpd
 import tensorflow as tf
 from shapely.geometry import Point
-import pyproj
 
 __all__ = ['GP']
 
@@ -19,7 +18,6 @@ class GP:
                  train_epochs=300, 
                  hyperparameters=dict(alpha=10, reg=None),
                  project=None,
-                 epsg_proj='EPSG:3310',
                  verbose=True,
                  ):
         
@@ -57,15 +55,10 @@ class GP:
                     and "reg", the value for regularization. If no regularization is wanted use reg=None.
                     Default is alpha=10 and reg=None.
                     
-                project : str, opt
-                    If not None, lon/lat coordinates will be projected. Can be 'meters'
-                    or 'kilometers'.
-                    Default is 'meters'.
+                project : function, opt
+                    A function that takes multiple vectors, and returns
+                    a tuple of projected vectors.
                 
-                epsg_proj : str
-                    The projected coordinate system to use. Ignored if project=False.
-                    Default is 'EPSG:3310' (California Albers).
-
                 verbose : boolean, optional
                     Whether or not to print parameters.
                     Default is True.
@@ -218,8 +211,6 @@ class GP:
         
         # Define other inputs.
         self.verbose = verbose
-        self.epsg_proj = epsg_proj
-        self.verbose = verbose
         self.train_epochs = train_epochs
         self.featurization = featurization
         self.gp_xform_parameters = gp_xform_parameters  # Need for predict.
@@ -291,66 +282,15 @@ class GP:
             self.u1 = u1.reshape(-1)
         else:
             raise ValueError("Check dimensions of 'u1'.")
-            
         
-        # Projections.
-        if project == 'meters':
-            self.project = 'meters'
-            self.epsg_proj = epsg_proj
-            
-            # Setup the projection.
-            p1 = pyproj.Proj(proj='latlong', datum='NAD83')
-            p2 = pyproj.Proj(self.epsg_proj)
-
-            self.transformer = pyproj.Transformer.from_proj(p1, p2)
-            #transformer_inverse = pyproj.Transformer.from_proj(p2, p1)
-            
-            xm, ym = self.transformer.transform(x1[:, 0], x1[:, 1])
-            
-            # If 2d coords.
-            if x1.shape[1] == 2:
-                self.x1 = np.array([xm, ym]).T
-            
-            # If 3d coords.
-            elif x1.shape[1] == 3:
-                zm = x1[:, 2]
-                self.x1 = np.array([xm, ym, zm]).T
-            
-        
-        elif project == 'kilometers':
-            self.project = 'kilometers'
-            self.epsg_proj = epsg_proj
-            
-            # Setup the projection.
-            p1 = pyproj.Proj(proj='latlong', datum='NAD83')
-            p2 = pyproj.Proj(self.epsg_proj)
-
-            self.transformer = pyproj.Transformer.from_proj(p1, p2)
-            #transformer_inverse = pyproj.Transformer.from_proj(p2, p1)
-            
-            xm, ym = self.transformer.transform(x1[:, 0], x1[:, 1])
-            
-            # If 2d coords.
-            if x1.shape[1] == 2:
-                self.x1 = np.array([xm, ym]).T * 0.001
-            
-            # If 3d coords.
-            elif x1.shape[1] == 3:
-                print('Reminder: Input z-coordinate units should be METERS.')
-                zm = x1[:, 2]
-                self.x1 = np.array([xm, ym, zm]).T * 0.001
-            
-            
-        elif project == None:
-            self.project = None
-            self.x1 = x1
-            self.epsg_proj = epsg_proj
-        
+        # Projection.
+        if project is None:
+            self.project = lambda *x: x
         else:
-            raise ValueError("'project' must be 'meters', 'kilometers', or 'None'.")
+            self.project = project
 
-        
-        
+        self.x1 = np.stack(self.project(*list(x1.T))).T
+
         # Distance matrix.
         self.D = cdist(self.x1, self.x1)       
         
@@ -427,43 +367,9 @@ class GP:
             F = np.concatenate([np.ones([1, len(x1)]), np.vstack(F_list)])
             return F
         
-        
-        # Check for 2d or 3d data.        
-        # 2d
-        if self.x1.shape[1] == 2:
-            
-            if self.project == 'meters':
-                xm, ym = self.transformer.transform(x2_pred[:, 0], x2_pred[:, 1])
-                self.x2 = np.array([xm, ym]).T
+        # Project.
+        self.x2 = np.stack(self.project(*list(x2_pred.T))).T
 
-            elif self.project == 'kilometers':
-                xm, ym = self.transformer.transform(x2_pred[:, 0], x2_pred[:, 1])
-                self.x2 = np.array([xm, ym]).T * 0.001
-                
-            elif self.project == None:
-                self.x2 = x2_pred
-                
-        # 3d    
-        elif self.x1.shape[1] == 3:
-            
-            if self.project == 'meters':
-                print('Reminder: Ensure depth coordinate units are meters.')
-                xm, ym = self.transformer.transform(x2_pred[:, 0], x2_pred[:, 1])
-                zm = x2_pred[:, 2]
-                self.x2 = np.array([xm, ym, zm]).T
-
-            elif self.project == 'kilometers':
-                print('Reminder: Ensure depth coordinate units are kilometers.')
-                xm, ym = self.transformer.transform(x2_pred[:, 0], x2_pred[:, 1])
-                xkm = xm * 0.001
-                ykm = ym * 0.001
-                zkm = x2_pred[:, 2]
-                self.x2 = np.array([xkm, ykm, zkm]).T 
-
-            elif self.project == None:
-                self.x2 = x2_pred         
-        
-        
         ##############################################
         def interpolate_gp(X1, u1, X2, parameters, hyperparameters):
 
@@ -592,45 +498,10 @@ class GP:
         # Lon/lat.
         x2_array = np.array([clipped.gridlon.to_numpy(), clipped.gridlat.to_numpy()]).T
 
+        # Project.
+        x2 = np.stack(self.project(*list(x2_array.T))).T
 
-        # If no z then make df and return.
-        if z is None:
-            if self.project == 'meters' or self.project == 'kilometers':
-                x2 = pd.DataFrame()
-                x2['lon'] = x2_array[:, 0]
-                x2['lat'] = x2_array[:, 1]
-                x2['xm'], x2['ym'] = self.transformer.transform(x2_array[:, 0], x2_array[:, 1])
-                x2['xkm'] = x2['xm'] * 0.001
-                x2['ykm'] = x2['ym'] * 0.001
-                return x2
-
-            elif self.project == None:
-                x2 = pd.DataFrame()
-                x2['lon'] = x2_array[:, 0]
-                x2['lat'] = x2_array[:, 1]
-                return x2
-
-        # Make the depth series at each xy coord.
-        else:
-            points = []
-
-            for xi, yi in zip(x2_array[:, 0], x2_array[:, 1]):
-                for zi in z:
-                    d = {'lon':[xi], 'lat':[yi], 'z':[zi]}
-                    point = pd.DataFrame(d)            
-                    points.append(point)
-
-            x2 = pd.concat(points)
-
-            if self.project == 'meters' or self.project == 'kilometers':
-                x2['xm'], x2['ym'] = self.transformer.transform(x2['lon'].to_numpy(), x2['lat'].to_numpy())
-                x2['xkm'] = x2['xm'] * 0.001
-                x2['ykm'] = x2['ym'] * 0.001
-                x2 = x2.rename(columns={'z':'zm'})
-                x2['zkm'] = x2['zm'] * 0.001
-
-            return x2
-        
+        return x2
         
     # Access the projected coords of the input data.
     def get_projected(self):

@@ -1,5 +1,5 @@
 import pandas as pd
-from geostat import GP
+from geostat import Krige
 import pyproj
 
 def featurization(x1):
@@ -8,11 +8,11 @@ def featurization(x1):
 def project(x):
     return 
 
-def test_gp():
+def test_krige():
     df = pd.DataFrame().assign(
-        lat = [35.0, 35.0, 36.0, 36.0, 37.0, 37.0],
-        lon = [-120.0, -121.0, -120.0, -121.0, -120.0, -121.0],
-        u = [5., 5., 5., 6., 5., 7.])
+        lat = [35.0, 35.0, 36.0, 36.0, 37.0, 37.0, 38.0, 38.0, 39.0, 39.0],
+        lon = [-120.0, -121.0, -120.0, -121.0, -120.0, -121.0, -120.0, -121.0, -120.0, -121.0],
+        u = [5., 5., 5., 6., 5., 7., 6., 6., 6., 7.])
 
     x1 = df[['lon', 'lat']].to_numpy()
 
@@ -24,13 +24,11 @@ def test_gp():
     project = pyproj.Transformer.from_proj(p1, p2)
     to_km = lambda x, y: (x * 1e-3, y * 1e-3)
 
-    gp = GP(x1, u1,
-            covariance_func='gamma-exp',
-            parameter0=dict(vrange=50, sill=500, nugget=50, gamma=1.0),
+    krige = Krige(x1, u1, 2,
+            variogram_func='linear',
             project=lambda x, y: to_km(*project.transform(x, y)),
             featurization=featurization,
-            train_epochs=300,
-            hyperparameters=dict(alpha=u1.ptp()**2, reg=1),
+            show_plots=False,
             verbose=True)
 
     df2 = pd.DataFrame().assign(
@@ -39,6 +37,6 @@ def test_gp():
 
     x2 = df2[['lon', 'lat']].to_numpy()
 
-    u2_mean, u2_var = gp.predict(x2, batch_size=500)
+    u2_mean, u2_var = krige.predict(x2)
     
     print(u2_mean, u2_var)
