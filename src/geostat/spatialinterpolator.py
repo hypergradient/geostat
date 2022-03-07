@@ -1,4 +1,6 @@
 import numpy as np
+import geopandas as gpd
+from shapely.geometry import Point
 
 class SpatialInterpolator:
      def __init__(self, projection=None):

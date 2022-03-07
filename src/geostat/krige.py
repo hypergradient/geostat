@@ -5,10 +5,6 @@ from scipy.stats import binned_statistic
 import scipy.stats as stats
 from scipy.optimize import curve_fit
 import pandas as pd
-import geopandas as gpd
-
-# For krige tools only.
-from shapely.geometry import Point
 
 from .spatialinterpolator import SpatialInterpolator
 

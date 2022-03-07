@@ -1,9 +1,7 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 import pandas as pd
-import geopandas as gpd
 import tensorflow as tf
-from shapely.geometry import Point
 
 from .spatialinterpolator import SpatialInterpolator
 
