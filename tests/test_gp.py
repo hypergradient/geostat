@@ -27,7 +27,7 @@ def test_gp():
     gp = GP(x1, u1,
             covariance_func='gamma-exp',
             parameter0=dict(vrange=50, sill=500, nugget=50, gamma=1.0),
-            project=lambda x, y: to_km(*project.transform(x, y)),
+            projection=lambda x, y: to_km(*project.transform(x, y)),
             featurization=featurization,
             train_epochs=300,
             hyperparameters=dict(alpha=u1.ptp()**2, reg=1),

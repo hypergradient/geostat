@@ -26,7 +26,7 @@ def test_krige():
 
     krige = Krige(x1, u1, 2,
             variogram_func='linear',
-            project=lambda x, y: to_km(*project.transform(x, y)),
+            projection=lambda x, y: to_km(*project.transform(x, y)),
             featurization=featurization,
             show_plots=False,
             verbose=True)

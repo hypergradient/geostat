@@ -10,6 +10,8 @@ import geopandas as gpd
 # For krige tools only.
 from shapely.geometry import Point
 
+from .spatialinterpolator import SpatialInterpolator
+
 __all__ = ['Krige']
 
 ########################################################################
@@ -60,7 +62,7 @@ def spherical(D, *parameter_vals):
 
 
 
-class Krige:
+class Krige(SpatialInterpolator):
     
     def __init__(self, 
                  x1, u1, 
@@ -69,8 +71,7 @@ class Krige:
                  variogram_params=None, 
                  cutoff_dist='auto',
                  featurization=None,
-                 project=None,
-                 epsg_proj='EPSG:3310',
+                 projection=None,
                  show_plots=True, 
                  verbose=True,
                  ):
@@ -130,6 +131,8 @@ class Krige:
         
         
         '''
+
+        super().__init__(projection=projection)
         
         # Save original x1 for stats function.
         self.x1_original = x1
@@ -143,12 +146,7 @@ class Krige:
             raise ValueError("Check dimensions of 'u1'.")
             
         # Projection.
-        if project is None:
-            self.project = lambda *x: x
-        else:
-            self.project = project
-
-        self.x1 = np.stack(self.project(*list(x1.T))).T
+        self.x1 = self.project(x1)
 
         # Variogram.
         if variogram_func == 'gaussian':
@@ -539,7 +537,7 @@ class Krige:
         
         '''
         
-        self.x2 = np.stack(self.project(*list(x2_pred.T))).T
+        self.x2 = self.project(x2_pred)
         
         n1 = len(self.x1)
         n2 = len(self.x2)
@@ -617,81 +615,6 @@ class Krige:
 
             return u2_mean, u2_var
         
-        
-        
-#########################################################################
-    
-    def convex_hull_grid(self, 
-                         spacing, 
-                         lon, 
-                         lat, 
-                         z=None
-                        ):
-
-        '''
-        This function replaces manual workflows in gis using
-        the minimum bounding geometry tool to make a custom
-        extent/bounds on a spatial dataset. It also adds on
-        a depth series (3d) and projects if desired.
-
-
-        Parameters:
-                spacing : int
-                    The spacing of the grid locations produced. The bigger
-                    the number, the closer the spacing and the denser
-                    the dataset created.
-
-                lon : The longitude coordinate of the input (x1) data to
-                    be encompassed. 
-
-                lat : The latitude coordinate of the input (x1) data to
-                    be encompassed. 
-
-                z : array, opt
-                    The depths to make a depth series at each xy coordinate.
-                    Example:  z = np.arange(-100, -5, 10) would make a depth
-                    series at each xy coordinate from -100 to -5 by 10.
-                    Default is None.
-                    
-        Returns:
-                x2 :  pandas dataframe
-                    Locations to make kriging predictions.
-
-
-        '''
-
-        # Make df then geodf of input data.
-        df = pd.DataFrame()
-        df['lon'] = lon
-        df['lat'] = lat
-        df['geometry'] = df.apply(lambda row: Point(row.lon, row.lat), axis=1)
-        df_shp  = gpd.GeoDataFrame(df).set_crs('EPSG:4269')
-
-        # Make square grid.
-        loni = np.linspace(np.min(lon), np.max(lon), spacing)
-        lati = np.linspace(np.min(lat), np.max(lat), spacing)
-        gridlon, gridlat = np.meshgrid(loni, lati)
-
-        # Grid df then geodf.
-        df_grid = pd.DataFrame()
-        df_grid['gridlon'] = gridlon.flatten()
-        df_grid['gridlat'] = gridlat.flatten()
-        df_grid['geometry'] = df_grid.apply(lambda row: Point(row.gridlon, row.gridlat), axis=1) 
-        df_grid  = gpd.GeoDataFrame(df_grid).set_crs('EPSG:4269')
-
-        # Clip.
-        hull = df_shp.unary_union.convex_hull
-        clipped = gpd.clip(df_grid, hull)
-
-        # Lon/lat.
-        x2_array = np.array([clipped.gridlon.to_numpy(), clipped.gridlat.to_numpy()]).T
-
-        # Project.
-        x2 = np.stack(self.project(*list(x2_array.T))).T
-
-        return x2
-
-
     #########################################################
     # Access the projected coords of the input data.
     def get_projected(self):

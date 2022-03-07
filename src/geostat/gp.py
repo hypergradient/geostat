@@ -5,9 +5,11 @@ import geopandas as gpd
 import tensorflow as tf
 from shapely.geometry import Point
 
+from .spatialinterpolator import SpatialInterpolator
+
 __all__ = ['GP']
 
-class GP:
+class GP(SpatialInterpolator):
     
     def __init__(self, 
                  x1,
@@ -17,7 +19,7 @@ class GP:
                  parameter0=None,
                  train_epochs=300, 
                  hyperparameters=dict(alpha=10, reg=None),
-                 project=None,
+                 projection=None,
                  verbose=True,
                  ):
         
@@ -68,7 +70,7 @@ class GP:
   
         '''
         
-    
+        super().__init__(projection=projection)
         
         # This provides a filter to create the tf.Variables() only if the call_flag is None.
         # This is needed to avoid "ValueError: tf.function-decorated function 
@@ -284,12 +286,7 @@ class GP:
             raise ValueError("Check dimensions of 'u1'.")
         
         # Projection.
-        if project is None:
-            self.project = lambda *x: x
-        else:
-            self.project = project
-
-        self.x1 = np.stack(self.project(*list(x1.T))).T
+        self.x1 = self.project(x1)
 
         # Distance matrix.
         self.D = cdist(self.x1, self.x1)       
@@ -368,7 +365,7 @@ class GP:
             return F
         
         # Project.
-        self.x2 = np.stack(self.project(*list(x2_pred.T))).T
+        self.x2 = self.project(x2_pred)
 
         ##############################################
         def interpolate_gp(X1, u1, X2, parameters, hyperparameters):
@@ -430,79 +427,6 @@ class GP:
 
             return u2_mean, u2_var
 
-        
-        
-        
-        
-#############################################
-
-    def convex_hull_grid(self, spacing, lon, lat, z=None):
-
-        '''
-        This function replaces manual workflows in gis using
-        the minimum bounding geometry tool to make a custom
-        extent/bounds on a spatial dataset. It also adds on
-        a depth series for 3d data and projects if desired.
-
-
-        Parameters:
-                spacing : int
-                    The spacing of the grid locations produced. The bigger
-                    the number, the closer the spacing and the denser
-                    the dataset created.
-
-                lon : array 
-                    The longitude coordinate of the input (x1) data to
-                    be encompassed. 
-
-                lat : array
-                    The latitude coordinate of the input (x1) data to
-                    be encompassed. 
-
-                z : array, opt
-                    The depths to make a depth series at each xy coordinate.
-                    Example:  z = np.arange(-100, -5, 10) would make a depth
-                    series at each xy coordinate from -100 to -5 by 10.
-                    Default is None.
-                    
-        Returns:
-                x2 :  pandas dataframe
-                    Locations to make GP predictions.
-
-
-        '''
-
-        # Make df then geodf of input data.
-        df = pd.DataFrame()
-        df['lon'] = lon
-        df['lat'] = lat
-        df['geometry'] = df.apply(lambda row: Point(row.lon, row.lat), axis=1)
-        df_shp  = gpd.GeoDataFrame(df).set_crs('EPSG:4269')
-
-        # Make square grid.
-        loni = np.linspace(np.min(lon), np.max(lon), spacing)
-        lati = np.linspace(np.min(lat), np.max(lat), spacing)
-        gridlon, gridlat = np.meshgrid(loni, lati)
-
-        # Grid df then geodf.
-        df_grid = pd.DataFrame()
-        df_grid['gridlon'] = gridlon.flatten()
-        df_grid['gridlat'] = gridlat.flatten()
-        df_grid['geometry'] = df_grid.apply(lambda row: Point(row.gridlon, row.gridlat), axis=1) 
-        df_grid  = gpd.GeoDataFrame(df_grid).set_crs('EPSG:4269')
-
-        # Clip.
-        hull = df_shp.unary_union.convex_hull
-        clipped = gpd.clip(df_grid, hull)
-
-        # Lon/lat.
-        x2_array = np.array([clipped.gridlon.to_numpy(), clipped.gridlat.to_numpy()]).T
-
-        # Project.
-        x2 = np.stack(self.project(*list(x2_array.T))).T
-
-        return x2
-        
     # Access the projected coords of the input data.
     def get_projected(self):
         return self.x1[:, 0], self.x1[:, 1]
