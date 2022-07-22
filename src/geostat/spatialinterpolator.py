@@ -9,7 +9,7 @@ class SpatialInterpolator:
      def predict(self, x, **kw):
          pass
 
-     def project(self, x: np.ndarray):
+     def project(self, x: np.ndarray) -> np.ndarray:
          if self.projection is None:
              return x
          else:

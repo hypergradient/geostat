@@ -10,30 +10,26 @@ __all__ = ['GP']
 class GP(SpatialInterpolator):
     
     def __init__(self, 
-                 x1,
-                 u1, 
-                 covariance_func='squared-exp',
-                 featurization=None,
-                 parameter0=None,
-                 train_epochs=300, 
-                 hyperparameters=dict(alpha=10, reg=None),
+                 df,
+                 u_name,
                  projection=None,
+                 featurization=None,
+                 covariance_func='squared-exp',
+                 parameter0=None,
+                 hyperparameters=dict(alpha=10, reg=None, train_iters=300),
                  verbose=True,
                  ):
         
         '''
         Parameters:
-                x1 : n-dim array
-                    Locations of input data.
+                df : Pandas dataframe with columns for locations and observations.
                     
-                u1 : 1-d array
-                    Values to be modeled.
-                
-                covariance_func : str
-                     Name of the covariance function to use in the GP. 
-                     Should be 'squared-exp' or 'gamma-exp'.
-                     Default is 'squared-exp'.
-                    
+                u_name : Name of the column in `df` containing observations.
+
+                project : function, opt
+                    A function that takes multiple vectors, and returns
+                    a tuple of projected vectors.
+
                 featurization : function, optional
                     Should be a function that takes x1 (n-dim array of input data) 
                     and returns the coordinates, i.e., x, y, x**2, y**2.
@@ -41,31 +37,27 @@ class GP(SpatialInterpolator):
                                 return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
                     Default is None.
                 
+                covariance_func : str
+                     Name of the covariance function to use in the GP.
+                     Should be 'squared-exp' or 'gamma-exp'.
+                     Default is 'squared-exp'.
+
                 parameter0 : dict, optional
                     The starting point for the parameters. Use "vrange" for the range.
                     Example: parameter0=dict(vrange=2.0, sill=5.0, nugget=1.0).
                     Default is None.
         
-                train_epochs : int, optional
-                    The number of training epochs.
-                    Default is 300.
-                
                 hyperparameters : dict
-                    Dictionary of the hyperparameters. Should contain "alpha", the prior distribution for the trend,
-                    and "reg", the value for regularization. If no regularization is wanted use reg=None.
-                    Default is alpha=10 and reg=None.
+                    Dictionary of the hyperparameters.
+                      - alpha: the prior distribution for the trend. Default 10.
+                      - reg: how much regularization to use. Default None (no regularization).
+                      - train_iters: number of training iterations. Default 300.
                     
-                project : function, opt
-                    A function that takes multiple vectors, and returns
-                    a tuple of projected vectors.
-                
                 verbose : boolean, optional
                     Whether or not to print parameters.
                     Default is True.
 
-
         Performs Gaussian process training and prediction.
-  
         '''
         
         super().__init__(projection=projection)
@@ -211,7 +203,7 @@ class GP(SpatialInterpolator):
         
         # Define other inputs.
         self.verbose = verbose
-        self.train_epochs = train_epochs
+        self.train_iters = hyperparameters['train_iters']
         self.featurization = featurization
         self.gp_xform_parameters = gp_xform_parameters  # Need for predict.
         
@@ -304,7 +296,7 @@ class GP(SpatialInterpolator):
             optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
             for i in range(10):
-                for j in range(self.train_epochs):
+                for j in range(self.train_iters):
                     
                     p, ll = gpm_train_step(optimizer, data, parameters, hyperparameters)
                 
