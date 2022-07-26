@@ -1,17 +1,69 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 import pandas as pd
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 import tensorflow as tf
 
 from .spatialinterpolator import SpatialInterpolator
 
 __all__ = ['GP']
 
+# Produces featurized locations (F matrix) and remembers normalization parameters.
+class Featurizer:
+    def __init__(self, featurization, loc):
+        self.featurization = featurization
+        F_unnorm = self.featurization(loc)
+        self.unnorm_mean = np.mean(F_unnorm, axis=0)
+        self.unnorm_std = np.std(F_unnorm, axis=0)
+
+    def __call__(self, loc):
+        ones = np.ones([loc.shape[0], 1])
+        F_unnorm = self.featurization(loc)
+        F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
+        return np.concatenate([ones, F_norm], axis=1)
+
+def e(x, a=-1):
+    return tf.expand_dims(x, a)
+
+def one_axes(x):
+    return tf.where(tf.equal(x.shape, 1))[:, 0]
+
+# Squared exponential covariance function.
+def gp_covariance_sq_exp(D, F, vrange, sill, nugget, alpha):
+    C = sill * tf.exp(-tf.square(D / vrange)) \
+            + (nugget + 1e-6) * tf.eye(D.shape[0], dtype=tf.float64) \
+            + alpha * tf.einsum('ba,ca->bc', F, F)
+    return C
+
+# Gamma exponential covariance function.
+@tf.custom_gradient
+def safepow(x, a):
+    y = tf.pow(x, a)
+    def grad(dy):
+        dx = tf.where(x <= 0.0, tf.zeros_like(x), dy * tf.pow(x, a-1))
+        dx = tf.reduce_sum(dx, axis=one_axes(x), keepdims=True)
+        da = tf.where(x <= 0.0, tf.zeros_like(a), dy * y * tf.math.log(x))
+        da = tf.reduce_sum(da, axis=one_axes(a), keepdims=True)
+        return dx, da
+    return y, grad
+
+def gamma_exp(d2, halfgamma):
+    return tf.exp(-safepow(tf.maximum(d2, 0.0), halfgamma))
+
+def gp_covariance_gamma_exp(D, F, vrange, sill, nugget, halfgamma, alpha):
+    vrange = e(e(vrange))
+    sill = e(e(sill))
+    halfgamma = e(e(halfgamma))
+    C = sill * gamma_exp(tf.square(D / vrange), halfgamma) + (nugget + 1e-6) * tf.eye(tf.shape(D)[0], dtype=tf.float64)
+    C += tf.einsum('ba,ca->bc', F, F) * alpha   
+    return C
+
 class GP(SpatialInterpolator):
     
     def __init__(self, 
-                 df,
-                 u_name,
+                 x,
+                 u,
                  projection=None,
                  featurization=None,
                  covariance_func='squared-exp',
@@ -22,9 +74,9 @@ class GP(SpatialInterpolator):
         
         '''
         Parameters:
-                df : Pandas dataframe with columns for locations and observations.
+                x : Pandas DataFrame with columns for locations.
                     
-                u_name : Name of the column in `df` containing observations.
+                u : A Pandas Series containing observations.
 
                 project : function, opt
                     A function that takes multiple vectors, and returns
@@ -61,7 +113,7 @@ class GP(SpatialInterpolator):
         '''
         
         super().__init__(projection=projection)
-        
+
         # This provides a filter to create the tf.Variables() only if the call_flag is None.
         # This is needed to avoid "ValueError: tf.function-decorated function 
         # tried to create variables on non-first call."
@@ -77,21 +129,6 @@ class GP(SpatialInterpolator):
         # def sigmoid(o): return 1 / (1 + np.exp(-o))
         # def doub_sigmoid(o): return 2 * sigmoid(o)
     
-        def e(x, a=-1):
-            return tf.expand_dims(x, a)
-
-        def one_axes(x):
-            return tf.where(tf.equal(x.shape, 1))[:, 0]
-
-        def Featurizer(x1, featurization):
-            F_list = []
-            for i in list(featurization(x1)):
-                F_list.append(i.T)
-            F = np.concatenate([np.ones([1, len(x1)]), np.vstack(F_list)])
-            return F
-
-
-
         # List the needed graph functions.
         
         # Transform parameters.
@@ -116,40 +153,6 @@ class GP(SpatialInterpolator):
                 return param_dict
                 
 
-        # Squared exponential covariance function.
-        @tf.function
-        def gp_covariance_sq_exp(D, F, vrange, sill, nugget, alpha):
-            C = sill * tf.exp(-tf.square(D / vrange)) \
-                    + (nugget + 1e-6) * tf.eye(D.shape[0], dtype=tf.float64) \
-                    + alpha * tf.einsum('ab,ac->bc', F, F)
-            return C
-        
-        # Gamma exponential covariance function.
-        @tf.custom_gradient
-        def safepow(x, a):
-            y = tf.pow(x, a)
-            def grad(dy):
-                dx = tf.where(x <= 0.0, tf.zeros_like(x), dy * tf.pow(x, a-1))
-                dx = tf.reduce_sum(dx, axis=one_axes(x), keepdims=True)
-                da = tf.where(x <= 0.0, tf.zeros_like(a), dy * y * tf.math.log(x))
-                da = tf.reduce_sum(da, axis=one_axes(a), keepdims=True)
-                return dx, da
-            return y, grad
-        
-        @tf.function
-        def gamma_exp(d2, halfgamma):
-            return tf.exp(-safepow(tf.maximum(d2, 0.0), halfgamma))
-
-        @tf.function
-        def gp_covariance_gamma_exp(D, F, vrange, sill, nugget, halfgamma, alpha):
-            vrange = e(e(vrange))
-            sill = e(e(sill))
-            halfgamma = e(e(halfgamma))
-            C = sill * gamma_exp(tf.square(D / vrange), halfgamma) + (nugget + 1e-6) * tf.eye(tf.shape(D)[0], dtype=tf.float64)
-            C += tf.einsum('ab,ac->bc', F, F) * alpha   
-            return C
-        
-
         # Log likelihood.
         @tf.function
         def gp_log_likelihood(u, m, cov):
@@ -168,10 +171,9 @@ class GP(SpatialInterpolator):
                 beta_prior = hyperparameters['alpha']
                 
                 if self.covariance_func == 'squared-exp':
-                    A = self.gp_covariance(data['D'], data['F'], p['vrange'], p['sill'], p['nugget'], beta_prior)
-                
+                    A = gp_covariance_sq_exp(data['D'], data['F'], p['vrange'], p['sill'], p['nugget'], beta_prior)
                 elif self.covariance_func == 'gamma-exp':
-                    A = self.gp_covariance(data['D'], data['F'], p['vrange'], p['sill'], p['nugget'], p['halfgamma'], beta_prior)
+                    A = gp_covariance_gamma_exp(data['D'], data['F'], p['vrange'], p['sill'], p['nugget'], p['halfgamma'], beta_prior)
                 
                 ll = gp_log_likelihood(data['u'], 0., A)
                 
@@ -188,18 +190,9 @@ class GP(SpatialInterpolator):
 
         
         # Set the user desired covariance function.
-        if covariance_func == 'squared-exp':
-            self.covariance_func = 'squared-exp'
-            self.gp_covariance = gp_covariance_sq_exp
-        
-        elif covariance_func == 'gamma-exp':
-            self.covariance_func = 'gamma-exp'
-            self.gp_covariance = gp_covariance_gamma_exp
-
-        else:
+        if covariance_func not in ['squared-exp', 'gamma-exp']:
             raise ValueError("Only 'squared-exp' and 'gamma-exp' are currently supported.")
-            
-        
+        self.covariance_func = covariance_func
         
         # Define other inputs.
         self.verbose = verbose
@@ -268,6 +261,7 @@ class GP(SpatialInterpolator):
 
     
         # Check and change the shape of u1 if needed.
+        u1 = u.values
         if u1.ndim == 1:
             self.u1 = u1
         elif u1.shape[1] == 1:
@@ -276,13 +270,14 @@ class GP(SpatialInterpolator):
             raise ValueError("Check dimensions of 'u1'.")
         
         # Projection.
-        self.x1 = self.project(x1)
+        self.x1 = self.project(x)
 
         # Distance matrix.
         self.D = cdist(self.x1, self.x1)       
-        
+
         # Feature matrix.
-        self.F = Featurizer(self.x1, self.featurization)
+        self.featurizer = Featurizer(self.featurization, self.x1)
+        self.F = self.featurizer(self.x1)
         
         # Data dict.
         self.data = {'D': tf.constant(self.D), 'F': tf.constant(self.F), 'u': tf.constant(self.u1)}        
@@ -295,19 +290,20 @@ class GP(SpatialInterpolator):
         def gpm_fit(data, parameters, hyperparameters):
             optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
+            j = 0 # Iteration count.
             for i in range(10):
-                for j in range(self.train_iters):
-                    
+                while j < (i + 1) * self.train_iters / 10:
                     p, ll = gpm_train_step(optimizer, data, parameters, hyperparameters)
+                    j += 1
                 
                 if self.verbose == True:
                     if self.covariance_func == 'squared-exp':
-                        print('[ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f]' % 
-                            (ll, p['vrange'], p['sill'], p['nugget']))
+                        print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f]' % 
+                            (j, ll, p['vrange'], p['sill'], p['nugget']))
 
                     elif self.covariance_func == 'gamma-exp':
-                        print('[ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f, gamma %4.2f]' % 
-                            (ll, p['vrange'], p['sill'], p['nugget'], p['halfgamma'] * 2))
+                        print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f, gamma %4.2f]' % 
+                            (j, ll, p['vrange'], p['sill'], p['nugget'], p['halfgamma'] * 2))
 
 
         gpm_fit(self.data, self.parameters, self.hyperparameters)
@@ -347,13 +343,6 @@ class GP(SpatialInterpolator):
         def one_axes(x):
             return tf.where(tf.equal(x.shape, 1))[:, 0]
 
-        def Featurizer(x1, featurization):
-            F_list = []
-            for i in list(featurization(x1)):
-                F_list.append(i.T)
-            F = np.concatenate([np.ones([1, len(x1)]), np.vstack(F_list)])
-            return F
-        
         # Project.
         self.x2 = self.project(x2_pred)
 
@@ -363,19 +352,18 @@ class GP(SpatialInterpolator):
             N1 = len(X1) # Number of measurements.
             N2 = len(X2) # Number of predictions.
 
-            X = np.concatenate([X1, X2])
+            X = pd.concat([X1, X2])
             D = cdist(X, X)
             
             # Use the user given featurization.
-            F = Featurizer(X, self.featurization)
+            F = self.featurizer(X)
 
             p = self.gp_xform_parameters(parameters)
             
             if self.covariance_func == 'squared-exp':
-                A = self.gp_covariance(D, F, p['vrange'], p['sill'], p['nugget'], hyperparameters['alpha'])
-                
-            if self.covariance_func == 'gamma-exp':
-                A = self.gp_covariance(D, F, p['vrange'], p['sill'], p['nugget'], p['halfgamma'], hyperparameters['alpha'])
+                A = gp_covariance_sq_exp(D, F, p['vrange'], p['sill'], p['nugget'], hyperparameters['alpha'])
+            elif self.covariance_func == 'gamma-exp':
+                A = gp_covariance_gamma_exp(D, F, p['vrange'], p['sill'], p['nugget'], p['halfgamma'], hyperparameters['alpha'])
 
             A11 = A[:N1, :N1]
             A12 = A[:N1, N1:]

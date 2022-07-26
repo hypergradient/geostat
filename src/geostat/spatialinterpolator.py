@@ -1,6 +1,6 @@
 import numpy as np
-import geopandas as gpd
-from shapely.geometry import Point
+# import geopandas as gpd
+# from shapely.geometry import Point
 
 class SpatialInterpolator:
      def __init__(self, projection=None):
@@ -13,9 +13,9 @@ class SpatialInterpolator:
          if self.projection is None:
              return x
          else:
-             return np.stack(self.projection(*list(x.T))).T
+             return self.projection(x)
 
-    def convex_hull_grid(self, spacing, lon, lat, z=None):
+     def convex_hull_grid(self, spacing, lon, lat, z=None):
 
         '''
         This function replaces manual workflows in gis using
