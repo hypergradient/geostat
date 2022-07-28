@@ -7,7 +7,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
 with warnings.catch_warnings():
-    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
 
 from .spatialinterpolator import SpatialInterpolator
@@ -80,8 +80,8 @@ def gp_covariance_gamma_exp(D, F, vrange, sill, nugget, halfgamma, alpha):
 class GP(SpatialInterpolator):
     
     def __init__(self, 
-                 x,
-                 u,
+                 x=None,
+                 u=None,
                  projection=None,
                  featurization=None,
                  covariance_func='squared-exp',
@@ -276,58 +276,67 @@ class GP(SpatialInterpolator):
         # tf_var = [tf.Variable(0.0, dtype=tf.float64)] * len(self.parameter_names)
         # self.parameters = dict(zip(self.parameter_names, tf_var))
 
-    
-        # Check and change the shape of u1 if needed.
-        u1 = u.values
-        if u1.ndim == 1:
-            self.u1 = u1
-        elif u1.shape[1] == 1:
-            self.u1 = u1.reshape(-1)
-        else:
-            raise ValueError("Check dimensions of 'u1'.")
-        
-        # Projection.
-        self.x1 = self.project(x)
+        self.featurization = featurization
 
-        # Distance matrix.
-        self.D = cdist(self.x1, self.x1)       
+        if u is not None and x is not None:
+            self.u1 = u.values
+        
+            # Projection.
+            self.x1 = self.project(x)
+
+            # Distance matrix.
+            self.D = cdist(self.x1, self.x1)       
+
+            # Feature matrix.
+            self.featurizer = Featurizer(featurization, self.x1)
+            self.F = self.featurizer(self.x1)
+        
+            # Data dict.
+            self.data = {'D': tf.constant(self.D), 'F': tf.constant(self.F), 'u': tf.constant(self.u1)}        
+        
+            # Train the GP.
+            def gpm_fit(data, parameters, hyperparameters):
+                optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+
+                j = 0 # Iteration count.
+                for i in range(10):
+                    while j < (i + 1) * self.train_iters / 10:
+                        p, ll = gpm_train_step(optimizer, data, parameters, hyperparameters)
+                        j += 1
+                    
+                    if self.verbose == True:
+                        if self.covariance_func == 'squared-exp':
+                            print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f]' % 
+                                (j, ll, p['vrange'], p['sill'], p['nugget']))
+
+                        elif self.covariance_func == 'gamma-exp':
+                            print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f, gamma %4.2f]' % 
+                                (j, ll, p['vrange'], p['sill'], p['nugget'], p['halfgamma'] * 2))
+
+
+            gpm_fit(self.data, self.parameters, self.hyperparameters)
+        
+        
+############################################################################
+############################################################################
+
+    def generate(self, x2_pred):
+        X = self.project(x2_pred)
+        D = cdist(X, X)
 
         # Feature matrix.
-        self.featurizer = Featurizer(featurization, self.x1)
-        self.F = self.featurizer(self.x1)
-        
-        # Data dict.
-        self.data = {'D': tf.constant(self.D), 'F': tf.constant(self.F), 'u': tf.constant(self.u1)}        
-        
-        
-        
-        #####################################################
+        featurizer = Featurizer(self.featurization, X)
+        F = featurizer(X)
 
-        # Train the GP.
-        def gpm_fit(data, parameters, hyperparameters):
-            optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
-
-            j = 0 # Iteration count.
-            for i in range(10):
-                while j < (i + 1) * self.train_iters / 10:
-                    p, ll = gpm_train_step(optimizer, data, parameters, hyperparameters)
-                    j += 1
-                
-                if self.verbose == True:
-                    if self.covariance_func == 'squared-exp':
-                        print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f]' % 
-                            (j, ll, p['vrange'], p['sill'], p['nugget']))
-
-                    elif self.covariance_func == 'gamma-exp':
-                        print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f, gamma %4.2f]' % 
-                            (j, ll, p['vrange'], p['sill'], p['nugget'], p['halfgamma'] * 2))
-
-
-        gpm_fit(self.data, self.parameters, self.hyperparameters)
+        p = self.gp_xform_parameters(self.parameters)
         
-        
-############################################################################
-############################################################################
+        if self.covariance_func == 'squared-exp':
+            A = gp_covariance_sq_exp(D, F, p['vrange'], p['sill'], p['nugget'], 0.)
+        elif self.covariance_func == 'gamma-exp':
+            A = gp_covariance_gamma_exp(D, F, p['vrange'], p['sill'], p['nugget'], p['halfgamma'], 0.)
+
+        A = A.numpy()
+        return np.random.multivariate_normal(np.zeros([A.shape[0]]), A)
 
     def predict(self, x2_pred, batch_size=None):
         
