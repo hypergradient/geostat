@@ -3,7 +3,12 @@ from scipy.spatial.distance import cdist
 import pandas as pd
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-import tensorflow as tf
+
+# Tensorflow is extraordinarily noisy. Catch warnings during import.
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    import tensorflow as tf
 
 from .spatialinterpolator import SpatialInterpolator
 
@@ -13,13 +18,26 @@ __all__ = ['GP']
 class Featurizer:
     def __init__(self, featurization, loc):
         self.featurization = featurization
-        F_unnorm = self.featurization(loc)
+        F_unnorm = self.get_unnorm_features(loc)
         self.unnorm_mean = np.mean(F_unnorm, axis=0)
         self.unnorm_std = np.std(F_unnorm, axis=0)
 
+    def get_unnorm_features(self, loc):
+        if self.featurization is None: # No features.
+            return np.ones([loc.shape[0], 0])
+
+        feats = self.featurization(loc)
+        if isinstance(feats, tuple): # One or many features.
+            if len(feats) == 0:
+                return np.ones([loc.shape[0], 0])
+            else:
+                return np.stack(self.featurization(loc), axis=1)
+        else: # One feature.
+            return feats[:, np.newaxis]
+
     def __call__(self, loc):
         ones = np.ones([loc.shape[0], 1])
-        F_unnorm = self.featurization(loc)
+        F_unnorm = self.get_unnorm_features(loc)
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
         return np.concatenate([ones, F_norm], axis=1)
 
@@ -197,7 +215,6 @@ class GP(SpatialInterpolator):
         # Define other inputs.
         self.verbose = verbose
         self.train_iters = hyperparameters['train_iters']
-        self.featurization = featurization
         self.gp_xform_parameters = gp_xform_parameters  # Need for predict.
         
         if hyperparameters['reg']:
@@ -276,7 +293,7 @@ class GP(SpatialInterpolator):
         self.D = cdist(self.x1, self.x1)       
 
         # Feature matrix.
-        self.featurizer = Featurizer(self.featurization, self.x1)
+        self.featurizer = Featurizer(featurization, self.x1)
         self.F = self.featurizer(self.x1)
         
         # Data dict.
