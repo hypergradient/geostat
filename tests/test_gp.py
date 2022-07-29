@@ -1,46 +1,39 @@
-import pandas as pd
 import numpy as np
-from geostat import GP, use_xform
+from geostat import GP, TrendFeaturizer
 import pyproj
 
 def test_gp():
-    # Define trend features.
-    def featurization(df):
-        x, y = df['x'].values, df['y'].values
+    # Create N by N grid and project.
+    locs = np.random.uniform(-1., 1., [30, 2])
+
+    # Initialize featurizer of location for trends.
+    def featurization(locs):
+        x, y = np.transpose(locs)
         return x, y, x*y
+    featurizer = TrendFeaturizer(featurization, locs)
 
-    # Define projection.
-    xform = pyproj.Transformer.from_crs('epsg:4269', 'epsg:3310').transform
-
-    gp = GP(projection = use_xform(xform, in_coords = ['lat', 'lon'], out_coords = ['x', 'y'], rescale=1e-3),
-            featurization = featurization,
+    # Generating GP.
+    gp = GP(featurizer = featurizer,
             covariance_func = 'squared-exp',
-            parameter0 = dict(vrange=30., sill=1., nugget=1.),
+            parameter0 = dict(vrange=0.5, sill=1., nugget=1.),
+            hyperparameters = dict(alpha=1.),
             verbose=True)
 
-    # Create N by N grid.
-    N = 20
-    df = pd.DataFrame().assign(
-        lat = np.repeat(np.linspace(35.0, 36.0, N), N),
-        lon = np.tile(np.linspace(-120.0, -121.0, N), N))
-
     # Generate data.
-    df = df.assign(u = gp.generate(df))
+    vals = gp.generate(locs)
 
     # Fit GP.
-    gp = GP(df[['lat', 'lon']], df['u'],
-            projection = use_xform(xform, in_coords = ['lat', 'lon'], out_coords = ['x', 'y'], rescale=1e-3),
-            featurization = featurization,
+    gp = GP(locs, vals,
+            featurizer = featurizer,
             covariance_func = 'squared-exp',
-            parameter0 = dict(vrange=20., sill=0.5, nugget=0.5),
-            hyperparameters = dict(alpha=df['u'].values.ptp()**2, reg=0, train_iters=1000),
+            parameter0 = dict(vrange=1.0, sill=0.5, nugget=0.5),
+            hyperparameters = dict(alpha=vals.ptp()**2, reg=0, train_iters=200),
             verbose=True)
 
     # Interpolate using GP.
-    df2 = pd.DataFrame().assign(
-        lat = [35.0, 35.5, 35.5, 36.5],
-        lon = [-120.0, -120.0, -121.0, -121.0])
+    N = 20
+    lat = np.repeat(np.linspace(-1., 1., N), N)
+    lon = np.tile(np.linspace(-1., 1., N), N)
+    locs = np.stack([lat, lon], axis=1)
 
-    mean, var = gp.predict(df2)
-    
-    print(mean, var)
+    mean, var = gp.predict(locs)
