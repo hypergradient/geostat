@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.spatial.distance import cdist
-import pandas as pd
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
@@ -12,32 +11,32 @@ with warnings.catch_warnings():
 
 from .spatialinterpolator import SpatialInterpolator
 
-__all__ = ['GP']
+__all__ = ['GP', 'TrendFeaturizer']
 
 # Produces featurized locations (F matrix) and remembers normalization parameters.
-class Featurizer:
-    def __init__(self, featurization, loc):
+class TrendFeaturizer:
+    def __init__(self, featurization, locs):
         self.featurization = featurization
-        F_unnorm = self.get_unnorm_features(loc)
+        F_unnorm = self.get_unnorm_features(locs)
         self.unnorm_mean = np.mean(F_unnorm, axis=0)
         self.unnorm_std = np.std(F_unnorm, axis=0)
 
-    def get_unnorm_features(self, loc):
+    def get_unnorm_features(self, locs):
         if self.featurization is None: # No features.
-            return np.ones([loc.shape[0], 0])
+            return np.ones([locs.shape[0], 0])
 
-        feats = self.featurization(loc)
+        feats = self.featurization(locs)
         if isinstance(feats, tuple): # One or many features.
             if len(feats) == 0:
-                return np.ones([loc.shape[0], 0])
+                return np.ones([locs.shape[0], 0])
             else:
-                return np.stack(self.featurization(loc), axis=1)
+                return np.stack(self.featurization(locs), axis=1)
         else: # One feature.
             return feats[:, np.newaxis]
 
-    def __call__(self, loc):
-        ones = np.ones([loc.shape[0], 1])
-        F_unnorm = self.get_unnorm_features(loc)
+    def __call__(self, locs):
+        ones = np.ones([locs.shape[0], 1])
+        F_unnorm = self.get_unnorm_features(locs)
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
         return np.concatenate([ones, F_norm], axis=1)
 
@@ -82,11 +81,10 @@ class GP(SpatialInterpolator):
     def __init__(self, 
                  x=None,
                  u=None,
-                 projection=None,
-                 featurization=None,
+                 featurizer=None,
                  covariance_func='squared-exp',
                  parameter0=None,
-                 hyperparameters=dict(alpha=10, reg=None, train_iters=300),
+                 hyperparameters=None,
                  verbose=True,
                  ):
         
@@ -95,10 +93,6 @@ class GP(SpatialInterpolator):
                 x : Pandas DataFrame with columns for locations.
                     
                 u : A Pandas Series containing observations.
-
-                project : function, opt
-                    A function that takes multiple vectors, and returns
-                    a tuple of projected vectors.
 
                 featurization : function, optional
                     Should be a function that takes x1 (n-dim array of input data) 
@@ -130,7 +124,11 @@ class GP(SpatialInterpolator):
         Performs Gaussian process training and prediction.
         '''
         
-        super().__init__(projection=projection)
+        super().__init__()
+
+        # Supply defaults.
+        default_hyperparameters = dict(alpha=10, reg=None, train_iters=300)
+        hyperparameters = dict(default_hyperparameters, **hyperparameters)
 
         # This provides a filter to create the tf.Variables() only if the call_flag is None.
         # This is needed to avoid "ValueError: tf.function-decorated function 
@@ -205,8 +203,6 @@ class GP(SpatialInterpolator):
             optimizer.apply_gradients(zip(gradients, parameters.values()))
             return p, ll
 
-
-        
         # Set the user desired covariance function.
         if covariance_func not in ['squared-exp', 'gamma-exp']:
             raise ValueError("Only 'squared-exp' and 'gamma-exp' are currently supported.")
@@ -276,19 +272,18 @@ class GP(SpatialInterpolator):
         # tf_var = [tf.Variable(0.0, dtype=tf.float64)] * len(self.parameter_names)
         # self.parameters = dict(zip(self.parameter_names, tf_var))
 
-        self.featurization = featurization
+        self.featurizer = featurizer
 
         if u is not None and x is not None:
-            self.u1 = u.values
+            self.u1 = u
         
             # Projection.
-            self.x1 = self.project(x)
+            self.x1 = x
 
             # Distance matrix.
             self.D = cdist(self.x1, self.x1)       
 
             # Feature matrix.
-            self.featurizer = Featurizer(featurization, self.x1)
             self.F = self.featurizer(self.x1)
         
             # Data dict.
@@ -321,19 +316,18 @@ class GP(SpatialInterpolator):
 ############################################################################
 
     def generate(self, x2_pred):
-        X = self.project(x2_pred)
+        X = x2_pred
         D = cdist(X, X)
 
         # Feature matrix.
-        featurizer = Featurizer(self.featurization, X)
-        F = featurizer(X)
+        F = self.featurizer(X)
 
         p = self.gp_xform_parameters(self.parameters)
         
         if self.covariance_func == 'squared-exp':
-            A = gp_covariance_sq_exp(D, F, p['vrange'], p['sill'], p['nugget'], 0.)
+            A = gp_covariance_sq_exp(D, F, p['vrange'], p['sill'], p['nugget'], self.hyperparameters['alpha'])
         elif self.covariance_func == 'gamma-exp':
-            A = gp_covariance_gamma_exp(D, F, p['vrange'], p['sill'], p['nugget'], p['halfgamma'], 0.)
+            A = gp_covariance_gamma_exp(D, F, p['vrange'], p['sill'], p['nugget'], p['halfgamma'], self.hyperparameters['alpha'])
 
         A = A.numpy()
         return np.random.multivariate_normal(np.zeros([A.shape[0]]), A)
@@ -370,7 +364,7 @@ class GP(SpatialInterpolator):
             return tf.where(tf.equal(x.shape, 1))[:, 0]
 
         # Project.
-        self.x2 = self.project(x2_pred)
+        self.x2 = x2_pred
 
         ##############################################
         def interpolate_gp(X1, u1, X2, parameters, hyperparameters):
@@ -378,7 +372,7 @@ class GP(SpatialInterpolator):
             N1 = len(X1) # Number of measurements.
             N2 = len(X2) # Number of predictions.
 
-            X = pd.concat([X1, X2])
+            X = np.concatenate([X1, X2], axis=0)
             D = cdist(X, X)
             
             # Use the user given featurization.
@@ -430,10 +424,3 @@ class GP(SpatialInterpolator):
             u2_var = np.concatenate(u2_var_s)
 
             return u2_mean, u2_var
-
-    # Access the projected coords of the input data.
-    def get_projected(self):
-        return self.x1[:, 0], self.x1[:, 1]
-
-        
-
