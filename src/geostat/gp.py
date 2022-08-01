@@ -11,10 +11,10 @@ with warnings.catch_warnings():
 
 from .spatialinterpolator import SpatialInterpolator
 
-__all__ = ['GP', 'TrendFeaturizer']
+__all__ = ['GP', 'NormalizingFeaturizer']
 
 # Produces featurized locations (F matrix) and remembers normalization parameters.
-class TrendFeaturizer:
+class NormalizingFeaturizer:
     def __init__(self, featurization, locs):
         self.featurization = featurization
         F_unnorm = self.get_unnorm_features(locs)
@@ -25,12 +25,12 @@ class TrendFeaturizer:
         if self.featurization is None: # No features.
             return np.ones([locs.shape[0], 0])
 
-        feats = self.featurization(locs)
+        feats = self.featurization(*np.transpose(locs))
         if isinstance(feats, tuple): # One or many features.
             if len(feats) == 0:
                 return np.ones([locs.shape[0], 0])
             else:
-                return np.stack(self.featurization(locs), axis=1)
+                return np.stack(self.featurization(*np.transpose(locs)), axis=1)
         else: # One feature.
             return feats[:, np.newaxis]
 
@@ -47,8 +47,8 @@ def one_axes(x):
     return tf.where(tf.equal(x.shape, 1))[:, 0]
 
 # Squared exponential covariance function.
-def gp_covariance_sq_exp(D, F, vrange, sill, nugget, alpha):
-    C = sill * tf.exp(-tf.square(D / vrange)) \
+def gp_covariance_sq_exp(D, F, range_, sill, nugget, alpha):
+    C = sill * tf.exp(-tf.square(D / range_)) \
             + (nugget + 1e-6) * tf.eye(D.shape[0], dtype=tf.float64) \
             + alpha * tf.einsum('ba,ca->bc', F, F)
     return C
@@ -68,11 +68,11 @@ def safepow(x, a):
 def gamma_exp(d2, halfgamma):
     return tf.exp(-safepow(tf.maximum(d2, 0.0), halfgamma))
 
-def gp_covariance_gamma_exp(D, F, vrange, sill, nugget, halfgamma, alpha):
-    vrange = e(e(vrange))
+def gp_covariance_gamma_exp(D, F, range_, sill, nugget, halfgamma, alpha):
+    range_ = e(e(range_))
     sill = e(e(sill))
     halfgamma = e(e(halfgamma))
-    C = sill * gamma_exp(tf.square(D / vrange), halfgamma) + (nugget + 1e-6) * tf.eye(tf.shape(D)[0], dtype=tf.float64)
+    C = sill * gamma_exp(tf.square(D / range_), halfgamma) + (nugget + 1e-6) * tf.eye(tf.shape(D)[0], dtype=tf.float64)
     C += tf.einsum('ba,ca->bc', F, F) * alpha   
     return C
 
@@ -83,7 +83,7 @@ class GP(SpatialInterpolator):
                  u=None,
                  featurizer=None,
                  covariance_func='squared-exp',
-                 parameter0=None,
+                 parameters=None,
                  hyperparameters=None,
                  verbose=True,
                  ):
@@ -106,9 +106,9 @@ class GP(SpatialInterpolator):
                      Should be 'squared-exp' or 'gamma-exp'.
                      Default is 'squared-exp'.
 
-                parameter0 : dict, optional
-                    The starting point for the parameters. Use "vrange" for the range.
-                    Example: parameter0=dict(vrange=2.0, sill=5.0, nugget=1.0).
+                parameters : dict, optional
+                    The starting point for the parameters.
+                    Example: parameters=dict(range=2.0, sill=5.0, nugget=1.0).
                     Default is None.
         
                 hyperparameters : dict
@@ -155,17 +155,17 @@ class GP(SpatialInterpolator):
             (which has the whole real number line as its range) to
             a surface representation (which is bounded).
             """
-            vrange = tf.exp(parameters['log_vrange'])
+            range_ = tf.exp(parameters['log_range'])
             sill = tf.exp(parameters['log_sill'])
             nugget = tf.exp(parameters['log_nugget'])
             
             if self.covariance_func == 'squared-exp':
-                param_dict = {'vrange': vrange, 'sill': sill, 'nugget': nugget}
+                param_dict = {'range': range_, 'sill': sill, 'nugget': nugget}
                 return param_dict
                 
             elif self.covariance_func == 'gamma-exp':
                 halfgamma = tf.sigmoid(parameters['logit_halfgamma'])
-                param_dict = {'vrange': vrange, 'sill': sill, 'nugget': nugget, 'halfgamma': halfgamma}
+                param_dict = {'range': range_, 'sill': sill, 'nugget': nugget, 'halfgamma': halfgamma}
                 return param_dict
                 
 
@@ -187,14 +187,14 @@ class GP(SpatialInterpolator):
                 beta_prior = hyperparameters['alpha']
                 
                 if self.covariance_func == 'squared-exp':
-                    A = gp_covariance_sq_exp(data['D'], data['F'], p['vrange'], p['sill'], p['nugget'], beta_prior)
+                    A = gp_covariance_sq_exp(data['D'], data['F'], p['range'], p['sill'], p['nugget'], beta_prior)
                 elif self.covariance_func == 'gamma-exp':
-                    A = gp_covariance_gamma_exp(data['D'], data['F'], p['vrange'], p['sill'], p['nugget'], p['halfgamma'], beta_prior)
+                    A = gp_covariance_gamma_exp(data['D'], data['F'], p['range'], p['sill'], p['nugget'], p['halfgamma'], beta_prior)
                 
                 ll = gp_log_likelihood(data['u'], 0., A)
                 
                 if hyperparameters['reg'] != None:
-                    reg = hyperparameters['reg'] * tf.reduce_sum(tf.square(parameters['log_vrange']))
+                    reg = hyperparameters['reg'] * tf.reduce_sum(tf.square(parameters['log_range']))
                     loss = -ll + reg
                 else:
                     loss = -ll
@@ -222,45 +222,45 @@ class GP(SpatialInterpolator):
         
         
         # Build the tf.Variable() dict.
-        if parameter0 != None:
+        if parameters != None:
             if self.call_flag is None:
                 if self.covariance_func == 'squared-exp':
                     # Log the starting point parameters that where provided.
-                    for key in parameter0:    
-                        parameter0[key] = np.log(parameter0[key])
+                    for key in parameters:    
+                        parameters[key] = np.log(parameters[key])
                         
                     self.parameters = {
-                          'log_vrange': tf.Variable(parameter0['vrange'], dtype=tf.float64),
-                          'log_sill': tf.Variable(parameter0['sill'], dtype=tf.float64),
-                          'log_nugget': tf.Variable(parameter0['nugget'], dtype=tf.float64)}
+                          'log_range': tf.Variable(parameters['range'], dtype=tf.float64),
+                          'log_sill': tf.Variable(parameters['sill'], dtype=tf.float64),
+                          'log_nugget': tf.Variable(parameters['nugget'], dtype=tf.float64)}
                     # print(self.parameters.items())
                 
                 elif self.covariance_func == 'gamma-exp':
-                    for key in parameter0:
+                    for key in parameters:
                         if key == 'gamma':
-                            parameter0[key] = logodds_half(parameter0[key])
+                            parameters[key] = logodds_half(parameters[key])
                         else:
-                            parameter0[key] = np.log(parameter0[key])
+                            parameters[key] = np.log(parameters[key])
                             
                     self.parameters = {
-                              'log_vrange': tf.Variable(parameter0['vrange'], dtype=tf.float64),
-                              'log_sill': tf.Variable(parameter0['sill'], dtype=tf.float64),
-                              'log_nugget': tf.Variable(parameter0['nugget'], dtype=tf.float64),
-                              'logit_halfgamma': tf.Variable(parameter0['gamma'], dtype=tf.float64)}
+                              'log_range': tf.Variable(parameters['range'], dtype=tf.float64),
+                              'log_sill': tf.Variable(parameters['sill'], dtype=tf.float64),
+                              'log_nugget': tf.Variable(parameters['nugget'], dtype=tf.float64),
+                              'logit_halfgamma': tf.Variable(parameters['gamma'], dtype=tf.float64)}
                     # print(self.parameters.items())
                     
 
-        elif parameter0 == None:
+        elif parameters == None:
             if self.call_flag is None:
                 if self.covariance_func == 'squared-exp':
                     self.parameters = {
-                          'log_vrange': tf.Variable(0.0, dtype=tf.float64),
+                          'log_range': tf.Variable(0.0, dtype=tf.float64),
                           'log_sill': tf.Variable(0.0, dtype=tf.float64),
                           'log_nugget': tf.Variable(0.0, dtype=tf.float64)}
                     # print(self.parameters.items())
                 elif self.covariance_func == 'gamma-exp':
                     self.parameters = {
-                          'log_vrange': tf.Variable(0.0, dtype=tf.float64),
+                          'log_range': tf.Variable(0.0, dtype=tf.float64),
                           'log_sill': tf.Variable(0.0, dtype=tf.float64),
                           'log_nugget': tf.Variable(0.0, dtype=tf.float64),
                           'logit_halfgamma': tf.Variable(0.0, dtype=tf.float64)}
@@ -302,11 +302,11 @@ class GP(SpatialInterpolator):
                     if self.verbose == True:
                         if self.covariance_func == 'squared-exp':
                             print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f]' % 
-                                (j, ll, p['vrange'], p['sill'], p['nugget']))
+                                (j, ll, p['range'], p['sill'], p['nugget']))
 
                         elif self.covariance_func == 'gamma-exp':
                             print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f, gamma %4.2f]' % 
-                                (j, ll, p['vrange'], p['sill'], p['nugget'], p['halfgamma'] * 2))
+                                (j, ll, p['range'], p['sill'], p['nugget'], p['halfgamma'] * 2))
 
 
             gpm_fit(self.data, self.parameters, self.hyperparameters)
@@ -325,14 +325,14 @@ class GP(SpatialInterpolator):
         p = self.gp_xform_parameters(self.parameters)
         
         if self.covariance_func == 'squared-exp':
-            A = gp_covariance_sq_exp(D, F, p['vrange'], p['sill'], p['nugget'], self.hyperparameters['alpha'])
+            A = gp_covariance_sq_exp(D, F, p['range'], p['sill'], p['nugget'], self.hyperparameters['alpha'])
         elif self.covariance_func == 'gamma-exp':
-            A = gp_covariance_gamma_exp(D, F, p['vrange'], p['sill'], p['nugget'], p['halfgamma'], self.hyperparameters['alpha'])
+            A = gp_covariance_gamma_exp(D, F, p['range'], p['sill'], p['nugget'], p['halfgamma'], self.hyperparameters['alpha'])
 
         A = A.numpy()
         return np.random.multivariate_normal(np.zeros([A.shape[0]]), A)
 
-    def predict(self, x2_pred, batch_size=None):
+    def predict(self, x2_pred):
         
         '''
         Parameters:
@@ -353,7 +353,7 @@ class GP(SpatialInterpolator):
         '''
         
         # Define inputs.
-        self.batch_size = batch_size
+        self.batch_size = self.x1.shape[0] // 2
         
         
         # Needed functions.
@@ -381,9 +381,9 @@ class GP(SpatialInterpolator):
             p = self.gp_xform_parameters(parameters)
             
             if self.covariance_func == 'squared-exp':
-                A = gp_covariance_sq_exp(D, F, p['vrange'], p['sill'], p['nugget'], hyperparameters['alpha'])
+                A = gp_covariance_sq_exp(D, F, p['range'], p['sill'], p['nugget'], hyperparameters['alpha'])
             elif self.covariance_func == 'gamma-exp':
-                A = gp_covariance_gamma_exp(D, F, p['vrange'], p['sill'], p['nugget'], p['halfgamma'], hyperparameters['alpha'])
+                A = gp_covariance_gamma_exp(D, F, p['range'], p['sill'], p['nugget'], p['halfgamma'], hyperparameters['alpha'])
 
             A11 = A[:N1, :N1]
             A12 = A[:N1, N1:]
@@ -397,30 +397,24 @@ class GP(SpatialInterpolator):
         
         
         # Interpolate in batches.
-        if self.batch_size == None:
-            u2_mean, u2_var = interpolate_gp(self.x1, self.u1, self.x2, self.parameters, self.hyperparameters)
-            return u2_mean.numpy(), u2_var.numpy()
-        
-        elif self.batch_size != None:
+        for_gp = []
+
+        for start in np.arange(0, len(self.x2), self.batch_size):
+            stop = start + self.batch_size    
+            subset = self.x2[start:stop]
+            for_gp.append(subset)
+
+        u2_mean_s = []
+        u2_var_s = []
+
+        for subset in for_gp:
+            u2_mean, u2_var = interpolate_gp(self.x1, self.u1, subset, self.parameters, self.hyperparameters)
+            u2_mean = u2_mean.numpy()
+            u2_var = u2_var.numpy()
+            u2_mean_s.append(u2_mean)
+            u2_var_s.append(u2_var)
             
-            for_gp = []
+        u2_mean = np.concatenate(u2_mean_s)
+        u2_var = np.concatenate(u2_var_s)
 
-            for start in np.arange(0, len(self.x2), self.batch_size):
-                stop = start + self.batch_size    
-                subset = self.x2[start:stop]
-                for_gp.append(subset)
-
-            u2_mean_s = []
-            u2_var_s = []
-
-            for subset in for_gp:
-                u2_mean, u2_var = interpolate_gp(self.x1, self.u1, subset, self.parameters, self.hyperparameters)
-                u2_mean = u2_mean.numpy()
-                u2_var = u2_var.numpy()
-                u2_mean_s.append(u2_mean)
-                u2_var_s.append(u2_var)
-                
-            u2_mean = np.concatenate(u2_mean_s)
-            u2_var = np.concatenate(u2_var_s)
-
-            return u2_mean, u2_var
+        return u2_mean, u2_var
