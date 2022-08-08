@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 from scipy.spatial.distance import cdist
+from scipy.special import expit
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
@@ -185,10 +186,12 @@ class GP(SpatialInterpolator):
         default_hyperparameters = dict(alpha=10, reg=None, train_iters=300)
         self.hyperparameters = dict(default_hyperparameters, **self.hyperparameters)
 
-        # This provides a filter to create the tf.Variables() only if the call_flag is None.
-        # This is needed to avoid "ValueError: tf.function-decorated function
-        # tried to create variables on non-first call."
-        self.call_flag = None
+        # Default parameters.
+        if self.parameters == None:
+            if self.covariance_func == 'squared-exp':
+                self.parameters = dict(range=1.0, sill=1.0, nugget=1.0)
+            elif self.covariance_func == 'gamma-exp':
+                self.parameters = dict(range=1.0, sill=1.0, nugget=1.0, gamma=1.0)
 
         # Other needed functions.
         def logodds(p):
@@ -216,57 +219,6 @@ class GP(SpatialInterpolator):
             self.hp = {'alpha': tf.constant(self.hyperparameters['alpha'], dtype=tf.float64),
                                     'reg': None}
 
-
-        # Build the tf.Variable() dict.
-        if self.parameters != None:
-            if self.call_flag is None:
-                if self.covariance_func == 'squared-exp':
-                    # Log the starting point parameters that where provided.
-                    for key in self.parameters:
-                        self.parameters[key] = np.log(self.parameters[key])
-
-                    self.up = {
-                          'log_range': tf.Variable(self.parameters['range'], dtype=tf.float64),
-                          'log_sill': tf.Variable(self.parameters['sill'], dtype=tf.float64),
-                          'log_nugget': tf.Variable(self.parameters['nugget'], dtype=tf.float64)}
-                    # print(self.up.items())
-
-                elif self.covariance_func == 'gamma-exp':
-                    for key in self.parameters:
-                        if key == 'gamma':
-                            self.parameters[key] = logodds_half(self.parameters[key])
-                        else:
-                            self.parameters[key] = np.log(self.parameters[key])
-
-                    self.up = {
-                              'log_range': tf.Variable(self.parameters['range'], dtype=tf.float64),
-                              'log_sill': tf.Variable(self.parameters['sill'], dtype=tf.float64),
-                              'log_nugget': tf.Variable(self.parameters['nugget'], dtype=tf.float64),
-                              'logit_halfgamma': tf.Variable(self.parameters['gamma'], dtype=tf.float64)}
-                    # print(self.up.items())
-
-
-        elif self.parameters == None:
-            if self.call_flag is None:
-                if self.covariance_func == 'squared-exp':
-                    self.up = {
-                          'log_range': tf.Variable(0.0, dtype=tf.float64),
-                          'log_sill': tf.Variable(0.0, dtype=tf.float64),
-                          'log_nugget': tf.Variable(0.0, dtype=tf.float64)}
-                    # print(self.up.items())
-                elif self.covariance_func == 'gamma-exp':
-                    self.up = {
-                          'log_range': tf.Variable(0.0, dtype=tf.float64),
-                          'log_sill': tf.Variable(0.0, dtype=tf.float64),
-                          'log_nugget': tf.Variable(0.0, dtype=tf.float64),
-                          'logit_halfgamma': tf.Variable(0.0, dtype=tf.float64)}
-                    # print(self.up.items())
-
-
-        # # Build parameters dict. (This may work when GP can take n params).
-        # self.parameter_names = parameter_names
-        # tf_var = [tf.Variable(0.0, dtype=tf.float64)] * len(self.parameter_names)
-        # self.up = dict(zip(self.parameter_names, tf_var))
 
     def fit(self, x, u):
         self.u1 = u
@@ -302,11 +254,47 @@ class GP(SpatialInterpolator):
                         print('[iter %d] [ll %7.2f] [range %4.2f, sill %4.2f, nugget %4.2f, gamma %4.2f]' %
                             (j, ll, p['range'], p['sill'], p['nugget'], p['halfgamma'] * 2))
 
+        up = self.get_underlying_parameters()
 
-        gpm_fit(self.data, self.up, self.hyperparameters)
+        gpm_fit(self.data, up, self.hyperparameters)
+
+        self.parameters = self.get_surface_parameters(up)
 
         return self
 
+    def get_underlying_parameters(self):
+        if self.covariance_func == 'squared-exp':
+            # Log the starting point parameters that where provided.
+            for key in self.parameters:
+                self.parameters[key] = np.log(self.parameters[key])
+
+            up = dict(
+                log_range = tf.Variable(self.parameters['range'], dtype=tf.float64),
+                log_sill = tf.Variable(self.parameters['sill'], dtype=tf.float64),
+                log_nugget = tf.Variable(self.parameters['nugget'], dtype=tf.float64))
+
+        elif self.covariance_func == 'gamma-exp':
+            for key in self.parameters:
+                if key == 'gamma':
+                    self.parameters[key] = logodds_half(self.parameters[key])
+                else:
+                    self.parameters[key] = np.log(self.parameters[key])
+
+            up = dict(
+                log_range = tf.Variable(self.parameters['range'], dtype=tf.float64),
+                log_sill = tf.Variable(self.parameters['sill'], dtype=tf.float64),
+                log_nugget = tf.Variable(self.parameters['nugget'], dtype=tf.float64),
+                logit_halfgamma = tf.Variable(self.parameters['gamma'], dtype=tf.float64))
+        return up
+
+    def get_surface_parameters(self, up):
+        sp = {}
+        sp['range'] = np.exp(up['log_range'].numpy())
+        sp['sill'] = np.exp(up['log_sill'].numpy())
+        sp['nugget'] = np.exp(up['log_nugget'].numpy())
+        if 'logit_halfgamma' in up:
+            sp['gamma'] = 2.0 * expit(parameters['logit_halfgamma'])
+        return sp
 
 ############################################################################
 ############################################################################
@@ -318,7 +306,9 @@ class GP(SpatialInterpolator):
         # Feature matrix.
         F = self.featurizer(X)
 
-        p = gp_xform_parameters(self.up, self.covariance_func)
+        up = self.get_underlying_parameters()
+
+        p = gp_xform_parameters(up, self.covariance_func)
 
         if self.covariance_func == 'squared-exp':
             A = gp_covariance_sq_exp(D, F, p['range'], p['sill'], p['nugget'], self.hyperparameters['alpha'])
@@ -400,11 +390,13 @@ class GP(SpatialInterpolator):
             subset = self.x2[start:stop]
             for_gp.append(subset)
 
+        up = self.get_underlying_parameters()
+
         u2_mean_s = []
         u2_var_s = []
 
         for subset in for_gp:
-            u2_mean, u2_var = interpolate_gp(self.x1, self.u1, subset, self.up, self.hyperparameters)
+            u2_mean, u2_var = interpolate_gp(self.x1, self.u1, subset, up, self.hyperparameters)
             u2_mean = u2_mean.numpy()
             u2_var = u2_var.numpy()
             u2_mean_s.append(u2_mean)
