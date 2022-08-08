@@ -20,12 +20,11 @@ def test_gp():
     vals = gp.generate(locs)
 
     # Fit GP.
-    gp = GP(locs, vals,
-            featurizer = featurizer,
+    gp = GP(featurizer = featurizer,
             covariance_func = 'squared-exp',
             parameters = dict(range=1.0, sill=0.5, nugget=0.5),
             hyperparameters = dict(alpha=vals.ptp()**2, reg=0, train_iters=200),
-            verbose=True)
+            verbose=True).fit(locs, vals)
 
     # Interpolate using GP.
     N = 20
