@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.special import expit
@@ -221,19 +221,14 @@ class GP(SpatialInterpolator):
 
 
     def fit(self, x, u):
-        self.u1 = u
-
-        # Projection.
-        self.x1 = x
-
         # Distance matrix.
-        self.D = cdist(self.x1, self.x1)
+        D = cdist(x, x)
 
         # Feature matrix.
-        self.F = self.featurizer(self.x1)
+        F = self.featurizer(x)
 
         # Data dict.
-        self.data = {'D': tf.constant(self.D), 'F': tf.constant(self.F), 'u': tf.constant(self.u1)}
+        self.data = {'D': tf.constant(D), 'F': tf.constant(F), 'u': tf.constant(u)}
 
         # Train the GP.
         def gpm_fit(data, parameters, hyperparameters):
@@ -258,9 +253,7 @@ class GP(SpatialInterpolator):
 
         gpm_fit(self.data, up, self.hyperparameters)
 
-        self.parameters = self.get_surface_parameters(up)
-
-        return self
+        return replace(self, parameters = self.get_surface_parameters(up))
 
     def get_underlying_parameters(self):
         if self.covariance_func == 'squared-exp':
@@ -318,7 +311,7 @@ class GP(SpatialInterpolator):
         A = A.numpy()
         return np.random.multivariate_normal(np.zeros([A.shape[0]]), A)
 
-    def predict(self, x2_pred):
+    def predict(self, x1, u1, x2):
 
         '''
         Parameters:
@@ -339,7 +332,7 @@ class GP(SpatialInterpolator):
         '''
 
         # Define inputs.
-        self.batch_size = self.x1.shape[0] // 2
+        self.batch_size = x1.shape[0] // 2
 
 
         # Needed functions.
@@ -348,9 +341,6 @@ class GP(SpatialInterpolator):
 
         def one_axes(x):
             return tf.where(tf.equal(x.shape, 1))[:, 0]
-
-        # Project.
-        self.x2 = x2_pred
 
         ##############################################
         def interpolate_gp(X1, u1, X2, parameters, hyperparameters):
@@ -385,9 +375,9 @@ class GP(SpatialInterpolator):
         # Interpolate in batches.
         for_gp = []
 
-        for start in np.arange(0, len(self.x2), self.batch_size):
+        for start in np.arange(0, len(x2), self.batch_size):
             stop = start + self.batch_size
-            subset = self.x2[start:stop]
+            subset = x2[start:stop]
             for_gp.append(subset)
 
         up = self.get_underlying_parameters()
@@ -396,7 +386,7 @@ class GP(SpatialInterpolator):
         u2_var_s = []
 
         for subset in for_gp:
-            u2_mean, u2_var = interpolate_gp(self.x1, self.u1, subset, up, self.hyperparameters)
+            u2_mean, u2_var = interpolate_gp(x1, u1, subset, up, self.hyperparameters)
             u2_mean = u2_mean.numpy()
             u2_var = u2_var.numpy()
             u2_mean_s.append(u2_mean)
