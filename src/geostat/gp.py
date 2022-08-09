@@ -10,8 +10,11 @@ import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
+    import tensorflow_probability as tfp
 
 from .spatialinterpolator import SpatialInterpolator
+
+MVN = tfp.distributions.MultivariateNormalTriL
 
 __all__ = ['GP', 'NormalizingFeaturizer']
 
@@ -218,7 +221,6 @@ class GP(SpatialInterpolator):
             self.hp = {'alpha': tf.constant(self.hyperparameters['alpha'], dtype=tf.float64),
                                     'reg': None}
 
-
     def fit(self, x, u):
         # Distance matrix.
         D = cdist(x, x)
@@ -277,15 +279,12 @@ class GP(SpatialInterpolator):
             sp['gamma'] = 2.0 * expit(parameters['logit_halfgamma'])
         return sp
 
-############################################################################
-############################################################################
+    def generate(self, x):
+        xr = x.reshape([-1, x.shape[-1]])
 
-    def generate(self, x2_pred):
-        X = x2_pred
-        D = cdist(X, X)
+        D = cdist(xr, xr)
 
-        # Feature matrix.
-        F = self.featurizer(X)
+        F = self.featurizer(xr)
 
         up = self.get_underlying_parameters()
 
@@ -296,8 +295,9 @@ class GP(SpatialInterpolator):
         elif self.covariance_func == 'gamma-exp':
             A = gp_covariance_gamma_exp(D, F, p['range'], p['sill'], p['nugget'], p['halfgamma'], self.hyperparameters['alpha'])
 
-        A = A.numpy()
-        return np.random.multivariate_normal(np.zeros([A.shape[0]]), A)
+        z = tf.zeros_like(A[0, :])
+
+        return MVN(z, tf.linalg.cholesky(A)).sample().numpy().reshape(x.shape[:-1])
 
     def predict(self, x1, u1, x2):
 
