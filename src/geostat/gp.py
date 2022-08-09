@@ -257,15 +257,15 @@ class GP(SpatialInterpolator):
     def get_underlying_parameters(self):
         if self.covariance_func == 'squared-exp':
             up = dict(
-                log_range = tf.Variable(self.parameters['range'], dtype=tf.float64),
-                log_sill = tf.Variable(self.parameters['sill'], dtype=tf.float64),
-                log_nugget = tf.Variable(self.parameters['nugget'], dtype=tf.float64))
+                log_range = tf.Variable(np.log(self.parameters['range']), dtype=tf.float64),
+                log_sill = tf.Variable(np.log(self.parameters['sill']), dtype=tf.float64),
+                log_nugget = tf.Variable(np.log(self.parameters['nugget']), dtype=tf.float64))
         elif self.covariance_func == 'gamma-exp':
             up = dict(
-                log_range = tf.Variable(self.parameters['range'], dtype=tf.float64),
-                log_sill = tf.Variable(self.parameters['sill'], dtype=tf.float64),
-                log_nugget = tf.Variable(self.parameters['nugget'], dtype=tf.float64),
-                logit_halfgamma = tf.Variable(self.parameters['gamma'], dtype=tf.float64))
+                log_range = tf.Variable(np.log(self.parameters['range']), dtype=tf.float64),
+                log_sill = tf.Variable(np.log(self.parameters['sill']), dtype=tf.float64),
+                log_nugget = tf.Variable(np.log(self.parameters['nugget']), dtype=tf.float64),
+                logit_halfgamma = tf.Variable(logodds_half(self.parameters['gamma']), dtype=tf.float64))
         return up
 
     def get_surface_parameters(self, up):
