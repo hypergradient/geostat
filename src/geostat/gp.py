@@ -110,7 +110,6 @@ def gp_log_likelihood(u, m, cov):
 
 
 # GP training.
-@tf.function
 def gpm_train_step(optimizer, data, parameters, hyperparameters, covariance_func):
     with tf.GradientTape() as tape:
         p = gp_xform_parameters(parameters, covariance_func)
@@ -257,22 +256,11 @@ class GP(SpatialInterpolator):
 
     def get_underlying_parameters(self):
         if self.covariance_func == 'squared-exp':
-            # Log the starting point parameters that where provided.
-            for key in self.parameters:
-                self.parameters[key] = np.log(self.parameters[key])
-
             up = dict(
                 log_range = tf.Variable(self.parameters['range'], dtype=tf.float64),
                 log_sill = tf.Variable(self.parameters['sill'], dtype=tf.float64),
                 log_nugget = tf.Variable(self.parameters['nugget'], dtype=tf.float64))
-
         elif self.covariance_func == 'gamma-exp':
-            for key in self.parameters:
-                if key == 'gamma':
-                    self.parameters[key] = logodds_half(self.parameters[key])
-                else:
-                    self.parameters[key] = np.log(self.parameters[key])
-
             up = dict(
                 log_range = tf.Variable(self.parameters['range'], dtype=tf.float64),
                 log_sill = tf.Variable(self.parameters['sill'], dtype=tf.float64),
@@ -374,10 +362,11 @@ class GP(SpatialInterpolator):
 
         # Interpolate in batches.
         for_gp = []
+        x2r = x2.reshape([-1, x2.shape[-1]])
 
-        for start in np.arange(0, len(x2), self.batch_size):
+        for start in np.arange(0, len(x2r), self.batch_size):
             stop = start + self.batch_size
-            subset = x2[start:stop]
+            subset = x2r[start:stop]
             for_gp.append(subset)
 
         up = self.get_underlying_parameters()
@@ -392,7 +381,7 @@ class GP(SpatialInterpolator):
             u2_mean_s.append(u2_mean)
             u2_var_s.append(u2_var)
 
-        u2_mean = np.concatenate(u2_mean_s)
-        u2_var = np.concatenate(u2_var_s)
+        u2_mean = np.concatenate(u2_mean_s).reshape(x2.shape[:-1])
+        u2_var = np.concatenate(u2_var_s).reshape(x2.shape[:-1])
 
         return u2_mean, u2_var

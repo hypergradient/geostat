@@ -28,8 +28,11 @@ def test_gp():
 
     # Interpolate using GP.
     N = 20
-    lat = np.repeat(np.linspace(-1., 1., N), N)
-    lon = np.tile(np.linspace(-1., 1., N), N)
-    locs2 = np.stack([lat, lon], axis=1)
+    xx, yy = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N))
+    locs2 = np.stack([xx, yy], axis=-1) # Okay if locs2 rank is greater than 2.
 
     mean, var = gp2.predict(locs1, vals1, locs2)
+    mean2, var2 = gp2.predict(locs1, vals1, locs2)
+
+    assert np.all(mean == mean2)
+    assert np.all(var == var2)
