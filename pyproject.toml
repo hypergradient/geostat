@@ -8,12 +8,12 @@ version = "0.0.1"
 description = "Model spatial data with Gaussian processes"
 readme = "README.md"
 authors = [
-  "Michael J. Stephens <mjstephens@usgs.gov>",
-  "Will Chang <will@hypergradient.ai>"
+  {name="Michael J. Stephens", email="mjstephens@usgs.gov"},
+  {name="Will Chang", email="will@hypergradient.ai"}
 ]
 license = { file = "LICENSE" }
 classifiers = [
-    "License :: Apache-2.0",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
 ]
 keywords = ["geospatial", "spatial", "interpolation", "gaussian process", "krige", "kriging"]
