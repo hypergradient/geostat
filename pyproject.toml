@@ -4,16 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "geostat"
-version = "0.0.0"
+version = "0.0.1"
 description = "Model spatial data with Gaussian processes"
 readme = "README.md"
 authors = [
-  { name = "Michael J. Stephens", email = "mjstephens@usgs.gov" },
-  { name = "Will Chang", email = "will@hypergradient.ai" }]
+  "Michael J. Stephens <mjstephens@usgs.gov>",
+  "Will Chang <will@hypergradient.ai>"
+]
 license = { file = "LICENSE" }
 classifiers = [
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python",
+    "License :: Apache-2.0",
     "Programming Language :: Python :: 3",
 ]
 keywords = ["geospatial", "spatial", "interpolation", "gaussian process", "krige", "kriging"]
