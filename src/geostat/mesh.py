@@ -1,18 +1,22 @@
+from dataclasses import dataclass, replace
 import numpy as np
 import pandas as pd
 from scipy.spatial import ConvexHull
-from shapely.geometry import MultiPoint, Point, shape
+from shapely.geometry import MultiPoint, Point, Polygon, shape
 
 __all__ = ['Mesh']
 
+@dataclass
 class Mesh:
-    def __init__(self, locs, nx=None, ny=None):
 
-        self.locs = locs
+    x: np.ndarray
+    y: np.ndarray
+    meshdf: pd.DataFrame
 
+    @staticmethod
+    def from_bounds(bounds, nx=None, ny=None):
         # Get bounding box.
-        x0, y0 = locs.min(axis=0)
-        x1, y1 = locs.max(axis=0)
+        x0, y0, x1, y1 = bounds
 
         # Figure out pitch.
         if nx is None and ny is None:
@@ -31,26 +35,36 @@ class Mesh:
 
         nx = int((x1 - x0) // xpitch)
         margin = (x1 - x0 - nx * xpitch) / 2
-        self.x = np.linspace(x0 + margin, x1 - margin, nx)
+        x = np.linspace(x0 + margin, x1 - margin, nx)
 
         ny = int((y1 - y0) // xpitch)
         margin = (y1 - y0 - ny * xpitch) / 2
-        self.y = np.linspace(y0 + margin, y1 - margin, ny)
+        y = np.linspace(y0 + margin, y1 - margin, ny)
 
-        meshx, meshy = np.meshgrid(self.x, self.y)
-        ix, iy = np.meshgrid(np.arange(len(self.x)), np.arange(len(self.y)))
+        meshx, meshy = np.meshgrid(x, y)
+        ix, iy = np.meshgrid(np.arange(len(x)), np.arange(len(y)))
 
-        self.meshdf = pd.DataFrame().assign(
+        meshdf = pd.DataFrame().assign(
             x = meshx.ravel(),
             y = meshy.ravel(),
             ix = ix.ravel(),
             iy = iy.ravel())
 
-    def convex_hull(self):
-        hull = MultiPoint(self.locs).convex_hull
-        mask = [hull.contains(Point(p)) for p in self.locations()]
-        self.meshdf = self.meshdf.iloc[mask]
-        return self
+        return Mesh(x, y, meshdf)
+
+    @staticmethod
+    def from_convex_hull(locs, nx=None, ny=None):
+        mp = MultiPoint(locs)
+        mesh = Mesh.from_bounds(mp.bounds, nx, ny)
+        hull = mp.convex_hull
+        mask = [hull.contains(Point(p)) for p in mesh.locations()]
+        return replace(mesh, meshdf = mesh.meshdf.iloc[mask])
+
+    @staticmethod
+    def from_polygon(polygon, nx=None, ny=None):
+        mesh = Mesh.from_bounds(polygon.bounds, nx, ny)
+        mask = [polygon.contains(Point(p)) for p in mesh.locations()]
+        return replace(mesh, meshdf = mesh.meshdf.iloc[mask])
 
     def locations(self):
         return self.meshdf[['x', 'y']].values
