@@ -100,10 +100,11 @@ def gpm_train_step(optimizer, data, parameters, hyperparameters, covariance):
         ll = gp_log_likelihood(data['u'], 0., A)
 
         if hyperparameters['reg'] != None:
-            reg = hyperparameters['reg'] * tf.reduce_sum(tf.square(parameters['range']))
-            loss = -ll + reg
+            reg = hyperparameters['reg'] * covariance.reg(p)
         else:
-            loss = -ll
+            reg = 0.
+
+        loss = -ll + reg
 
     gradients = tape.gradient(loss, parameters.values())
     optimizer.apply_gradients(zip(gradients, parameters.values()))

@@ -23,8 +23,13 @@ class CovarianceFunction:
         string = ', '.join('%s %4.2f' % (v, p[v]) for v in self.vars())
         return '[' + string + ']'
 
+    def reg(self, p):
+        pass
+
 class SquaredExponential(CovarianceFunction):
-    def __init__(self, scale=None):
+    def __init__(self, range='range', sill='sill', scale=None):
+        self.range = range
+        self.sill = sill
         self.scale = scale
         super().__init__()
 
@@ -33,17 +38,23 @@ class SquaredExponential(CovarianceFunction):
             scale_variables = [s for s in self.scale if isinstance(s, str)]
         else:
             scale_variables = []
-        return dedup(scale_variables + ['range', 'sill'])
+        return dedup(scale_variables + [self.range, self.sill])
 
     def matrix(self, x, p):
         if self.scale is not None:
             scale_tensor = [p.get(s, s) for s in self.scale]
             x *= scale_tensor
         d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
-        return p['sill'] * tf.exp(-d2 / tf.square(p['range']))
+        return p[self.sill] * tf.exp(-d2 / tf.square(p[self.range]))
+
+    def reg(self, p):
+        return p[self.range]
 
 class GammaExponential(CovarianceFunction):
-    def __init__(self, scale=None):
+    def __init__(self, range='range', sill='sill', gamma='gamma', scale=None):
+        self.range = range
+        self.sill = sill
+        self.gamma = gamma
         self.scale = scale
         super().__init__()
 
@@ -52,24 +63,31 @@ class GammaExponential(CovarianceFunction):
             scale_variables = [s for s in self.scale if isinstance(s, str)]
         else:
             scale_variables = []
-        return dedup(scale_variables + ['range', 'sill', 'gamma'])
+        return dedup(scale_variables + [self.range, self.sill, self.gamma])
 
     def matrix(self, x, p):
         if self.scale is not None:
             scale_tensor = [p.get(s, s) for s in self.scale]
             x *= scale_tensor
         d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
-        return p['sill'] * gamma_exp(d2 / tf.square(p['range']), p['gamma'])
+        return p[self.sill] * gamma_exp(d2 / tf.square(p[self.range]), p[self.gamma])
+
+    def reg(self, p):
+        return p[self.range]
 
 class Noise(CovarianceFunction):
-    def __init__(self):
+    def __init__(self, nugget='nugget'):
+        self.nugget = nugget
         super().__init__()
 
     def vars(self):
-        return ['nugget']
+        return [self.nugget]
 
     def matrix(self, x, p):
-        return p['nugget'] * tf.eye(x.shape[0])
+        return p[self.nugget] * tf.eye(x.shape[0])
+
+    def reg(self, p):
+        return 0.
 
 class Stack(CovarianceFunction):
     def __init__(self, parts: List[CovarianceFunction]):
@@ -88,6 +106,9 @@ class Stack(CovarianceFunction):
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)
+
+    def reg(self, p):
+        return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)
 
 def e(x, a=-1):
     return tf.expand_dims(x, a)
