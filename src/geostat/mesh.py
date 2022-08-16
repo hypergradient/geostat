@@ -66,8 +66,11 @@ class Mesh:
         mask = [polygon.contains(Point(p)) for p in mesh.locations()]
         return replace(mesh, meshdf = mesh.meshdf.iloc[mask])
 
-    def locations(self):
-        return self.meshdf[['x', 'y']].values
+    def locations(self, proj=None):
+        loc = self.meshdf[['x', 'y']].values
+        if proj is not None:
+            loc = (loc @ np.eye(2, 3) + [0, 0, 1]) @ proj
+        return loc
 
     def slice(self, values):
         meshx, meshy = np.meshgrid(self.x, self.y)
