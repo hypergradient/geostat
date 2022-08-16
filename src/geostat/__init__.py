@@ -1,6 +1,5 @@
 from .gp import *
 from .krige import *
-from .misc import *
 from .mesh import *
 
 __all__ = []

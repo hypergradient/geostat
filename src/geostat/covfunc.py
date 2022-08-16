@@ -68,6 +68,9 @@ class GammaExponential(CovarianceFunction):
     def matrix(self, x, p):
         if self.scale is not None:
             scale_tensor = [p.get(s, s) for s in self.scale]
+            missing = list(filter(lambda s: isinstance(s, str), scale_tensor))
+            if missing:
+                raise ValueError("parameter(s) [%s] not found" % ', '.join(missing))
             x *= scale_tensor
         d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
         return p[self.sill] * gamma_exp(d2 / tf.square(p[self.range]), p[self.gamma])
