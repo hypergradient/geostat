@@ -1,4 +1,5 @@
-from typing import List
+from dataclasses import dataclass
+from typing import Dict, List
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
@@ -6,10 +7,16 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
 
-def dedup(a: List) -> List:
-    return list(dict.fromkeys(a))
+@dataclass
+class PaperParameter:
+    name: str
+    lo: float
+    hi: float
 
+@dataclass
 class CovarianceFunction:
+    fa: Dict[str, object] # Formal arguments.
+
     def __add__(self, other):
         return Stack([self]) + other
 
@@ -20,74 +27,98 @@ class CovarianceFunction:
         pass
 
     def report(self, p):
-        string = ', '.join('%s %4.2f' % (v, p[v]) for v in self.vars())
+        string = ', '.join('%s %4.2f' % (v.name, p[v.name]) for v in self.vars())
         return '[' + string + ']'
 
     def reg(self, p):
         pass
 
+def get_parameter_values(
+    blob: object,
+    p: Dict[str, object] # Parameters to tensors.
+):
+    """
+    For each string encountered in the nested blob,
+    look it up in `p` and replace it with the lookup result.
+    """
+    if isinstance(blob, dict):
+        return {k: get_parameter_values(a, p) for k, a in blob.items()}
+    elif isinstance(blob, (list, tuple)):
+        return [get_parameter_values(a, p) for a in blob]
+    elif isinstance(blob, str):
+        if blob not in p:
+            raise ValueError('Parameter `%s` not found' % blob)
+        return p[blob]
+    elif blob is None:
+        return None
+    else:
+        return blob
+
+def ppp(name):
+    """Positive paper parameter."""
+    return PaperParameter(name, 0., float('inf'))
+
+def get_scale_vars(scale):
+    if scale is not None:
+        return [ppp(s) for s in scale if isinstance(s, str)]
+    else:
+        return []
+
 class SquaredExponential(CovarianceFunction):
-    def __init__(self, range='range', sill='sill', scale=None):
-        self.range = range
-        self.sill = sill
-        self.scale = scale
-        super().__init__()
+    def __init__(self, sill='sill', range='range', scale=None):
+        fa = dict(sill=sill, range=range, scale=scale)
+        super().__init__(fa)
 
     def vars(self):
-        if self.scale is not None:
-            scale_variables = [s for s in self.scale if isinstance(s, str)]
-        else:
-            scale_variables = []
-        return dedup(scale_variables + [self.range, self.sill])
+        return get_scale_vars(self.fa['scale']) + [ppp(self.fa['sill']), ppp(self.fa['range'])]
 
     def matrix(self, x, p):
-        if self.scale is not None:
-            scale_tensor = [p.get(s, s) for s in self.scale]
-            x *= scale_tensor
+        v = get_parameter_values(self.fa, p)
+
+        if v['scale'] is not None:
+            x *= v['scale']
+
         d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
-        return p[self.sill] * tf.exp(-d2 / tf.square(p[self.range]))
+        return v['sill'] * tf.exp(-d2 / tf.square(v['range']))
 
     def reg(self, p):
-        return p[self.range]
+        v = get_parameter_values(self.fa, p)
+        return v['range']
 
 class GammaExponential(CovarianceFunction):
     def __init__(self, range='range', sill='sill', gamma='gamma', scale=None):
-        self.range = range
-        self.sill = sill
-        self.gamma = gamma
-        self.scale = scale
-        super().__init__()
+        fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
+        super().__init__(fa)
 
     def vars(self):
-        if self.scale is not None:
-            scale_variables = [s for s in self.scale if isinstance(s, str)]
-        else:
-            scale_variables = []
-        return dedup(scale_variables + [self.range, self.sill, self.gamma])
+        return get_scale_vars(self.fa['scale']) + \
+            [ppp(self.fa['sill']), ppp(self.fa['range']), PaperParameter(self.fa['gamma'], 0., 2.)]
 
     def matrix(self, x, p):
-        if self.scale is not None:
-            scale_tensor = [p.get(s, s) for s in self.scale]
-            missing = list(filter(lambda s: isinstance(s, str), scale_tensor))
-            if missing:
-                raise ValueError("parameter(s) [%s] not found" % ', '.join(missing))
-            x *= scale_tensor
+        v = get_parameter_values(self.fa, p)
+
+        if v['scale'] is not None:
+            x *= v['scale']
+
         d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
-        return p[self.sill] * gamma_exp(d2 / tf.square(p[self.range]), p[self.gamma])
+        return v['sill'] * gamma_exp(d2 / tf.square(v['range']), v['gamma'])
 
     def reg(self, p):
-        return p[self.range]
+        v = get_parameter_values(self.fa, p)
+        return v['range']
 
 class Noise(CovarianceFunction):
     def __init__(self, nugget='nugget'):
-        self.nugget = nugget
-        super().__init__()
+        fa = dict(nugget=nugget)
+        super().__init__(fa)
 
     def vars(self):
-        return [self.nugget]
+        return [ppp(self.fa['nugget'])]
 
     def matrix(self, x, p):
-        return p[self.nugget] * tf.eye(x.shape[0])
+        v = get_parameter_values(self.fa, p)
+
+        return v['nugget'] * tf.eye(x.shape[0])
 
     def reg(self, p):
         return 0.
@@ -95,10 +126,10 @@ class Noise(CovarianceFunction):
 class Stack(CovarianceFunction):
     def __init__(self, parts: List[CovarianceFunction]):
         self.parts = parts
-        super().__init__()
+        super().__init__({})
 
     def vars(self):
-        return dedup([v for part in self.parts for v in part.vars()])
+        raise NotImplemented('Cannot ask for vars of a stack')
 
     def __add__(self, other):
         if isinstance(other, CovarianceFunction):
