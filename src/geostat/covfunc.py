@@ -35,7 +35,7 @@ class CovarianceFunction:
 
 def get_parameter_values(
     blob: object,
-    p: Dict[str, object] # Parameters to tensors.
+    p: Dict[str, object]
 ):
     """
     For each string encountered in the nested blob,
@@ -55,12 +55,22 @@ def get_parameter_values(
         return blob
 
 def ppp(name):
-    """Positive paper parameter."""
-    return PaperParameter(name, 0., float('inf'))
+    """Positive paper parameter (maybe)."""
+    if isinstance(name, str):
+        return [PaperParameter(name, 0., float('inf'))]
+    else:
+        return []
+
+def bpp(name, lo, hi):
+    """Bounded paper parameter (maybe)."""
+    if isinstance(name, str):
+        return [PaperParameter(name, lo, hi)]
+    else:
+        return []
 
 def get_scale_vars(scale):
     if scale is not None:
-        return [ppp(s) for s in scale if isinstance(s, str)]
+        return [p for s in scale for p in ppp(s)]
     else:
         return []
 
@@ -70,7 +80,7 @@ class SquaredExponential(CovarianceFunction):
         super().__init__(fa)
 
     def vars(self):
-        return get_scale_vars(self.fa['scale']) + [ppp(self.fa['sill']), ppp(self.fa['range'])]
+        return get_scale_vars(self.fa['scale']) + ppp(self.fa['sill']) + ppp(self.fa['range'])
 
     def matrix(self, x, p):
         v = get_parameter_values(self.fa, p)
@@ -92,7 +102,7 @@ class GammaExponential(CovarianceFunction):
 
     def vars(self):
         return get_scale_vars(self.fa['scale']) + \
-            [ppp(self.fa['sill']), ppp(self.fa['range']), PaperParameter(self.fa['gamma'], 0., 2.)]
+            ppp(self.fa['sill']) + ppp(self.fa['range']) + bpp(self.fa['gamma'], 0., 2.)
 
     def matrix(self, x, p):
         v = get_parameter_values(self.fa, p)
@@ -113,7 +123,7 @@ class Noise(CovarianceFunction):
         super().__init__(fa)
 
     def vars(self):
-        return [ppp(self.fa['nugget'])]
+        return ppp(self.fa['nugget'])
 
     def matrix(self, x, p):
         v = get_parameter_values(self.fa, p)
@@ -129,7 +139,7 @@ class Stack(CovarianceFunction):
         super().__init__({})
 
     def vars(self):
-        raise NotImplemented('Cannot ask for vars of a stack')
+        return [p for part in self.parts for p in part.vars()]
 
     def __add__(self, other):
         if isinstance(other, CovarianceFunction):
