@@ -1,6 +1,8 @@
+from collections import defaultdict
 from dataclasses import dataclass, replace
+from typing import Dict, List
 import numpy as np
-from scipy.special import expit
+from scipy.special import expit, logit
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
@@ -12,7 +14,8 @@ with warnings.catch_warnings():
     import tensorflow_probability as tfp
 
 from .spatialinterpolator import SpatialInterpolator
-from .covfunc import CovarianceFunction
+from .covfunc import CovarianceFunction, PaperParameter
+from .param import ParameterSpace, Bound
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
@@ -45,13 +48,6 @@ class NormalizingFeaturizer:
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
         return np.concatenate([ones, F_norm], axis=1)
 
-# Other needed functions.
-def logodds(p):
-    return -np.log(1/p-1)
-
-def logodds_half(x):
-    return logodds(x/2)
-
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
@@ -62,22 +58,6 @@ def gp_covariance(covariance, X, F, p, alpha):
     C += 1e-6 * tf.eye(X.shape[0])
     C += alpha * tf.einsum('ba,ca->bc', F, F)
     return tf.cast(C, tf.float64)
-
-# Transform parameters.
-@tf.function
-def gp_xform_parameters(up):
-    """
-    Transform parameters from the underlying representation
-    (which has the whole real number line as its range) to
-    a surface representation (which is bounded).
-    """
-    sp = {}
-    for v in up.keys():
-        if v == 'gamma':
-            sp[v] = 2.0 * tf.sigmoid(up[v])
-        else:
-            sp[v] = tf.exp(up[v])
-    return sp
 
 # Log likelihood.
 @tf.function
@@ -90,9 +70,9 @@ def gp_log_likelihood(u, m, cov):
 
 
 # GP training.
-def gpm_train_step(optimizer, data, parameters, hyperparameters, covariance):
+def gpm_train_step(optimizer, data, parameters, parameter_space, hyperparameters, covariance):
     with tf.GradientTape() as tape:
-        p = gp_xform_parameters(parameters)
+        p = parameter_space.get_surface(parameters)
         beta_prior = hyperparameters['alpha']
 
         A = gp_covariance(covariance, data['X'], data['F'], p, hyperparameters['alpha'])
@@ -110,12 +90,26 @@ def gpm_train_step(optimizer, data, parameters, hyperparameters, covariance):
     optimizer.apply_gradients(zip(gradients, parameters.values()))
     return p, ll
 
+def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dict[str, Bound]:
+    d = defaultdict(list)
+    for pp in pps:
+        d[pp.name].append(pp)
+    out = {}
+    for name, pps in d.items():
+        lo = np.max([pp.lo for pp in pps])
+        hi = np.min([pp.hi for pp in pps])
+        assert lo < hi, 'Conflicting bounds for parameter `%s`' % name
+        assert name in values, 'Parameter `%s` is missing' % name
+        assert lo < values[name] < hi, 'Parameter `%s` is out of bounds' % name
+        out[name] = Bound(pp.lo, pp.hi)
+    return out
+
 @dataclass
 class GP(SpatialInterpolator):
 
     featurizer: NormalizingFeaturizer
     covariance: CovarianceFunction
-    parameters: object = None
+    parameters: Dict[str, float]
     hyperparameters: object = None
     verbose: bool = True
 
@@ -178,6 +172,8 @@ class GP(SpatialInterpolator):
             self.hp = {'alpha': tf.constant(self.hyperparameters['alpha'], dtype=tf.float32),
                        'reg': None}
 
+        self.parameter_space = ParameterSpace(check_parameters(self.covariance.vars(), self.parameters))
+
     def fit(self, x, u):
         # Feature matrix.
         F = self.featurizer(x)
@@ -192,7 +188,8 @@ class GP(SpatialInterpolator):
             j = 0 # Iteration count.
             for i in range(10):
                 while j < (i + 1) * self.train_iters / 10:
-                    p, ll = gpm_train_step(optimizer, data, parameters, hyperparameters, self.covariance)
+                    p, ll = gpm_train_step(optimizer, data, parameters, self.parameter_space,
+                        hyperparameters, self.covariance)
                     j += 1
 
                 if self.verbose == True:
@@ -200,38 +197,21 @@ class GP(SpatialInterpolator):
                     s += self.covariance.report(p)
                     print(s)
 
-        up = self.get_underlying_parameters()
+        up = self.parameter_space.get_underlying(self.parameters)
 
         gpm_fit(self.data, up, self.hyperparameters)
 
-        return replace(self, parameters = self.get_surface_parameters(up))
-
-    def get_underlying_parameters(self):
-        up = {}
-        for v in self.parameters.keys():
-            if v == 'gamma':
-                up[v] = tf.Variable(logodds_half(self.parameters[v]), dtype=tf.float32)
-            else:
-                up[v] = tf.Variable(np.log(self.parameters[v]), dtype=tf.float32)
-        return up
-
-    def get_surface_parameters(self, up):
-        sp = {}
-        for v in up.keys():
-            if v == 'gamma':
-                sp[v] = 2.0 * expit(up[v])
-            else:
-                sp[v] = np.exp(up[v])
-        return sp
+        new_parameters = self.parameter_space.get_surface(up, numpy=True)
+        return replace(self, parameters = new_parameters)
 
     def generate(self, x):
         X = x.reshape([-1, x.shape[-1]])
 
         F = self.featurizer(X)
 
-        up = self.get_underlying_parameters()
+        up = self.parameter_space.get_underlying(self.parameters)
 
-        p = gp_xform_parameters(up)
+        p = self.parameter_space.get_surface(up)
 
         A = gp_covariance(self.covariance, X, F, p, self.hyperparameters['alpha'])
 
@@ -276,7 +256,7 @@ class GP(SpatialInterpolator):
 
             F = self.featurizer(X)
 
-            p = gp_xform_parameters(parameters)
+            p = self.parameter_space.get_surface(parameters)
 
             A = gp_covariance(self.covariance, X, F, p, hyperparameters['alpha'])
 
@@ -300,7 +280,7 @@ class GP(SpatialInterpolator):
             subset = x2r[start:stop]
             for_gp.append(subset)
 
-        up = self.get_underlying_parameters()
+        up = self.parameter_space.get_underlying(self.parameters)
 
         u2_mean_s = []
         u2_var_s = []
