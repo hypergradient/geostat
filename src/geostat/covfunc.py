@@ -74,6 +74,23 @@ def get_scale_vars(scale):
     else:
         return []
 
+class Trend(CovarianceFunction):
+    def __init__(self, featurizer, alpha='alpha', axes=None):
+        fa = dict(alpha=alpha)
+        self.featurizer = featurizer
+        super().__init__(fa)
+
+    def vars(self):
+        return ppp(self.fa['alpha'])
+
+    def matrix(self, x, p):
+        v = get_parameter_values(self.fa, p)
+        F = tf.cast(self.featurizer(x), tf.float32)
+        return v['alpha'] * tf.einsum('ba,ca->bc', F, F)
+
+    def reg(self, p):
+        return 0.
+
 class SquaredExponential(CovarianceFunction):
     def __init__(self, sill='sill', range='range', scale=None):
         fa = dict(sill=sill, range=range, scale=scale)
