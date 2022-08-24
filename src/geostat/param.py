@@ -2,6 +2,7 @@ from dataclasses import dataclass, replace
 from typing import Dict
 import tensorflow as tf
 import numpy as np
+from scipy.special import logit
 
 @dataclass
 class Bound:
