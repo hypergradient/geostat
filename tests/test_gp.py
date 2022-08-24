@@ -48,10 +48,12 @@ def test_gp3d():
     def trend_terms(x, y, z): return z, z*z
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
 
+    covariance = cf.GammaExponential(scale=[1., 1., 'zscale']) + cf.Delta(axes=[0, 1]) + cf.Noise()
+
     # Generating GP.
     gp1 = GP(featurizer = featurizer,
-            covariance = cf.GammaExponential(scale=[1., 1., 'zscale']) + cf.Noise(),
-            parameters = dict(zscale=5., range=0.5, sill=1., gamma=1., nugget=1.),
+            covariance = covariance,
+            parameters = dict(zscale=5., range=0.5, sill=1., gamma=1., dsill=1., nugget=1.),
             hyperparameters = dict(alpha=1.),
             verbose=True)
 
@@ -60,8 +62,8 @@ def test_gp3d():
 
     # Fit GP.
     gp2 = GP(featurizer = featurizer,
-            covariance = cf.GammaExponential(scale=[1., 1., 'zscale']) + cf.Noise(),
-            parameters = dict(zscale=1., range=1.0, sill=0.5, gamma=0.5, nugget=0.5),
+            covariance = covariance,
+            parameters = dict(zscale=1., range=1.0, sill=0.5, gamma=0.5, dsill=0.5, nugget=0.5),
             hyperparameters = dict(alpha=vals1.ptp()**2, reg=0, train_iters=500),
             verbose=True).fit(locs1, vals1)
 
