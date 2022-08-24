@@ -101,7 +101,7 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
         assert lo < hi, 'Conflicting bounds for parameter `%s`' % name
         assert name in values, 'Parameter `%s` is missing' % name
         assert lo < values[name] < hi, 'Parameter `%s` is out of bounds' % name
-        out[name] = Bound(pp.lo, pp.hi)
+        out[name] = Bound(lo, hi)
     return out
 
 @dataclass
