@@ -74,6 +74,23 @@ def get_scale_vars(scale):
     else:
         return []
 
+class Trend(CovarianceFunction):
+    def __init__(self, featurizer, alpha='alpha', axes=None):
+        fa = dict(alpha=alpha)
+        self.featurizer = featurizer
+        super().__init__(fa)
+
+    def vars(self):
+        return ppp(self.fa['alpha'])
+
+    def matrix(self, x, p):
+        v = get_parameter_values(self.fa, p)
+        F = tf.cast(self.featurizer(x), tf.float32)
+        return v['alpha'] * tf.einsum('ba,ca->bc', F, F)
+
+    def reg(self, p):
+        return 0.
+
 class SquaredExponential(CovarianceFunction):
     def __init__(self, sill='sill', range='range', scale=None):
         fa = dict(sill=sill, range=range, scale=scale)
@@ -129,6 +146,27 @@ class Noise(CovarianceFunction):
         v = get_parameter_values(self.fa, p)
 
         return v['nugget'] * tf.eye(x.shape[0])
+
+    def reg(self, p):
+        return 0.
+
+class Delta(CovarianceFunction):
+    def __init__(self, dsill='dsill', axes=None):
+        fa = dict(dsill=dsill)
+        self.axes = axes
+        super().__init__(fa)
+
+    def vars(self):
+        return ppp(self.fa['dsill'])
+
+    def matrix(self, x, p):
+        v = get_parameter_values(self.fa, p)
+
+        if self.axes is not None:
+            x = tf.gather(x, self.axes, axis=-1)
+
+        d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
+        return v['dsill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
 
     def reg(self, p):
         return 0.

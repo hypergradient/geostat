@@ -51,12 +51,10 @@ class NormalizingFeaturizer:
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-def gp_covariance(covariance, X, F, p, alpha):
+def gp_covariance(covariance, X, p):
     X = tf.cast(X, tf.float32)
-    F = tf.cast(F, tf.float32)
     C = covariance.matrix(X, p)
     C += 1e-6 * tf.eye(X.shape[0])
-    C += alpha * tf.einsum('ba,ca->bc', F, F)
     return tf.cast(C, tf.float64)
 
 # Log likelihood.
@@ -73,9 +71,8 @@ def gp_log_likelihood(u, m, cov):
 def gpm_train_step(optimizer, data, parameters, parameter_space, hyperparameters, covariance):
     with tf.GradientTape() as tape:
         p = parameter_space.get_surface(parameters)
-        beta_prior = hyperparameters['alpha']
 
-        A = gp_covariance(covariance, data['X'], data['F'], p, hyperparameters['alpha'])
+        A = gp_covariance(covariance, data['X'], p)
 
         ll = gp_log_likelihood(data['u'], 0., A)
 
@@ -106,8 +103,6 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 
 @dataclass
 class GP(SpatialInterpolator):
-
-    featurizer: NormalizingFeaturizer
     covariance: CovarianceFunction
     parameters: Dict[str, float]
     hyperparameters: object = None
@@ -140,7 +135,6 @@ class GP(SpatialInterpolator):
 
                 hyperparameters : dict
                     Dictionary of the hyperparameters.
-                      - alpha: the prior distribution for the trend. Default 10.
                       - reg: how much regularization to use. Default None (no regularization).
                       - train_iters: number of training iterations. Default 300.
 
@@ -154,7 +148,8 @@ class GP(SpatialInterpolator):
         super().__init__()
 
         # Supply defaults.
-        default_hyperparameters = dict(alpha=10, reg=None, train_iters=300)
+        default_hyperparameters = dict(reg=None, train_iters=300)
+        if self.hyperparameters is None: self.hyperparameters = dict()
         self.hyperparameters = dict(default_hyperparameters, **self.hyperparameters)
 
         # def sigmoid(o): return 1 / (1 + np.exp(-o))
@@ -165,21 +160,11 @@ class GP(SpatialInterpolator):
         # Define other inputs.
         self.train_iters = self.hyperparameters['train_iters']
 
-        if self.hyperparameters['reg']:
-            self.hp = {'alpha': tf.constant(self.hyperparameters['alpha'], dtype=tf.float32),
-                       'reg': tf.constant(self.hyperparameters['reg'], dtype=tf.float32)}
-        if not self.hyperparameters['reg']:
-            self.hp = {'alpha': tf.constant(self.hyperparameters['alpha'], dtype=tf.float32),
-                       'reg': None}
-
         self.parameter_space = ParameterSpace(check_parameters(self.covariance.vars(), self.parameters))
 
     def fit(self, x, u):
-        # Feature matrix.
-        F = self.featurizer(x)
-
         # Data dict.
-        self.data = {'X': tf.constant(x), 'F': tf.constant(F), 'u': tf.constant(u)}
+        self.data = {'X': tf.constant(x), 'u': tf.constant(u)}
 
         # Train the GP.
         def gpm_fit(data, parameters, hyperparameters):
@@ -207,13 +192,11 @@ class GP(SpatialInterpolator):
     def generate(self, x):
         X = x.reshape([-1, x.shape[-1]])
 
-        F = self.featurizer(X)
-
         up = self.parameter_space.get_underlying(self.parameters)
 
         p = self.parameter_space.get_surface(up)
 
-        A = gp_covariance(self.covariance, X, F, p, self.hyperparameters['alpha'])
+        A = gp_covariance(self.covariance, X, p)
 
         z = tf.zeros_like(A[0, :])
 
@@ -254,11 +237,9 @@ class GP(SpatialInterpolator):
 
             X = np.concatenate([X1, X2], axis=0)
 
-            F = self.featurizer(X)
-
             p = self.parameter_space.get_surface(parameters)
 
-            A = gp_covariance(self.covariance, X, F, p, hyperparameters['alpha'])
+            A = gp_covariance(self.covariance, X, p)
 
             A11 = A[:N1, :N1]
             A12 = A[:N1, N1:]
