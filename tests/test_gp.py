@@ -19,7 +19,7 @@ def test_gp2d():
         verbose=True)
 
     # Generate data.
-    vals1 = gp1.generate(locs1)
+    vals1 = gp1.generate(locs1).vals
 
     # Fit GP.
     gp2 = GP(
@@ -31,10 +31,10 @@ def test_gp2d():
     # Interpolate using GP.
     N = 20
     xx, yy = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N))
-    locs2 = np.stack([xx, yy], axis=-1) # Okay if locs2 rank is greater than 2.
+    locs2 = np.stack([xx, yy], axis=-1).reshape([-1, 2])
 
-    mean, var = gp2.predict(locs1, vals1, locs2)
-    mean2, var2 = gp2.predict(locs1, vals1, locs2)
+    mean, var = gp2.predict(locs2)
+    mean2, var2 = gp2.predict(locs2)
 
     assert np.all(mean == mean2)
     assert np.all(var == var2)
@@ -60,7 +60,7 @@ def test_gp3d():
         verbose=True)
 
     # Generate data.
-    vals1 = gp1.generate(locs1)
+    vals1 = gp1.generate(locs1).vals
 
     # Fit GP.
     gp2 = GP(
@@ -72,10 +72,10 @@ def test_gp3d():
     # Interpolate using GP.
     N = 10
     xx, yy, zz = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N), np.linspace(-1, 1, N))
-    locs2 = np.stack([xx, yy, zz], axis=-1) # Okay if locs2 rank is greater than 2.
+    locs2 = np.stack([xx, yy, zz], axis=-1).reshape([-1, 3])
 
-    mean, var = gp2.predict(locs1, vals1, locs2)
-    mean2, var2 = gp2.predict(locs1, vals1, locs2)
+    mean, var = gp2.predict(locs2)
+    mean2, var2 = gp2.predict(locs2)
 
     assert np.all(mean == mean2)
     assert np.all(var == var2)
@@ -103,7 +103,7 @@ def test_gp3d_stacked():
         verbose=True)
 
     # Generate data.
-    vals1 = gp1.generate(locs1)
+    vals1 = gp1.generate(locs1).vals
 
     # Fit GP.
     gp2 = GP(
@@ -115,10 +115,10 @@ def test_gp3d_stacked():
     # Interpolate using GP.
     N = 10
     xx, yy, zz = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N), np.linspace(-1, 1, N))
-    locs2 = np.stack([xx, yy, zz], axis=-1) # Okay if locs2 rank is greater than 2.
+    locs2 = np.stack([xx, yy, zz], axis=-1).reshape([-1, 3])
 
-    mean, var = gp2.predict(locs1, vals1, locs2)
-    mean2, var2 = gp2.predict(locs1, vals1, locs2)
+    mean, var = gp2.predict(locs2)
+    mean2, var2 = gp2.predict(locs2)
 
     assert np.all(mean == mean2)
     assert np.all(var == var2)

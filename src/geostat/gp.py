@@ -106,6 +106,8 @@ class GP(SpatialInterpolator):
     covariance: CovarianceFunction
     parameters: Dict[str, float]
     hyperparameters: object = None
+    locs: np.ndarray = None
+    vals: np.ndarray = None
     verbose: bool = True
 
     def __post_init__(self):
@@ -162,9 +164,9 @@ class GP(SpatialInterpolator):
 
         self.parameter_space = ParameterSpace(check_parameters(self.covariance.vars(), self.parameters))
 
-    def fit(self, x, u):
+    def fit(self, locs, vals):
         # Data dict.
-        self.data = {'X': tf.constant(x), 'u': tf.constant(u)}
+        self.data = {'X': tf.constant(locs), 'u': tf.constant(vals)}
 
         # Train the GP.
         def gpm_fit(data, parameters, hyperparameters):
@@ -187,22 +189,24 @@ class GP(SpatialInterpolator):
         gpm_fit(self.data, up, self.hyperparameters)
 
         new_parameters = self.parameter_space.get_surface(up, numpy=True)
-        return replace(self, parameters = new_parameters)
+        return replace(self, parameters = new_parameters, locs=locs, vals=vals)
 
-    def generate(self, x):
-        X = x.reshape([-1, x.shape[-1]])
+    def generate(self, locs):
+        assert self.locs is None and self.vals is None, 'Conditional generation not yet supported'
 
         up = self.parameter_space.get_underlying(self.parameters)
 
         p = self.parameter_space.get_surface(up)
 
-        A = gp_covariance(self.covariance, X, p)
+        A = gp_covariance(self.covariance, locs, p)
 
         z = tf.zeros_like(A[0, :])
 
-        return MVN(z, tf.linalg.cholesky(A)).sample().numpy().reshape(x.shape[:-1])
+        vals = MVN(z, tf.linalg.cholesky(A)).sample().numpy()
 
-    def predict(self, x1, u1, x2):
+        return replace(self, locs=locs, vals=vals)
+
+    def predict(self, x2):
 
         '''
         Parameters:
@@ -222,9 +226,18 @@ class GP(SpatialInterpolator):
 
         '''
 
+        if self.locs is None:
+            self.locs = np.zeros([0, x2.shape[0]], np.float32)
+
+        if self.vals is None:
+            self.vals = np.zeros([0], np.float32)
+
+        assert self.locs.shape[1] == x2.shape[1], 'Mismatch in location dimentions'
+
+        x1, u1 = self.locs, self.vals
+
         # Define inputs.
         self.batch_size = x1.shape[0] // 2
-
 
         # Needed functions.
         def e(x, a=-1):
@@ -250,7 +263,6 @@ class GP(SpatialInterpolator):
             u2_var = tf.linalg.diag_part(A22) -  tf.reduce_sum(A12 * tf.linalg.solve(A11, A12), axis=0)
 
             return u2_mean, u2_var
-
 
         # Interpolate in batches.
         for_gp = []
