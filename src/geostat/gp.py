@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass, replace
-from typing import Dict, List
+from typing import Callable, Dict, List, Union
 import numpy as np
 from scipy.special import expit, logit
 import os
@@ -12,14 +12,16 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
     import tensorflow_probability as tfp
+    from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
+    from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
 from .spatialinterpolator import SpatialInterpolator
-from .covfunc import CovarianceFunction, PaperParameter
+from .covfunc import CovarianceFunction, PaperParameter, get_parameter_values
 from .param import ParameterSpace, Bound
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['GP', 'NormalizingFeaturizer']
+__all__ = ['GP', 'NormalizingFeaturizer', 'Observation']
 
 # Produces featurized locations (F matrix) and remembers normalization parameters.
 class NormalizingFeaturizer:
@@ -51,13 +53,38 @@ class NormalizingFeaturizer:
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-def gp_covariance(covariance, X, p):
-    X = tf.cast(X, tf.float32)
-    C = covariance.matrix(X, p)
-    C += 1e-6 * tf.eye(X.shape[0])
-    return tf.cast(C, tf.float64)
+def block_diag(blocks):
+    """Return a dense block-diagonal matrix."""
+    return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
-# Log likelihood.
+def gp_covariance(covariance, observation, locs, cats, p):
+    locs = tf.cast(locs, tf.float32)
+    C = tf.stack([c.matrix(locs, p) for c in covariance], axis=0) # [hidden, locs, locs].
+
+    if observation is None:
+        C = tf.cast(C[0, ...], tf.float64)
+        m = tf.zeros_like(C[0, :])
+        return m, C
+
+    A = tf.convert_to_tensor(get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
+    N = tf.stack([o.noise.matrix(locs, p) for o in observation], axis=0) # [surface, locs, locs].
+
+    outer = tf.einsum('ac,bc->abc', A, A)
+    num_surf, num_locs, _ =  tf.shape(N)
+    n = num_surf * num_locs
+    S = tf.reshape(tf.einsum('abc,cAB->aAbB', outer, C), [n, n])
+    S += block_diag(tf.unstack(N))
+
+    keep_indices = tf.range(num_locs) + num_locs * cats
+    S = tf.gather(tf.gather(S, keep_indices, axis=-1), keep_indices)
+    S = tf.cast(S, tf.float64)
+
+    m = np.transpose([o.mu(locs) for o in observation])
+    m = np.take_along_axis(m, cats[:, np.newaxis], axis=-1)[:, 0]
+    m = tf.constant(m, tf.float64)
+
+    return m, S
+
 @tf.function
 def gp_log_likelihood(u, m, cov):
     """Log likelihood of is the PDF of a multivariate gaussian."""
@@ -66,18 +93,16 @@ def gp_log_likelihood(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-
-# GP training.
-def gpm_train_step(optimizer, data, parameters, parameter_space, hyperparameters, covariance):
+def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters, covariance, observation):
     with tf.GradientTape() as tape:
         p = parameter_space.get_surface(parameters)
 
-        A = gp_covariance(covariance, data['X'], p)
+        m, S = gp_covariance(covariance, observation, data['X'], data['cats'], p)
 
-        ll = gp_log_likelihood(data['u'], 0., A)
+        ll = gp_log_likelihood(data['u'], m, S)
 
         if hyperparameters['reg'] != None:
-            reg = hyperparameters['reg'] * covariance.reg(p)
+            reg = hyperparameters['reg'] * tf.reduce_sum([c.reg(p) for c in covariance])
         else:
             reg = 0.
 
@@ -101,11 +126,40 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
         out[name] = Bound(lo, hi)
     return out
 
+def upp(name):
+    """Unbounded paper parameter (maybe)."""
+    if isinstance(name, str):
+        return [PaperParameter(name, float('-inf'), float('inf'))]
+    else:
+        return []
+
+@dataclass
+class Observation:
+    coefs: List
+    offset: Union[float, Callable]
+    noise: CovarianceFunction
+
+    def vars(self):
+        vv = [p for c in self.coefs for p in upp(c)]
+        vv += self.noise.vars()
+        return vv
+
+    def mu(self, locs):
+        if callable(self.offset):
+            return self.offset(*np.transpose(locs))
+        else:
+            return np.full_like(locs[..., 0], self.offset, np.float32)
+
 @dataclass
 class GP(SpatialInterpolator):
-    covariance: CovarianceFunction
-    parameters: Dict[str, float]
+    covariance: Union[CovarianceFunction, List[CovarianceFunction]]
+    observation: Union[Observation, List[Observation]] = None
+    parameters: Dict[str, float] = None
     hyperparameters: object = None
+    locs: np.ndarray = None
+    vals: np.ndarray = None
+    cats: np.ndarray = None
+    report: Callable = None
     verbose: bool = True
 
     def __post_init__(self):
@@ -147,24 +201,30 @@ class GP(SpatialInterpolator):
 
         super().__init__()
 
+        if isinstance(self.covariance, CovarianceFunction):
+            self.covariance = [self.covariance]
+
         # Supply defaults.
         default_hyperparameters = dict(reg=None, train_iters=300)
         if self.hyperparameters is None: self.hyperparameters = dict()
         self.hyperparameters = dict(default_hyperparameters, **self.hyperparameters)
 
-        # def sigmoid(o): return 1 / (1 + np.exp(-o))
-        # def doub_sigmoid(o): return 2 * sigmoid(o)
+        if self.locs is not None: self.locs = np.array(self.locs)
+        if self.vals is not None: self.vals = np.array(self.vals)
+        if self.cats is not None: self.cats = np.array(self.cats)
 
-        # List the needed graph functions.
+        # Collect paraameters.
+        if self.parameters is None: self.parameters = {}
+        vv = [v for c in self.covariance for v in c.vars()]
+        if self.observation is not None:
+            vv += [v for o in self.observation for v in o.vars()]
+        self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))
 
-        # Define other inputs.
-        self.train_iters = self.hyperparameters['train_iters']
+    def fit(self, locs, vals, cats=None):
+        if cats is not None: cats = np.array(cats)
 
-        self.parameter_space = ParameterSpace(check_parameters(self.covariance.vars(), self.parameters))
-
-    def fit(self, x, u):
         # Data dict.
-        self.data = {'X': tf.constant(x), 'u': tf.constant(u)}
+        self.data = {'X': tf.constant(locs), 'u': tf.constant(vals), 'cats': cats}
 
         # Train the GP.
         def gpm_fit(data, parameters, hyperparameters):
@@ -172,41 +232,46 @@ class GP(SpatialInterpolator):
 
             j = 0 # Iteration count.
             for i in range(10):
-                while j < (i + 1) * self.train_iters / 10:
-                    p, ll = gpm_train_step(optimizer, data, parameters, self.parameter_space,
-                        hyperparameters, self.covariance)
+                while j < (i + 1) * self.hyperparameters['train_iters'] / 10:
+                    p, ll = gp_train_step(optimizer, data, parameters, self.parameter_space,
+                        hyperparameters, self.covariance, self.observation)
                     j += 1
 
                 if self.verbose == True:
-                    s = '[iter %4d, ll %7.2f]' % (j, ll)
-                    s += self.covariance.report(p)
-                    print(s)
+                    if self.report is None:
+                        s = '[iter %4d, ll %7.2f] [%s]' % (j, ll, ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
+                        print(s)
+                    else:
+                        self.report(dict(**p, iter=j, ll=ll))
 
         up = self.parameter_space.get_underlying(self.parameters)
 
         gpm_fit(self.data, up, self.hyperparameters)
 
         new_parameters = self.parameter_space.get_surface(up, numpy=True)
-        return replace(self, parameters = new_parameters)
+        return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
-    def generate(self, x):
-        X = x.reshape([-1, x.shape[-1]])
+    def generate(self, locs, cats=None):
+        assert self.locs is None and self.vals is None, 'Conditional generation not yet supported'
+
+        if locs is not None: locs = np.array(locs)
+        if cats is not None: cats = np.array(cats)
 
         up = self.parameter_space.get_underlying(self.parameters)
 
         p = self.parameter_space.get_surface(up)
 
-        A = gp_covariance(self.covariance, X, p)
+        m, S = gp_covariance(self.covariance, self.observation, locs, cats, p)
 
-        z = tf.zeros_like(A[0, :])
+        vals = MVN(m, tf.linalg.cholesky(S)).sample().numpy()
 
-        return MVN(z, tf.linalg.cholesky(A)).sample().numpy().reshape(x.shape[:-1])
+        return replace(self, locs=locs, vals=vals, cats=cats)
 
-    def predict(self, x1, u1, x2):
+    def predict(self, locs2, cats2=None):
 
         '''
         Parameters:
-                x2 : n-dim array
+                locs2 : n-dim array
                     Locations to make predictions.
 
         Returns:
@@ -222,43 +287,62 @@ class GP(SpatialInterpolator):
 
         '''
 
+        if self.locs is None:
+            self.locs = np.zeros([0, locs2.shape[0]], np.float32)
+
+        if self.vals is None:
+            self.vals = np.zeros([0], np.float32)
+
+        assert self.locs.shape[-1] == locs2.shape[-1], 'Mismatch in location dimentions'
+        if cats2 is not None:
+            assert cats2.shape == locs2.shape[:-1], 'Mismatched shapes in cats and locs'
+
+        x1, u1, cats1 = self.locs, self.vals, self.cats
+
         # Define inputs.
         self.batch_size = x1.shape[0] // 2
-
 
         # Needed functions.
         def e(x, a=-1):
             return tf.expand_dims(x, a)
 
-        def interpolate_gp(X1, u1, X2, parameters, hyperparameters):
+        def interpolate_gp(X1, u1, cats1, X2, cats2, parameters, hyperparameters):
 
             N1 = len(X1) # Number of measurements.
             N2 = len(X2) # Number of predictions.
 
             X = np.concatenate([X1, X2], axis=0)
 
+            if cats1 is None:
+                cats = None
+            else:
+                cats = np.concatenate([cats1, cats2], axis=0)
+
             p = self.parameter_space.get_surface(parameters)
 
-            A = gp_covariance(self.covariance, X, p)
+            m, A = gp_covariance(self.covariance, self.observation, X, cats, p)
 
             A11 = A[:N1, :N1]
             A12 = A[:N1, N1:]
             A21 = A[N1:, :N1]
             A22 = A[N1:, N1:]
 
-            u2_mean = tf.matmul(A21, tf.linalg.solve(A11, e(u1, -1)))[:, 0]
+            u2_mean = m[N1:] + tf.matmul(A21, tf.linalg.solve(A11, e(u1, -1)))[:, 0]
             u2_var = tf.linalg.diag_part(A22) -  tf.reduce_sum(A12 * tf.linalg.solve(A11, A12), axis=0)
 
             return u2_mean, u2_var
 
-
         # Interpolate in batches.
         for_gp = []
-        x2r = x2.reshape([-1, x2.shape[-1]])
+        locs2r = locs2.reshape([-1, locs2.shape[-1]])
+        if cats2 is not None:
+            cats2r = cats2.ravel()
+        else:
+            cats2r = np.zeros_like(locs2r[..., 0], np.int32)
 
-        for start in np.arange(0, len(x2r), self.batch_size):
+        for start in np.arange(0, len(locs2r), self.batch_size):
             stop = start + self.batch_size
-            subset = x2r[start:stop]
+            subset = locs2r[start:stop], cats2r[start:stop]
             for_gp.append(subset)
 
         up = self.parameter_space.get_underlying(self.parameters)
@@ -266,14 +350,14 @@ class GP(SpatialInterpolator):
         u2_mean_s = []
         u2_var_s = []
 
-        for subset in for_gp:
-            u2_mean, u2_var = interpolate_gp(x1, u1, subset, up, self.hyperparameters)
+        for locs_subset, cats_subset in for_gp:
+            u2_mean, u2_var = interpolate_gp(x1, u1, cats1, locs_subset, cats_subset, up, self.hyperparameters)
             u2_mean = u2_mean.numpy()
             u2_var = u2_var.numpy()
             u2_mean_s.append(u2_mean)
             u2_var_s.append(u2_var)
 
-        u2_mean = np.concatenate(u2_mean_s).reshape(x2.shape[:-1])
-        u2_var = np.concatenate(u2_var_s).reshape(x2.shape[:-1])
+        u2_mean = np.concatenate(u2_mean_s).reshape(locs2.shape[:-1])
+        u2_var = np.concatenate(u2_var_s).reshape(locs2.shape[:-1])
 
         return u2_mean, u2_var
