@@ -159,6 +159,7 @@ class GP(SpatialInterpolator):
     locs: np.ndarray = None
     vals: np.ndarray = None
     cats: np.ndarray = None
+    report: Callable = None
     verbose: bool = True
 
     def __post_init__(self):
@@ -237,8 +238,11 @@ class GP(SpatialInterpolator):
                     j += 1
 
                 if self.verbose == True:
-                    s = '[iter %4d, ll %7.2f] [%s]' % (j, ll, ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
-                    print(s)
+                    if self.report is None:
+                        s = '[iter %4d, ll %7.2f] [%s]' % (j, ll, ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
+                        print(s)
+                    else:
+                        self.report(dict(**p, iter=j, ll=ll))
 
         up = self.parameter_space.get_underlying(self.parameters)
 
