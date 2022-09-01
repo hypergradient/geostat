@@ -59,26 +59,26 @@ def block_diag(blocks):
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 def gp_covariance(covariance, observation, locs, cats, p):
-    assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
+    # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
-    C = tf.stack([c.matrix(locs, p) for c in covariance], axis=0) # [hidden, locs, locs].
+    C = tf.stack([c.matrix(locs, p) for c in covariance], axis=-1) # [locs, locs, hidden].
 
     if observation is None:
-        C = tf.cast(C[0, ...], tf.float64)
+        C = tf.cast(C[..., 0], tf.float64)
         m = tf.zeros_like(C[0, :])
         return m, C
 
     A = tf.convert_to_tensor(get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
-    N = tf.stack([o.noise.matrix(locs, p) for o in observation], axis=0) # [surface, locs, locs].
+    Aaug = tf.gather(A, cats) # [locs, hidden].
 
-    outer = tf.einsum('ac,bc->abc', A, A)
-    num_surf, num_locs, _ =  tf.shape(N)
-    n = num_surf * num_locs
-    S = tf.reshape(tf.einsum('abc,cAB->aAbB', outer, C), [n, n])
-    S += block_diag(tf.unstack(N))
+    outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
+    S = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
 
-    keep_indices = tf.range(num_locs) + num_locs * cats
-    S = tf.gather(tf.gather(S, keep_indices, axis=-1), keep_indices)
+    NN = [] # Observation noise submatrices.
+    for sublocs, o in zip(tf.split(locs, np.bincount(cats)), observation):
+        N = o.noise.matrix(sublocs, p)
+        NN.append(N)
+    S += block_diag(NN)
     S = tf.cast(S, tf.float64)
 
     m = np.transpose([o.mu(locs) for o in observation])
@@ -124,7 +124,7 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
         hi = np.min([pp.hi for pp in pps])
         assert lo < hi, 'Conflicting bounds for parameter `%s`' % name
         assert name in values, 'Parameter `%s` is missing' % name
-        assert lo < values[name] < hi, 'Parameter `%s` is out of bounds' % name
+        assert lo <= values[name] <= hi, 'Parameter `%s` is out of bounds' % name
         out[name] = Bound(lo, hi)
     return out
 
