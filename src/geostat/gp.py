@@ -59,6 +59,7 @@ def block_diag(blocks):
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 def gp_covariance(covariance, observation, locs, cats, p):
+    assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
     C = tf.stack([c.matrix(locs, p) for c in covariance], axis=0) # [hidden, locs, locs].
 
@@ -222,7 +223,12 @@ class GP(SpatialInterpolator):
         self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))
 
     def fit(self, locs, vals, cats=None):
-        if cats is not None: cats = np.array(cats)
+
+        # Permute datapoints if cats is given.
+        if cats is not None:
+            cats = np.array(cats)
+            perm = np.argsort(cats)
+            locs, vals, cats = locs[perm], vals[perm], cats[perm]
 
         # Data dict.
         self.data = {'X': tf.constant(locs), 'u': tf.constant(vals), 'cats': cats}
@@ -254,13 +260,24 @@ class GP(SpatialInterpolator):
         gpm_fit(self.data, up, self.hyperparameters)
 
         new_parameters = self.parameter_space.get_surface(up, numpy=True)
+
+        # Restore order if things were permuted.
+        if cats is not None:
+            revperm = np.argsort(perm)
+            locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
+
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
     def generate(self, locs, cats=None):
         assert self.locs is None and self.vals is None, 'Conditional generation not yet supported'
 
-        if locs is not None: locs = np.array(locs)
-        if cats is not None: cats = np.array(cats)
+        locs = np.array(locs)
+
+        # Permute datapoints if cats is given.
+        if cats is not None:
+            cats = np.array(cats)
+            perm = np.argsort(cats)
+            locs, cats = locs[perm], cats[perm]
 
         up = self.parameter_space.get_underlying(self.parameters)
 
@@ -269,6 +286,11 @@ class GP(SpatialInterpolator):
         m, S = gp_covariance(self.covariance, self.observation, locs, cats, p)
 
         vals = MVN(m, tf.linalg.cholesky(S)).sample().numpy()
+
+        # Restore order if things were permuted.
+        if cats is not None:
+            revperm = np.argsort(perm)
+            locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
         return replace(self, locs=locs, vals=vals, cats=cats)
 
@@ -311,28 +333,38 @@ class GP(SpatialInterpolator):
         def e(x, a=-1):
             return tf.expand_dims(x, a)
 
-        def interpolate_gp(X1, u1, cats1, X2, cats2, parameters, hyperparameters):
+        def interpolate_gp(locs1, vals1, cats1, locs2, cats2, parameters, hyperparameters):
 
-            N1 = len(X1) # Number of measurements.
-            N2 = len(X2) # Number of predictions.
+            N1 = len(locs1) # Number of measurements.
 
-            X = np.concatenate([X1, X2], axis=0)
+            locs = np.concatenate([locs1, locs2], axis=0)
 
             if cats1 is None:
                 cats = None
             else:
                 cats = np.concatenate([cats1, cats2], axis=0)
 
+            # Permute datapoints if cats is given.
+            if cats is not None:
+                perm = np.argsort(cats)
+                locs, cats = locs[perm], cats[perm]
+
             p = self.parameter_space.get_surface(parameters)
 
-            m, A = gp_covariance(self.covariance, self.observation, X, cats, p)
+            m, A = gp_covariance(self.covariance, self.observation, locs, cats, p)
+
+            # Restore order if things were permuted.
+            if cats is not None:
+                revperm = np.argsort(perm)
+                m = tf.gather(m, revperm)
+                A = tf.gather(tf.gather(A, revperm), revperm, axis=-1)
 
             A11 = A[:N1, :N1]
             A12 = A[:N1, N1:]
             A21 = A[N1:, :N1]
             A22 = A[N1:, N1:]
 
-            u2_mean = m[N1:] + tf.matmul(A21, tf.linalg.solve(A11, e(u1, -1)))[:, 0]
+            u2_mean = m[N1:] + tf.matmul(A21, tf.linalg.solve(A11, e(vals1, -1)))[:, 0]
             u2_var = tf.linalg.diag_part(A22) -  tf.reduce_sum(A12 * tf.linalg.solve(A11, A12), axis=0)
 
             return u2_mean, u2_var
