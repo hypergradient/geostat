@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 from dataclasses import dataclass, replace
 from typing import Callable, Dict, List, Union
@@ -110,7 +111,7 @@ def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters,
 
     gradients = tape.gradient(loss, parameters.values())
     optimizer.apply_gradients(zip(gradients, parameters.values()))
-    return p, ll
+    return p, ll, reg
 
 def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dict[str, Bound]:
     d = defaultdict(list)
@@ -232,17 +233,21 @@ class GP(SpatialInterpolator):
 
             j = 0 # Iteration count.
             for i in range(10):
+                t0 = time.time()
                 while j < (i + 1) * self.hyperparameters['train_iters'] / 10:
-                    p, ll = gp_train_step(optimizer, data, parameters, self.parameter_space,
+                    p, ll, reg = gp_train_step(optimizer, data, parameters, self.parameter_space,
                         hyperparameters, self.covariance, self.observation)
                     j += 1
 
+                time_elapsed = time.time() - t0
                 if self.verbose == True:
                     if self.report is None:
-                        s = '[iter %4d, ll %7.2f] [%s]' % (j, ll, ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
+                        s = '[iter %4d, ll %.2f, reg %.2f, time %.1f] [%s]' % (
+                            j, ll, reg, time_elapsed,
+                            ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
                         print(s)
                     else:
-                        self.report(dict(**p, iter=j, ll=ll))
+                        self.report(dict(**p, iter=j, ll=ll, time=time_elapsed, reg=reg))
 
         up = self.parameter_space.get_underlying(self.parameters)
 
