@@ -25,7 +25,7 @@ def test_multigp():
         parameters = dict(
             a1=1., s1=1., r1=0.5, k1=2.,
             a2=1., s2=1., r2=0.5, k2=3.,
-            n1=0.1, n2=0.1, n3=0.1),
+            n1=0.1, n2=0.2, n3=0.3),
         verbose=True)
 
     # Generate data.

@@ -29,27 +29,28 @@ class NormalizingFeaturizer:
     def __init__(self, featurization, locs):
         self.featurization = featurization
         F_unnorm = self.get_unnorm_features(locs)
-        self.unnorm_mean = np.mean(F_unnorm, axis=0)
-        self.unnorm_std = np.std(F_unnorm, axis=0)
+        self.unnorm_mean = tf.reduce_mean(F_unnorm, axis=0)
+        self.unnorm_std = tf.math.reduce_std(F_unnorm, axis=0)
 
     def get_unnorm_features(self, locs):
+        locs = tf.cast(locs, tf.float32)
         if self.featurization is None: # No features.
-            return np.ones([locs.shape[0], 0])
+            return tf.ones([locs.shape[0], 0], dtype=tf.float32)
 
-        feats = self.featurization(*np.transpose(locs))
+        feats = self.featurization(*tf.unstack(tf.transpose(locs)))
         if isinstance(feats, tuple): # One or many features.
             if len(feats) == 0:
-                return np.ones([locs.shape[0], 0])
+                return tf.ones([locs.shape[0], 0], dtype=tf.float32)
             else:
-                return np.stack(self.featurization(*np.transpose(locs)), axis=1)
+                return tf.stack(self.featurization(*tf.unstack(tf.transpose(locs))), axis=1)
         else: # One feature.
-            return feats[:, np.newaxis]
+            return e(feats)
 
     def __call__(self, locs):
-        ones = np.ones([locs.shape[0], 1])
+        ones = tf.ones([locs.shape[0], 1], dtype=tf.float32)
         F_unnorm = self.get_unnorm_features(locs)
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
-        return np.concatenate([ones, F_norm], axis=1)
+        return tf.concat([ones, F_norm], axis=1)
 
 def e(x, a=-1):
     return tf.expand_dims(x, a)
@@ -58,9 +59,23 @@ def block_diag(blocks):
     """Return a dense block-diagonal matrix."""
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
+class Foo:
+    def __init__(self, x):
+        self.x = x
+
 def gp_covariance(covariance, observation, locs, cats, p):
+    return gp_covariance_inside(
+        Foo(covariance),
+        Foo(observation),
+        locs, cats, p)
+
+@tf.function
+def gp_covariance_inside(covariance, observation, locs, cats, p):
+    covariance = covariance.x
+    observation = observation.x
+    numsurf = len(observation)
+
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
-    locs = tf.cast(locs, tf.float32)
     C = tf.stack([c.matrix(locs, p) for c in covariance], axis=-1) # [locs, locs, hidden].
 
     if observation is None:
@@ -74,16 +89,17 @@ def gp_covariance(covariance, observation, locs, cats, p):
     outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
     S = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
 
+    locsegs = tf.split(locs, tf.math.bincount(cats, minlength=numsurf, maxlength=numsurf), num=numsurf)
+
     NN = [] # Observation noise submatrices.
-    for sublocs, o in zip(tf.split(locs, np.bincount(cats)), observation):
+    for sublocs, o in zip(locsegs, observation):
         N = o.noise.matrix(sublocs, p)
         NN.append(N)
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
 
-    m = np.transpose([o.mu(locs) for o in observation])
-    m = np.take_along_axis(m, cats[:, np.newaxis], axis=-1)[:, 0]
-    m = tf.constant(m, tf.float64)
+    m = tf.concat([o.mu(locs) for locs in locsegs], 0)
+    m = tf.cast(m, tf.float64)
 
     return m, S
 
@@ -99,9 +115,11 @@ def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters,
     with tf.GradientTape() as tape:
         p = parameter_space.get_surface(parameters)
 
-        m, S = gp_covariance(covariance, observation, data['X'], data['cats'], p)
+        m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], p)
 
-        ll = gp_log_likelihood(data['u'], m, S)
+        u = tf.cast(data['vals'], tf.float64)
+
+        ll = gp_log_likelihood(u, m, S)
 
         if hyperparameters['reg'] != None:
             reg = hyperparameters['reg'] * tf.reduce_sum([c.reg(p) for c in covariance])
@@ -148,9 +166,9 @@ class Observation:
 
     def mu(self, locs):
         if callable(self.offset):
-            return self.offset(*np.transpose(locs))
+            return self.offset(*tf.unstack(locs, axis=1))
         else:
-            return np.full_like(locs[..., 0], self.offset, np.float32)
+            return tf.full_like(locs[..., 0], self.offset, tf.float32)
 
 @dataclass
 class GP(SpatialInterpolator):
@@ -231,7 +249,10 @@ class GP(SpatialInterpolator):
             locs, vals, cats = locs[perm], vals[perm], cats[perm]
 
         # Data dict.
-        self.data = {'X': tf.constant(locs), 'u': tf.constant(vals), 'cats': cats}
+        self.data = {
+            'locs': tf.constant(locs, dtype=tf.float32),
+            'vals': tf.constant(vals, dtype=tf.float32),
+            'cats': tf.constant(cats, dtype=tf.int32)}
 
         # Train the GP.
         def gpm_fit(data, parameters, hyperparameters):
@@ -283,7 +304,12 @@ class GP(SpatialInterpolator):
 
         p = self.parameter_space.get_surface(up)
 
-        m, S = gp_covariance(self.covariance, self.observation, locs, cats, p)
+        m, S = gp_covariance(
+            self.covariance,
+            self.observation,
+            tf.constant(locs, dtype=tf.float32),
+            tf.constant(cats, dtype=tf.int32),
+            p)
 
         vals = MVN(m, tf.linalg.cholesky(S)).sample().numpy()
 
@@ -351,7 +377,12 @@ class GP(SpatialInterpolator):
 
             p = self.parameter_space.get_surface(parameters)
 
-            m, A = gp_covariance(self.covariance, self.observation, locs, cats, p)
+            m, A = gp_covariance(
+                self.covariance,
+                self.observation,
+                tf.constant(locs, dtype=tf.float32),
+                tf.constant(cats, dtype=tf.int32),
+                p)
 
             # Restore order if things were permuted.
             if cats is not None:
