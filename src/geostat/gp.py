@@ -61,7 +61,8 @@ def block_diag(blocks):
 def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
-    C = tf.stack([c.matrix(locs, p) for c in covariance], axis=-1) # [locs, locs, hidden].
+    d2 = tf.square(e(locs, 0) - e(locs, 1))
+    C = tf.stack([c.matrix(locs, d2, p) for c in covariance], axis=-1) # [locs, locs, hidden].
 
     if observation is None:
         C = tf.cast(C[..., 0], tf.float64)
@@ -76,7 +77,8 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     NN = [] # Observation noise submatrices.
     for sublocs, o in zip(tf.split(locs, np.bincount(cats)), observation):
-        N = o.noise.matrix(sublocs, p)
+        d2 = tf.square(e(sublocs, 0) - e(sublocs, 1))
+        N = o.noise.matrix(sublocs, d2, p)
         NN.append(N)
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
