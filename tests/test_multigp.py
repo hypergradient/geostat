@@ -5,7 +5,7 @@ import geostat.covfunc as cf
 
 def test_multigp():
     # Create 100 random locations in a square centered on the origin.
-    locs1 = np.random.uniform(-1., 1., [600, 2])
+    locs1 = np.random.uniform(-1., 1., [900, 2])
 
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
@@ -25,11 +25,11 @@ def test_multigp():
         parameters = dict(
             a1=1., s1=1., r1=0.5, k1=2.,
             a2=1., s2=1., r2=0.5, k2=3.,
-            n1=0.1, n2=0.1, n3=0.1),
+            n1=0.1, n2=0.2, n3=0.3),
         verbose=True)
 
     # Generate data.
-    cats1 = [0] * 200 + [1] * 200 + [2] * 200
+    cats1 = [0] * 300 + [1] * 300 + [2] * 300
     vals1 = gp1.generate(locs1, cats1).vals
 
     # Fit GP.
