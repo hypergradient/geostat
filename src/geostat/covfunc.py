@@ -149,7 +149,7 @@ class Noise(CovarianceFunction):
     def matrix(self, x, d2, p):
         v = get_parameter_values(self.fa, p)
 
-        return v['nugget'] * tf.eye(x.shape[0])
+        return v['nugget'] * tf.eye(tf.shape(x)[0])
 
     def reg(self, p):
         return 0.
