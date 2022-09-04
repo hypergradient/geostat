@@ -14,7 +14,7 @@ class Bound:
             ('u' if self.lo == float('-inf') else 'b') + \
             ('u' if self.hi == float('inf') else 'b')
 
-    def get_underlying_parameter(self, v):
+    def get_underlying_parameter(self, v, name=None):
         b = self.bounding()
         if b == 'bb':
             init = logit((v - self.lo) / (self.hi - self.lo))
@@ -24,7 +24,7 @@ class Bound:
             init = -np.log(self.hi - v)
         else:
             init = v
-        return tf.Variable(init, dtype=tf.float32)
+        return tf.Variable(init, name=name, dtype=tf.float32)
 
     def get_surface_parameter(self, v):
         b = self.bounding()
@@ -45,7 +45,7 @@ class ParameterSpace:
     def get_underlying(self, parameters):
         up = {}
         for name, v in parameters.items():
-            up[name] = self.bounds[name].get_underlying_parameter(v)
+            up[name] = self.bounds[name].get_underlying_parameter(v, name)
         return up
 
     def get_surface(self, parameters, numpy=False):

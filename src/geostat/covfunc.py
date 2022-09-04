@@ -23,7 +23,7 @@ class CovarianceFunction:
     def vars(self):
         pass
 
-    def matrix(self, x, p):
+    def matrix(self, x, d2, p):
         pass
 
     def report(self, p):
@@ -83,7 +83,7 @@ class Trend(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['alpha'])
 
-    def matrix(self, x, p):
+    def matrix(self, x, d2, p):
         v = get_parameter_values(self.fa, p)
         F = tf.cast(self.featurizer(x), tf.float32)
         return v['alpha'] * tf.einsum('ba,ca->bc', F, F)
@@ -99,14 +99,16 @@ class SquaredExponential(CovarianceFunction):
     def vars(self):
         return get_scale_vars(self.fa['scale']) + ppp(self.fa['sill']) + ppp(self.fa['range'])
 
-    def matrix(self, x, p):
+    def matrix(self, x, d2, p):
         v = get_parameter_values(self.fa, p)
 
         if v['scale'] is not None:
-            x *= v['scale']
+            scale = v['scale']
+        else:
+            scale = [1.]
 
-        d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
-        return v['sill'] * tf.exp(-d2 / tf.square(v['range']))
+        d2 = tf.einsum('abc,c->ab', d2, tf.square(scale / v['range']))
+        return v['sill'] * tf.exp(-d2)
 
     def reg(self, p):
         v = get_parameter_values(self.fa, p)
@@ -121,14 +123,16 @@ class GammaExponential(CovarianceFunction):
         return get_scale_vars(self.fa['scale']) + \
             ppp(self.fa['sill']) + ppp(self.fa['range']) + bpp(self.fa['gamma'], 0., 2.)
 
-    def matrix(self, x, p):
+    def matrix(self, x, d2, p):
         v = get_parameter_values(self.fa, p)
 
         if v['scale'] is not None:
-            x *= v['scale']
-
-        d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
-        return v['sill'] * gamma_exp(d2 / tf.square(v['range']), v['gamma'])
+            scale = v['scale']
+        else:
+            scale = [1.]
+            
+        d2 = tf.einsum('abc,c->ab', d2, tf.square(scale / v['range']))
+        return v['sill'] * gamma_exp(d2, v['gamma'])
 
     def reg(self, p):
         v = get_parameter_values(self.fa, p)
@@ -142,7 +146,7 @@ class Noise(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['nugget'])
 
-    def matrix(self, x, p):
+    def matrix(self, x, d2, p):
         v = get_parameter_values(self.fa, p)
 
         return v['nugget'] * tf.eye(x.shape[0])
@@ -159,13 +163,13 @@ class Delta(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['dsill'])
 
-    def matrix(self, x, p):
+    def matrix(self, x, d2, p):
         v = get_parameter_values(self.fa, p)
 
         if self.axes is not None:
             x = tf.gather(x, self.axes, axis=-1)
 
-        d2 = tf.reduce_sum(tf.square(e(x, 0) - e(x, 1)), axis=-1)
+        d2 = tf.reduce_sum(d2, axis=-1)
         return v['dsill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
 
     def reg(self, p):
@@ -183,8 +187,8 @@ class Stack(CovarianceFunction):
         if isinstance(other, CovarianceFunction):
             return Stack(self.parts + [other])
     
-    def matrix(self, x, p):
-        return tf.reduce_sum([part.matrix(x, p) for part in self.parts], axis=0)
+    def matrix(self, x, d2, p):
+        return tf.reduce_sum([part.matrix(x, d2, p) for part in self.parts], axis=0)
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)
