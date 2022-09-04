@@ -214,7 +214,7 @@ def safepow(x, a):
 def unbroadcast(x, shape):
     excess_rank = tf.maximum(0, len(x.shape) - len(shape))
     x = tf.reduce_sum(x, axis=tf.range(excess_rank))
-    axes_that_are_one = tf.where(tf.equal(shape, 1))
+    axes_that_are_one = tf.where(tf.equal(shape, 1))[:, 0]
     x = tf.reduce_sum(x, axis=axes_that_are_one, keepdims=True)
     return x
 

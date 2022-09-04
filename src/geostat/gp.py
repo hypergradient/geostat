@@ -59,11 +59,31 @@ def block_diag(blocks):
     """Return a dense block-diagonal matrix."""
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
+class FooTraceType(tf.types.experimental.TraceType):
+  def __init__(self):
+     pass
+
+  def is_subtype_of(self, other):
+     return type(other) is FooTraceType
+
+  def most_specific_common_supertype(self, others):
+     return self if all(self == other for other in others) else None
+
+  def __eq__(self, other):
+     return isinstance(other, FooTraceType)
+
+  def __hash__(self):
+     return hash('footracetype')
+
 class Foo:
     def __init__(self, x):
         self.x = x
+    def __tf_tracing_type__(self, context):
+        return FooTraceType()
 
 def gp_covariance(covariance, observation, locs, cats, p):
+    # print('-----------------------')
+    # print(gp_covariance_inside.pretty_printed_concrete_signatures())
     return gp_covariance_inside(
         Foo(covariance),
         Foo(observation),
@@ -84,7 +104,7 @@ def gp_covariance_inside(covariance, observation, locs, cats, p):
         m = tf.zeros_like(C[0, :])
         return m, C
 
-    numsurf = len(observation)
+    numobs = len(observation)
 
     A = tf.convert_to_tensor(get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
     Aaug = tf.gather(A, cats) # [locs, hidden].
@@ -92,10 +112,10 @@ def gp_covariance_inside(covariance, observation, locs, cats, p):
     outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
     S = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
 
-    locsegs = tf.split(locs, tf.math.bincount(cats, minlength=numsurf, maxlength=numsurf), num=numsurf)
+    locsegs = tf.split(locs, tf.math.bincount(cats, minlength=numobs, maxlength=numobs), num=numobs)
 
     NN = [] # Observation noise submatrices.
-    for sublocs, o in zip(tf.split(locs, np.bincount(cats)), observation):
+    for sublocs, o in zip(tf.split(locs, tf.math.bincount(cats), num=numobs), observation):
         d2 = tf.square(e(sublocs, 0) - e(sublocs, 1))
         N = o.noise.matrix(sublocs, d2, p)
         NN.append(N)
