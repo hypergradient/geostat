@@ -73,7 +73,6 @@ def gp_covariance(covariance, observation, locs, cats, p):
 def gp_covariance_inside(covariance, observation, locs, cats, p):
     covariance = covariance.x
     observation = observation.x
-    numsurf = len(observation)
 
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
@@ -84,6 +83,8 @@ def gp_covariance_inside(covariance, observation, locs, cats, p):
         C = tf.cast(C[..., 0], tf.float64)
         m = tf.zeros_like(C[0, :])
         return m, C
+
+    numsurf = len(observation)
 
     A = tf.convert_to_tensor(get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
     Aaug = tf.gather(A, cats) # [locs, hidden].
@@ -255,7 +256,7 @@ class GP(SpatialInterpolator):
         self.data = {
             'locs': tf.constant(locs, dtype=tf.float32),
             'vals': tf.constant(vals, dtype=tf.float32),
-            'cats': tf.constant(cats, dtype=tf.int32)}
+            'cats': None if cats is None else tf.constant(cats, dtype=tf.int32)}
 
         # Train the GP.
         def gpm_fit(data, parameters, hyperparameters):
@@ -311,7 +312,7 @@ class GP(SpatialInterpolator):
             self.covariance,
             self.observation,
             tf.constant(locs, dtype=tf.float32),
-            tf.constant(cats, dtype=tf.int32),
+            None if cats is None else tf.constant(cats, dtype=tf.int32),
             p)
 
         vals = MVN(m, tf.linalg.cholesky(S)).sample().numpy()
@@ -384,7 +385,7 @@ class GP(SpatialInterpolator):
                 self.covariance,
                 self.observation,
                 tf.constant(locs, dtype=tf.float32),
-                tf.constant(cats, dtype=tf.int32),
+                None if cats is None else tf.constant(cats, dtype=tf.int32),
                 p)
 
             # Restore order if things were permuted.
