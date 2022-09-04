@@ -105,7 +105,7 @@ class SquaredExponential(CovarianceFunction):
         if v['scale'] is not None:
             scale = v['scale']
         else:
-            scale = [1.]
+            scale = tf.ones_like(d2[0, 0, :])
 
         d2 = tf.einsum('abc,c->ab', d2, tf.square(scale / v['range']))
         return v['sill'] * tf.exp(-d2)
@@ -129,7 +129,7 @@ class GammaExponential(CovarianceFunction):
         if v['scale'] is not None:
             scale = v['scale']
         else:
-            scale = [1.]
+            scale = tf.ones_like(d2[0, 0, :])
             
         d2 = tf.einsum('abc,c->ab', d2, tf.square(scale / v['range']))
         return v['sill'] * gamma_exp(d2, v['gamma'])
