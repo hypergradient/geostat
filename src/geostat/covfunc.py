@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Callable, Dict, List, Union
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
@@ -33,6 +33,9 @@ class CovarianceFunction:
     def reg(self, p):
         pass
 
+    def __tf_tracing_type__(self, context):
+        return SingletonTraceType(type(self))
+
 def get_parameter_values(
     blob: object,
     p: Dict[str, object]
@@ -58,6 +61,13 @@ def ppp(name):
     """Positive paper parameter (maybe)."""
     if isinstance(name, str):
         return [PaperParameter(name, 0., float('inf'))]
+    else:
+        return []
+
+def upp(name):
+    """Unbounded paper parameter (maybe)."""
+    if isinstance(name, str):
+        return [PaperParameter(name, float('-inf'), float('inf'))]
     else:
         return []
 
@@ -149,7 +159,7 @@ class Noise(CovarianceFunction):
     def matrix(self, x, d2, p):
         v = get_parameter_values(self.fa, p)
 
-        return v['nugget'] * tf.eye(x.shape[0])
+        return v['nugget'] * tf.eye(tf.shape(x)[0])
 
     def reg(self, p):
         return 0.
@@ -214,9 +224,52 @@ def safepow(x, a):
 def unbroadcast(x, shape):
     excess_rank = tf.maximum(0, len(x.shape) - len(shape))
     x = tf.reduce_sum(x, axis=tf.range(excess_rank))
-    axes_that_are_one = tf.where(tf.equal(shape, 1))
+    axes_that_are_one = tf.where(tf.equal(shape, 1))[:, 0]
     x = tf.reduce_sum(x, axis=axes_that_are_one, keepdims=True)
     return x
 
 def gamma_exp(d2, gamma):
     return tf.exp(-safepow(tf.maximum(d2, 0.0), 0.5 * gamma))
+
+@dataclass
+class Observation:
+    coefs: List
+    offset: Union[float, Callable]
+    noise: CovarianceFunction
+
+    def vars(self):
+        vv = [p for c in self.coefs for p in upp(c)]
+        vv += self.noise.vars()
+        return vv
+
+    def mu(self, locs):
+        if callable(self.offset):
+            return self.offset(*tf.unstack(locs, axis=1))
+        else:
+            return self.offset * tf.ones_like(locs[..., 0], tf.float32)
+
+    def __tf_tracing_type__(self, context):
+        return SingletonTraceType(type(self))
+
+class SingletonTraceType(tf.types.experimental.TraceType):
+  """
+  A trace type to override TF's default behavior, which is 
+  to treat dataclass-based onjects as dicts.
+  """
+
+  def __init__(self, classtype):
+     self.classtype = classtype
+     pass
+
+  def is_subtype_of(self, other):
+     return type(other) is SingletonTraceType \
+         and self.classtype is other.classtype
+
+  def most_specific_common_supertype(self, others):
+     return self if all(self == other for other in others) else None
+
+  def __eq__(self, other):
+     return isinstance(other, SingletonTraceType) and self.classtype == other.classtype
+
+  def __hash__(self):
+     return hash(self.classtype)
