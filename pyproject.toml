@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "geostat"
-version = "0.3.2"
+version = "0.4.0"
 description = "Model spatial data with Gaussian processes"
 readme = "README.md"
 authors = [
