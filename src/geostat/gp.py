@@ -17,7 +17,7 @@ with warnings.catch_warnings():
     from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
 from .spatialinterpolator import SpatialInterpolator
-from .covfunc import CovarianceFunction, PaperParameter, get_parameter_values
+from .covfunc import CovarianceFunction, Observation, PaperParameter, get_parameter_values
 from .param import ParameterSpace, Bound
 
 MVN = tfp.distributions.MultivariateNormalTriL
@@ -35,19 +35,19 @@ class NormalizingFeaturizer:
     def get_unnorm_features(self, locs):
         locs = tf.cast(locs, tf.float32)
         if self.featurization is None: # No features.
-            return tf.ones([locs.shape[0], 0], dtype=tf.float32)
+            return tf.ones([tf.shape(locs)[0], 0], dtype=tf.float32)
 
-        feats = self.featurization(*tf.unstack(tf.transpose(locs)))
+        feats = self.featurization(*tf.unstack(locs, axis=1))
         if isinstance(feats, tuple): # One or many features.
             if len(feats) == 0:
-                return tf.ones([locs.shape[0], 0], dtype=tf.float32)
+                return tf.ones([tf.shape(locs)[0], 0], dtype=tf.float32)
             else:
-                return tf.stack(self.featurization(*tf.unstack(tf.transpose(locs))), axis=1)
+                return tf.stack(self.featurization(*tf.unstack(locs, axis=1)), axis=1)
         else: # One feature.
             return e(feats)
 
     def __call__(self, locs):
-        ones = tf.ones([locs.shape[0], 1], dtype=tf.float32)
+        ones = tf.ones([tf.shape(locs)[0], 1], dtype=tf.float32)
         F_unnorm = self.get_unnorm_features(locs)
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
         return tf.concat([ones, F_norm], axis=1)
@@ -59,41 +59,14 @@ def block_diag(blocks):
     """Return a dense block-diagonal matrix."""
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
-class FooTraceType(tf.types.experimental.TraceType):
-  def __init__(self):
-     pass
-
-  def is_subtype_of(self, other):
-     return type(other) is FooTraceType
-
-  def most_specific_common_supertype(self, others):
-     return self if all(self == other for other in others) else None
-
-  def __eq__(self, other):
-     return isinstance(other, FooTraceType)
-
-  def __hash__(self):
-     return hash('footracetype')
-
-class Foo:
-    def __init__(self, x):
-        self.x = x
-    def __tf_tracing_type__(self, context):
-        return FooTraceType()
-
 def gp_covariance(covariance, observation, locs, cats, p):
-    # print('-----------------------')
-    # print(gp_covariance_inside.pretty_printed_concrete_signatures())
     return gp_covariance_inside(
         Foo(covariance),
         Foo(observation),
         locs, cats, p)
 
 @tf.function
-def gp_covariance_inside(covariance, observation, locs, cats, p):
-    covariance = covariance.x
-    observation = observation.x
-
+def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
     d2 = tf.square(e(locs, 0) - e(locs, 1))
@@ -169,30 +142,6 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
         assert lo <= values[name] <= hi, 'Parameter `%s` is out of bounds' % name
         out[name] = Bound(lo, hi)
     return out
-
-def upp(name):
-    """Unbounded paper parameter (maybe)."""
-    if isinstance(name, str):
-        return [PaperParameter(name, float('-inf'), float('inf'))]
-    else:
-        return []
-
-@dataclass
-class Observation:
-    coefs: List
-    offset: Union[float, Callable]
-    noise: CovarianceFunction
-
-    def vars(self):
-        vv = [p for c in self.coefs for p in upp(c)]
-        vv += self.noise.vars()
-        return vv
-
-    def mu(self, locs):
-        if callable(self.offset):
-            return self.offset(*tf.unstack(locs, axis=1))
-        else:
-            return tf.full_like(locs[..., 0], self.offset, tf.float32)
 
 @dataclass
 class GP(SpatialInterpolator):
