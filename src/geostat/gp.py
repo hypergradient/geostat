@@ -83,7 +83,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
     Aaug = tf.gather(A, cats) # [locs, hidden].
 
     outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
-    S = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
+    S = einsum('abc,abc->ab', C, outer) # [locs, locs].
 
     locsegs = tf.split(locs, tf.math.bincount(cats, minlength=numobs, maxlength=numobs), num=numobs)
 
