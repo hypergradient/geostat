@@ -7,6 +7,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
 
+from .util import einsum_abc_c_ab
+
 @dataclass
 class PaperParameter:
     name: str
@@ -117,7 +119,7 @@ class SquaredExponential(CovarianceFunction):
         else:
             scale = tf.ones_like(d2[0, 0, :])
 
-        d2 = tf.einsum('abc,c->ab', d2, tf.square(scale / v['range']))
+        d2 = einsum_abc_c_ab(d2, tf.square(scale / v['range']))
         return v['sill'] * tf.exp(-d2)
 
     def reg(self, p):
@@ -141,7 +143,7 @@ class GammaExponential(CovarianceFunction):
         else:
             scale = tf.ones_like(d2[0, 0, :])
             
-        d2 = tf.einsum('abc,c->ab', d2, tf.square(scale / v['range']))
+        d2 = einsum_abc_c_ab(d2, tf.square(scale / v['range']))
         return v['sill'] * gamma_exp(d2, v['gamma'])
 
     def reg(self, p):
