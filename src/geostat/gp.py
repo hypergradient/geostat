@@ -101,22 +101,23 @@ def gp_covariance(covariance, observation, locs, cats, p):
     return m, S
 
 @tf.function
-def gp_log_likelihood(u, m, cov):
+def gp_log_likelihood(x, cov):
     """Log likelihood of is the PDF of a multivariate gaussian."""
-    u_adj = u - m
     logdet = tf.linalg.logdet(2 * np.pi * cov)
-    quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
+    quad = tf.matmul(e(x, 0), tf.linalg.solve(cov, e(x, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters, covariance, observation):
+def gp_train_step(
+    optimizer, data, parameters, parameter_space,
+    hyperparameters, covariance, observation
+):
     with tf.GradientTape() as tape:
         p = parameter_space.get_surface(parameters)
 
-        m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], p)
-
         u = tf.cast(data['vals'], tf.float64)
 
-        ll = gp_log_likelihood(u, m, S)
+        m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], p)
+        ll = gp_log_likelihood(u - m, S)
 
         if hyperparameters['reg'] != None:
             reg = hyperparameters['reg'] * tf.reduce_sum([c.reg(p) for c in covariance])
@@ -227,31 +228,29 @@ class GP(SpatialInterpolator):
             'vals': tf.constant(vals, dtype=tf.float32),
             'cats': None if cats is None else tf.constant(cats, dtype=tf.int32)}
 
-        # Train the GP.
-        def gpm_fit(data, parameters, hyperparameters):
-            optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
-
-            j = 0 # Iteration count.
-            for i in range(10):
-                t0 = time.time()
-                while j < (i + 1) * self.hyperparameters['train_iters'] / 10:
-                    p, ll, reg = gp_train_step(optimizer, data, parameters, self.parameter_space,
-                        hyperparameters, self.covariance, self.observation)
-                    j += 1
-
-                time_elapsed = time.time() - t0
-                if self.verbose == True:
-                    if self.report is None:
-                        s = '[iter %4d, ll %.2f, reg %.2f, time %.1f] [%s]' % (
-                            j, ll, reg, time_elapsed,
-                            ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
-                        print(s)
-                    else:
-                        self.report(dict(**p, iter=j, ll=ll, time=time_elapsed, reg=reg))
-
         up = self.parameter_space.get_underlying(self.parameters)
 
-        gpm_fit(self.data, up, self.hyperparameters)
+        # Train the GP.
+        optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+
+        j = 0 # Iteration count.
+        for i in range(10):
+            t0 = time.time()
+            while j < (i + 1) * self.hyperparameters['train_iters'] / 10:
+                p, ll, reg = gp_train_step(optimizer, self.data, up, self.parameter_space,
+                    self.hyperparameters, self.covariance, self.observation)
+                j += 1
+
+            time_elapsed = time.time() - t0
+            if self.verbose == True:
+                if self.report is None:
+                    s = '[iter %4d, ll %.2f, reg %.2f, time %.1f] [%s]' % (
+                        j, ll, reg, time_elapsed,
+                        ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
+                    print(s)
+                else:
+                    self.report(dict(**p, iter=j, ll=ll, time=time_elapsed, reg=reg))
+
 
         new_parameters = self.parameter_space.get_surface(up, numpy=True)
 
