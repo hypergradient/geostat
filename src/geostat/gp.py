@@ -88,14 +88,14 @@ def gp_covariance(covariance, observation, locs, cats, p):
     locsegs = tf.split(locs, tf.math.bincount(cats, minlength=numobs, maxlength=numobs), num=numobs)
 
     NN = [] # Observation noise submatrices.
-    for sublocs, o in zip(tf.split(locs, tf.math.bincount(cats), num=numobs), observation):
+    for sublocs, o in zip(locsegs, observation):
         d2 = tf.square(e(sublocs, 0) - e(sublocs, 1))
         N = o.noise.matrix(sublocs, d2, p)
         NN.append(N)
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
 
-    m = tf.concat([o.mu(locs) for locs in locsegs], 0)
+    m = tf.concat([o.mu(sublocs) for sublocs, o in zip(locsegs, observation)], 0)
     m = tf.cast(m, tf.float64)
 
     return m, S
