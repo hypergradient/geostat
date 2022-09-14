@@ -114,6 +114,8 @@ def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters,
 
         m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], p)
 
+        print(S)
+
         u = tf.cast(data['vals'], tf.float64)
 
         ll = gp_log_likelihood(u, m, S)
