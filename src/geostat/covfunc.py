@@ -179,9 +179,12 @@ class Delta(CovarianceFunction):
         v = get_parameter_values(self.fa, p)
 
         if self.axes is not None:
-            x = tf.gather(x, self.axes, axis=-1)
+            n = tf.shape(x)[-1]
+            mask = tf.math.bincount(self.axes, minlength=n, maxlength=n, dtype=tf.float32)
+            d2 = einsum_abc_c_ab(d2, mask)
+        else:
+            d2 = tf.reduce_sum(d2, axis=-1)
 
-        d2 = tf.reduce_sum(d2, axis=-1)
         return v['dsill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
 
     def reg(self, p):
