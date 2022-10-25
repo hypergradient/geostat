@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 def test_diag_block_diag():
-    A = lo.LODiagBlockDiag([2, 3, 4], [1., 1., 1.], [0.2, 0.3, 0.4])
+    A = lo.DiagBlockDiag([2, 3, 4], [1., 1., 1.], [0.2, 0.3, 0.4])
     check(A)
 
 def test_low_rank():
@@ -11,17 +11,17 @@ def test_low_rank():
     x = np.arange(num).astype(np.float32)
     d2 = np.square(x[:, np.newaxis] - x[np.newaxis, :]) / 5.
     C = np.exp(-d2)
-    R = lo.LOFullMatrix(C[:3, :3])
+    R = lo.Full(C[:3, :3])
     Q = C[:3, :]
-    N = lo.LODiag(0.1 * np.ones([num], dtype=np.float32))
-    A = lo.LOLowRank(Q, R, N)
+    N = lo.Diag(0.1 * np.ones([num], dtype=np.float32))
+    A = lo.LowRank(Q, R, N)
     check(A)
 
 def allclose(a, b):
     return np.allclose(a, b, atol=1e-4)
 
 def check(a):
-    a2 = lo.LOFullMatrix(a.to_dense())
+    a2 = lo.Full(a.to_dense())
 
     # Shape
     assert(allclose(a.shape.as_list(), a2.shape.as_list()))

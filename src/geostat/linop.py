@@ -3,11 +3,11 @@ import tensorflow as tf
 
 from dataclasses import dataclass
 from tensorflow.linalg import LinearOperator as LO
-from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
-from tensorflow.linalg import LinearOperatorComposition as LOComposition
-from tensorflow.linalg import LinearOperatorDiag as LODiag
-from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
-from tensorflow.linalg import LinearOperatorPermutation as LOPermutation
+from tensorflow.linalg import LinearOperatorBlockDiag as BlockDiag
+from tensorflow.linalg import LinearOperatorComposition as Composition
+from tensorflow.linalg import LinearOperatorDiag as Diag
+from tensorflow.linalg import LinearOperatorFullMatrix as Full
+from tensorflow.linalg import LinearOperatorPermutation as Permutation
 
 logdet = tf.linalg.logdet
 
@@ -35,7 +35,7 @@ def revert(x, batch_dims, inner_dim):
     x = tf.reshape(x, tf.concat([batch_dims, [-1, inner_dim]], axis=0))
     return x
 
-class LODiagBlockDiag(LO):
+class DiagBlockDiag(LO):
     def __init__(self, blocksizes: np.ndarray, diag, const, dtype=tf.float32):
         self.blocksizes = np.array(blocksizes)
         self.size = np.sum(blocksizes)
@@ -47,8 +47,8 @@ class LODiagBlockDiag(LO):
     def to_block_diag(self):
         blocks = []
         for s, d, c in zip(self.blocksizes, self.diag, self.const):
-            blocks.append(LOFullMatrix(tf.eye(s) * d + c))
-        return LOBlockDiag(blocks)
+            blocks.append(Full(tf.eye(s) * d + c))
+        return BlockDiag(blocks)
 
     def _to_dense(self):
         return self.to_block_diag().to_dense()
@@ -68,7 +68,7 @@ class LODiagBlockDiag(LO):
         d, c = self.diag, self.const
         ci = -c / (d * (d + n * c))
         di = 1 / d
-        return LODiagBlockDiag(self.blocksizes, di, ci)
+        return DiagBlockDiag(self.blocksizes, di, ci)
 
     def _solve(self, x, adjoint=False, adjoint_arg=False):
         return self._inverse().matmul(x, adjoint_arg=adjoint_arg)
@@ -79,7 +79,7 @@ class LODiagBlockDiag(LO):
         return tf.reduce_sum(n * tf.math.log(d) + tf.math.log(1. + c * n / d), axis=0)
 
 @dataclass
-class LOLowRank(LO):
+class LowRank(LO):
     """
     Implements Q^T R^-1 Q + N.
     R and N should be symmetric.
