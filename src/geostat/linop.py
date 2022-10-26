@@ -35,14 +35,22 @@ def revert(x, batch_dims, inner_dim):
     x = tf.reshape(x, tf.concat([batch_dims, [-1, inner_dim]], axis=0))
     return x
 
+@dataclass
 class DiagBlockDiag(LO):
-    def __init__(self, blocksizes: np.ndarray, diag, const, dtype=tf.float32):
-        self.blocksizes = np.array(blocksizes)
-        self.size = np.sum(blocksizes)
-        self.segment_ids = np.repeat(range(len(blocksizes)), blocksizes)
-        self.diag = tf.cast(diag, dtype)
-        self.const = tf.cast(const, dtype)
-        super().__init__(dtype=dtype, is_square=True, is_self_adjoint=True)
+    blocksizes: np.ndarray
+    diag: tf.Tensor
+    const: tf.Tensor
+    dtype = tf.float32
+
+    def __post_init__(self):
+        self.blocksizes = np.array(self.blocksizes)
+        self.diag = tf.cast(self.diag, self.dtype)
+        self.const = tf.cast(self.const, self.dtype)
+
+        self.size = np.sum(self.blocksizes)
+        self.segment_ids = np.repeat(range(len(self.blocksizes)), self.blocksizes)
+
+        super().__init__(dtype=self.dtype, is_square=True, is_self_adjoint=True)
 
     def to_block_diag(self):
         blocks = []
