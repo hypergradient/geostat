@@ -7,13 +7,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
 
+from .params import get_parameter_values, ppp, upp, bpp
 from .util import einsum_abc_c_ab
-
-@dataclass
-class PaperParameter:
-    name: str
-    lo: float
-    hi: float
 
 @dataclass
 class CovarianceFunction:
@@ -38,54 +33,6 @@ class CovarianceFunction:
     def __tf_tracing_type__(self, context):
         return SingletonTraceType(type(self))
 
-def get_parameter_values(
-    blob: object,
-    p: Dict[str, object]
-):
-    """
-    For each string encountered in the nested blob,
-    look it up in `p` and replace it with the lookup result.
-    """
-    if isinstance(blob, dict):
-        return {k: get_parameter_values(a, p) for k, a in blob.items()}
-    elif isinstance(blob, (list, tuple)):
-        return [get_parameter_values(a, p) for a in blob]
-    elif isinstance(blob, str):
-        if blob not in p:
-            raise ValueError('Parameter `%s` not found' % blob)
-        return p[blob]
-    elif blob is None:
-        return None
-    else:
-        return blob
-
-def ppp(name):
-    """Positive paper parameter (maybe)."""
-    if isinstance(name, str):
-        return [PaperParameter(name, 0., float('inf'))]
-    else:
-        return []
-
-def upp(name):
-    """Unbounded paper parameter (maybe)."""
-    if isinstance(name, str):
-        return [PaperParameter(name, float('-inf'), float('inf'))]
-    else:
-        return []
-
-def bpp(name, lo, hi):
-    """Bounded paper parameter (maybe)."""
-    if isinstance(name, str):
-        return [PaperParameter(name, lo, hi)]
-    else:
-        return []
-
-def get_scale_vars(scale):
-    if scale is not None:
-        return [p for s in scale for p in ppp(s)]
-    else:
-        return []
-
 class Trend(CovarianceFunction):
     def __init__(self, featurizer, alpha='alpha', axes=None):
         fa = dict(alpha=alpha)
@@ -103,13 +50,22 @@ class Trend(CovarianceFunction):
     def reg(self, p):
         return 0.
 
+def scale_to_metric(scale, metric):
+    assert not (scale is None and metric is None)
+    if scale is not None:
+        metric = Scaled(scale)
+    elif metric is None:
+        metric = Euclidean()
+    return metric
+
 class SquaredExponential(CovarianceFunction):
-    def __init__(self, sill='sill', range='range', scale=None):
-        fa = dict(sill=sill, range=range, scale=scale)
+    def __init__(self, sill='sill', range='range', scale=None, metric=None):
+        self.metric = scale_to_metric(scale, metric)
+        fa = dict(sill=sill, range=range)
         super().__init__(fa)
 
     def vars(self):
-        return get_scale_vars(self.fa['scale']) + ppp(self.fa['sill']) + ppp(self.fa['range'])
+        return ppp(self.fa['sill']) + ppp(self.fa['range'])
 
     def matrix(self, x, d2, p):
         v = get_parameter_values(self.fa, p)
@@ -120,7 +76,7 @@ class SquaredExponential(CovarianceFunction):
             scale = tf.ones_like(d2[0, 0, :])
 
         d2 = einsum_abc_c_ab(d2, tf.square(scale / v['range']))
-        return v['sill'] * tf.exp(-d2)
+        return v['sill'] * tf.exp(-self.metric.out.d2)
 
     def reg(self, p):
         v = get_parameter_values(self.fa, p)
@@ -128,6 +84,7 @@ class SquaredExponential(CovarianceFunction):
 
 class GammaExponential(CovarianceFunction):
     def __init__(self, range='range', sill='sill', gamma='gamma', scale=None):
+        self.metric = scale_to_metric(scale, metric)
         fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
         super().__init__(fa)
 
