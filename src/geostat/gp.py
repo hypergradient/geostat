@@ -69,7 +69,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
-    C = tf.stack([c.matrix(locs, p) for c in covariance], axis=-1) # [locs, locs, hidden].
+    C = tf.stack([c.run(locs, p) for c in covariance], axis=-1) # [locs, locs, hidden].
 
     if observation is None:
         C = tf.cast(C[..., 0], tf.float64)
@@ -88,7 +88,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     NN = [] # Observation noise submatrices.
     for sublocs, o in zip(locsegs, observation):
-        N = o.noise.matrix(sublocs, p)
+        N = o.noise.run(sublocs, p)
         NN.append(N)
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)

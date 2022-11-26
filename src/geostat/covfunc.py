@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Union
+from typing import Callable, List, Union
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
@@ -7,21 +7,14 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
 
+from .op import Op
 from .metric import Metric
 from .param import get_parameter_values, ppp, upp, bpp
 
 @dataclass
-class CovarianceFunction:
-    fa: Dict[str, object] # Formal arguments.
-
+class CovarianceFunction(Op):
     def __add__(self, other):
         return Stack([self]) + other
-
-    def vars(self):
-        pass
-
-    def matrix(self, x, p):
-        pass
 
     def report(self, p):
         string = ', '.join('%s %4.2f' % (v.name, p[v.name]) for v in self.vars())
@@ -29,9 +22,6 @@ class CovarianceFunction:
 
     def reg(self, p):
         pass
-
-    def __tf_tracing_type__(self, context):
-        return SingletonTraceType(type(self))
 
 class Trend(CovarianceFunction):
     def __init__(self, featurizer, alpha='alpha', axes=None):
@@ -42,7 +32,7 @@ class Trend(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['alpha'])
 
-    def matrix(self, x, p):
+    def run(self, x, p):
         v = get_parameter_values(self.fa, p)
         F = tf.cast(self.featurizer(x), tf.float32)
         return v['alpha'] * tf.einsum('ba,ca->bc', F, F)
@@ -68,7 +58,7 @@ class SquaredExponential(CovarianceFunction):
         return ppp(self.fa['sill']) + ppp(self.fa['range']) \
             + self.metric.vars()
 
-    def matrix(self, x, p):
+    def run(self, x, p):
         v = get_parameter_values(self.fa, p)
         d2 = self.metric.run(x, p)
         return v['sill'] * tf.exp(-d2 / tf.square(v['range']))
@@ -88,7 +78,7 @@ class GammaExponential(CovarianceFunction):
             + bpp(self.fa['gamma'], 0., 2.) \
             + self.metric.vars()
 
-    def matrix(self, x, p):
+    def run(self, x, p):
         v = get_parameter_values(self.fa, p)
         d2 = self.metric.run(x, p)
         return v['sill'] * gamma_exp(d2 / tf.square(v['range']), v['gamma'])
@@ -105,7 +95,7 @@ class Noise(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['nugget'])
 
-    def matrix(self, x, p):
+    def run(self, x, p):
         v = get_parameter_values(self.fa, p)
 
         return v['nugget'] * tf.eye(tf.shape(x)[0])
@@ -122,7 +112,7 @@ class Delta(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['dsill'])
 
-    def matrix(self, x, p):
+    def run(self, x, p):
         v = get_parameter_values(self.fa, p)
 
         if self.axes is not None:
@@ -150,8 +140,8 @@ class Stack(CovarianceFunction):
         if isinstance(other, CovarianceFunction):
             return Stack(self.parts + [other])
     
-    def matrix(self, x, p):
-        return tf.reduce_sum([part.matrix(x, p) for part in self.parts], axis=0)
+    def run(self, x, p):
+        return tf.reduce_sum([part.run(x, p) for part in self.parts], axis=0)
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)
@@ -185,7 +175,7 @@ def gamma_exp(d2, gamma):
     return tf.exp(-safepow(tf.maximum(d2, 0.0), 0.5 * gamma))
 
 @dataclass
-class Observation:
+class Observation(Op):
     coefs: List
     offset: Union[float, Callable]
     noise: CovarianceFunction
@@ -200,29 +190,3 @@ class Observation:
             return self.offset(*tf.unstack(locs, axis=1))
         else:
             return self.offset * tf.ones_like(locs[..., 0], tf.float32)
-
-    def __tf_tracing_type__(self, context):
-        return SingletonTraceType(type(self))
-
-class SingletonTraceType(tf.types.experimental.TraceType):
-  """
-  A trace type to override TF's default behavior, which is 
-  to treat dataclass-based onjects as dicts.
-  """
-
-  def __init__(self, classtype):
-     self.classtype = classtype
-     pass
-
-  def is_subtype_of(self, other):
-     return type(other) is SingletonTraceType \
-         and self.classtype is other.classtype
-
-  def most_specific_common_supertype(self, others):
-     return self if all(self == other for other in others) else None
-
-  def __eq__(self, other):
-     return isinstance(other, SingletonTraceType) and self.classtype == other.classtype
-
-  def __hash__(self):
-     return hash(self.classtype)

@@ -1,25 +1,23 @@
-import tensorflow as tf
 from dataclasses import dataclass
 from typing import Dict
+
+# Tensorflow is extraordinarily noisy. Catch warnings during import.
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    import tensorflow as tf
+
+from .op import Op
 from .param import get_parameter_values, ppp, upp, bpp
 
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
 @dataclass
-class Metric:
-    fa: Dict[str, object] # Formal arguments.
-
+class Metric(Op):
     def __post_init__(self):
         self.out = {}
     def __call__(self, a, b):
-        pass
-    def run(self, d2):
-        """
-        d2 holds squared distances. It has shape [N, N, K] where:
-          - N is number of observations
-          - K is number of input dimentions
-        """
         pass
 
 def get_scale_vars(scale):
