@@ -7,8 +7,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
 
-from .params import get_parameter_values, ppp, upp, bpp
-from .util import einsum_abc_c_ab
+from .metric import Metric
+from .param import get_parameter_values, ppp, upp, bpp
 
 @dataclass
 class CovarianceFunction:
@@ -20,7 +20,7 @@ class CovarianceFunction:
     def vars(self):
         pass
 
-    def matrix(self, x, d2, p):
+    def matrix(self, x, p):
         pass
 
     def report(self, p):
@@ -42,7 +42,7 @@ class Trend(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['alpha'])
 
-    def matrix(self, x, d2, p):
+    def matrix(self, x, p):
         v = get_parameter_values(self.fa, p)
         F = tf.cast(self.featurizer(x), tf.float32)
         return v['alpha'] * tf.einsum('ba,ca->bc', F, F)
@@ -60,48 +60,38 @@ def scale_to_metric(scale, metric):
 
 class SquaredExponential(CovarianceFunction):
     def __init__(self, sill='sill', range='range', scale=None, metric=None):
-        self.metric = scale_to_metric(scale, metric)
         fa = dict(sill=sill, range=range)
+        self.metric = scale_to_metric(scale, metric)
         super().__init__(fa)
 
     def vars(self):
-        return ppp(self.fa['sill']) + ppp(self.fa['range'])
+        return ppp(self.fa['sill']) + ppp(self.fa['range']) \
+            + self.metric.vars()
 
-    def matrix(self, x, d2, p):
+    def matrix(self, x, p):
         v = get_parameter_values(self.fa, p)
-
-        if v['scale'] is not None:
-            scale = v['scale']
-        else:
-            scale = tf.ones_like(d2[0, 0, :])
-
-        d2 = einsum_abc_c_ab(d2, tf.square(scale / v['range']))
-        return v['sill'] * tf.exp(-self.metric.out.d2)
+        d2 = self.metric.run(x, p)
+        return v['sill'] * tf.exp(-d2 / tf.square(v['range']))
 
     def reg(self, p):
         v = get_parameter_values(self.fa, p)
         return v['range']
 
 class GammaExponential(CovarianceFunction):
-    def __init__(self, range='range', sill='sill', gamma='gamma', scale=None):
-        self.metric = scale_to_metric(scale, metric)
+    def __init__(self, range='range', sill='sill', gamma='gamma', scale=None, metric=None):
         fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
+        self.metric = scale_to_metric(scale, metric)
         super().__init__(fa)
 
     def vars(self):
-        return get_scale_vars(self.fa['scale']) + \
-            ppp(self.fa['sill']) + ppp(self.fa['range']) + bpp(self.fa['gamma'], 0., 2.)
+        return ppp(self.fa['sill']) + ppp(self.fa['range']) \
+            + bpp(self.fa['gamma'], 0., 2.) \
+            + self.metric.vars()
 
-    def matrix(self, x, d2, p):
+    def matrix(self, x, p):
         v = get_parameter_values(self.fa, p)
-
-        if v['scale'] is not None:
-            scale = v['scale']
-        else:
-            scale = tf.ones_like(d2[0, 0, :])
-            
-        d2 = einsum_abc_c_ab(d2, tf.square(scale / v['range']))
-        return v['sill'] * gamma_exp(d2, v['gamma'])
+        d2 = self.metric.run(x, p)
+        return v['sill'] * gamma_exp(d2 / tf.square(v['range']), v['gamma'])
 
     def reg(self, p):
         v = get_parameter_values(self.fa, p)
@@ -115,7 +105,7 @@ class Noise(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['nugget'])
 
-    def matrix(self, x, d2, p):
+    def matrix(self, x, p):
         v = get_parameter_values(self.fa, p)
 
         return v['nugget'] * tf.eye(tf.shape(x)[0])
@@ -132,13 +122,14 @@ class Delta(CovarianceFunction):
     def vars(self):
         return ppp(self.fa['dsill'])
 
-    def matrix(self, x, d2, p):
+    def matrix(self, x, p):
         v = get_parameter_values(self.fa, p)
 
         if self.axes is not None:
             n = tf.shape(x)[-1]
             mask = tf.math.bincount(self.axes, minlength=n, maxlength=n, dtype=tf.float32)
-            d2 = einsum_abc_c_ab(d2, mask)
+            d2 = tf.square(e(x, 0) - e(x, 1))
+            d2 = tf.einsum('abc,c->ab', d2, mask)
         else:
             d2 = tf.reduce_sum(d2, axis=-1)
 
@@ -159,8 +150,8 @@ class Stack(CovarianceFunction):
         if isinstance(other, CovarianceFunction):
             return Stack(self.parts + [other])
     
-    def matrix(self, x, d2, p):
-        return tf.reduce_sum([part.matrix(x, d2, p) for part in self.parts], axis=0)
+    def matrix(self, x, p):
+        return tf.reduce_sum([part.matrix(x, p) for part in self.parts], axis=0)
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)

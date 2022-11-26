@@ -17,12 +17,12 @@ with warnings.catch_warnings():
     from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
 from .spatialinterpolator import SpatialInterpolator
-from .covfunc import CovarianceFunction, Observation, PaperParameter, get_parameter_values
-from .param import ParameterSpace, Bound
+from . import covfunc as cf
+from .param import PaperParameter, ParameterSpace, Bound
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['GP', 'NormalizingFeaturizer', 'Observation']
+__all__ = ['GP', 'NormalizingFeaturizer']
 
 # Produces featurized locations (F matrix) and remembers normalization parameters.
 class NormalizingFeaturizer:
@@ -69,8 +69,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
-    d2 = tf.square(e(locs, 0) - e(locs, 1))
-    C = tf.stack([c.matrix(locs, d2, p) for c in covariance], axis=-1) # [locs, locs, hidden].
+    C = tf.stack([c.matrix(locs, p) for c in covariance], axis=-1) # [locs, locs, hidden].
 
     if observation is None:
         C = tf.cast(C[..., 0], tf.float64)
@@ -79,7 +78,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     numobs = len(observation)
 
-    A = tf.convert_to_tensor(get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
+    A = tf.convert_to_tensor(cf.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
     Aaug = tf.gather(A, cats) # [locs, hidden].
 
     outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
@@ -89,8 +88,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     NN = [] # Observation noise submatrices.
     for sublocs, o in zip(locsegs, observation):
-        d2 = tf.square(e(sublocs, 0) - e(sublocs, 1))
-        N = o.noise.matrix(sublocs, d2, p)
+        N = o.noise.matrix(sublocs, p)
         NN.append(N)
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
@@ -145,8 +143,8 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 
 @dataclass
 class GP(SpatialInterpolator):
-    covariance: Union[CovarianceFunction, List[CovarianceFunction]]
-    observation: Union[Observation, List[Observation]] = None
+    covariance: Union[cf.CovarianceFunction, List[cf.CovarianceFunction]]
+    observation: Union[cf.Observation, List[cf.Observation]] = None
     parameters: Dict[str, float] = None
     hyperparameters: object = None
     locs: np.ndarray = None
@@ -170,7 +168,7 @@ class GP(SpatialInterpolator):
                                 return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
                     Default is None.
 
-                covariance : CovarianceFunction
+                covariance : cf.CovarianceFunction
                      Name of the covariance function to use in the GP.
                      Should be 'squared-exp' or 'gamma-exp'.
                      Default is 'squared-exp'.
@@ -194,7 +192,7 @@ class GP(SpatialInterpolator):
 
         super().__init__()
 
-        if isinstance(self.covariance, CovarianceFunction):
+        if isinstance(self.covariance, cf.CovarianceFunction):
             self.covariance = [self.covariance]
 
         # Supply defaults.
@@ -327,10 +325,6 @@ class GP(SpatialInterpolator):
 
         # Define inputs.
         self.batch_size = x1.shape[0] // 2
-
-        # Needed functions.
-        def e(x, a=-1):
-            return tf.expand_dims(x, a)
 
         def interpolate_gp(locs1, vals1, cats1, locs2, cats2, parameters, hyperparameters):
 

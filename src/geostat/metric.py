@@ -1,8 +1,16 @@
+import tensorflow as tf
 from dataclasses import dataclass
-from .params import get_parameter_values, ppp, upp, bpp
+from typing import Dict
+from .param import get_parameter_values, ppp, upp, bpp
 
+def e(x, a=-1):
+    return tf.expand_dims(x, a)
+
+@dataclass
 class Metric:
-    def __init__(self):
+    fa: Dict[str, object] # Formal arguments.
+
+    def __post_init__(self):
         self.out = {}
     def __call__(self, a, b):
         pass
@@ -20,29 +28,18 @@ def get_scale_vars(scale):
     else:
         return []
 
-class ScaledEuclidean(Metric):
-    def __init__(self, scale):
+class Euclidean(Metric):
+    def __init__(self, scale=None):
         fa = dict(scale=scale)
         super().__init__(fa)
 
     def vars(self):
         return get_scale_vars(self.fa['scale'])
 
-    def run(self, d2):
+    def run(self, x, p):
+        v = get_parameter_values(self.fa, p)
+        d2 = tf.square(e(x, 0) - e(x, 1))
         if v['scale'] is not None:
-            scale = v['scale']
+            return tf.einsum('abc,c->ab', d2, tf.square(v['scale']))
         else:
-            scale = tf.ones_like(d2[0, 0, :])
-
-        self.out['d2'] = einsum('abc,c->ab', d2, tf.square(scale / v['range']))
-
-class Euclidean(Metric):
-    def __init__(self, scale):
-        fa = dict(scale=scale)
-        super().__init__(fa)
-
-    def vars(self):
-        return []
-
-    def run(self, d2):
-        self.out['d2'] = einsum('abc,c->ab', d2, tf.square(scale / v['range']))
+            return tf.reduce_sum(d2, axis=-1)
