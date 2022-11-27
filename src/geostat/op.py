@@ -23,24 +23,28 @@ class Op:
     autoinputs: object # Blob of Ops.
 
     def vars(self): # Parameters
-        pass
+        return []
 
-    def gather_vars(self, dejavu=None):
-        if dejavu is None: dejavu = {}
-        if id(self) not in dejavu:
-            vv = {v for op in tf.nest.flatten(self.autoinputs) for v in op.gather_vars(dejavu)}
-            dejavu[id(self)] = vv | set(self.vars())
-        return dejavu[id(self)]
+    def gather_vars(self, cache=None):
+        if cache is None: cache = {}
+        if id(self) not in cache:
+            vv = {v for op in tf.nest.flatten(self.autoinputs) for v in op.gather_vars(cache)}
+            cache[id(self)] = vv | set(self.vars())
+        return cache[id(self)]
 
     def __call__(self, p, **e):
+        """
+        `e['auto']` contains evaluated inputs from upstream ops.
+        Other values in `e` are supplied by the caller.
+        """
         pass
 
     def run(self, cache, p, **e):
         """
         If op has already been run, return result. Else:
             - Assemble inputs by recursively calling upstream ops.
-            - Execute op.
-            - Store result in self.out.
+            - Execute op by calling `__call__`.
+            - Store result in cache.
         """
         if id(self) not in cache:
             xval = tf.nest.map_structure(lambda op: op.run(cache, p, **e), self.autoinputs)

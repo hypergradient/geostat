@@ -8,7 +8,7 @@ with warnings.catch_warnings():
     import tensorflow as tf
 
 from .op import Op
-from .metric import Euclidean
+from .metric import Euclidean, EUCLIDEAN, PER_AXIS_DIST_SQ
 from .param import get_parameter_values, ppp, upp, bpp
 
 @dataclass
@@ -44,7 +44,10 @@ class Trend(CovarianceFunction):
 def scale_to_metric(scale, metric):
     assert scale is None or metric is None
     if metric is None:
-        metric = Euclidean(scale)
+        if scale is None:
+            metric = EUCLIDEAN
+        else:
+            metric = Euclidean(scale)
     return metric
 
 class SquaredExponential(CovarianceFunction):
@@ -106,19 +109,19 @@ class Delta(CovarianceFunction):
     def __init__(self, dsill='dsill', axes=None):
         fa = dict(dsill=dsill)
         self.axes = axes
-        super().__init__(fa, [])
+        super().__init__(fa, PER_AXIS_DIST_SQ)
 
     def vars(self):
         return ppp(self.fa['dsill'])
 
     def __call__(self, p, **e):
         x = e['locs']
+        d2 = e['auto']
         v = get_parameter_values(self.fa, p)
 
         if self.axes is not None:
             n = tf.shape(x)[-1]
             mask = tf.math.bincount(self.axes, minlength=n, maxlength=n, dtype=tf.float32)
-            d2 = tf.square(ed(x, 0) - ed(x, 1))
             d2 = tf.einsum('abc,c->ab', d2, mask)
         else:
             d2 = tf.reduce_sum(d2, axis=-1)
@@ -148,9 +151,6 @@ class Stack(CovarianceFunction):
 
     def reg(self, p):
         return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)
-
-def ed(x, a=-1):
-    return tf.expand_dims(x, a)
 
 # Gamma exponential covariance function.
 @tf.custom_gradient
