@@ -59,24 +59,19 @@ def block_diag(blocks):
     """Return a dense block-diagonal matrix."""
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
-def gp_covariance(covariance, observation, locs, cats, p):
-    return gp_covariance_inside(
-        Foo(covariance),
-        Foo(observation),
-        locs, cats, p)
-
 @tf.function
 def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
-    C = tf.stack([c.run(locs, p) for c in covariance], axis=-1) # [locs, locs, hidden].
+    cache = {}
+    C = tf.stack([c.run(cache, p, locs=locs) for c in covariance], axis=-1) # [locs, locs, hidden].
 
-    if observation is None:
+    numobs = len(observation)
+
+    if numobs == 0:
         C = tf.cast(C[..., 0], tf.float64)
         m = tf.zeros_like(C[0, :])
         return m, C
-
-    numobs = len(observation)
 
     A = tf.convert_to_tensor(cf.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
     Aaug = tf.gather(A, cats) # [locs, hidden].
@@ -88,7 +83,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     NN = [] # Observation noise submatrices.
     for sublocs, o in zip(locsegs, observation):
-        N = o.noise.run(sublocs, p)
+        N = o.noise.run(cache, p, locs=sublocs)
         NN.append(N)
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
@@ -195,6 +190,8 @@ class GP(SpatialInterpolator):
         if isinstance(self.covariance, cf.CovarianceFunction):
             self.covariance = [self.covariance]
 
+        if self.observation is None: self.observation = []
+
         # Supply defaults.
         default_hyperparameters = dict(reg=None, train_iters=300)
         if self.hyperparameters is None: self.hyperparameters = dict()
@@ -206,9 +203,9 @@ class GP(SpatialInterpolator):
 
         # Collect paraameters.
         if self.parameters is None: self.parameters = {}
-        vv = [v for c in self.covariance for v in c.vars()]
-        if self.observation is not None:
-            vv += [v for o in self.observation for v in o.vars()]
+        vv = {v for c in self.covariance for v in c.gather_vars()}
+        vv |= {v for o in self.observation for v in o.gather_vars()}
+
         self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))
 
     def fit(self, locs, vals, cats=None):

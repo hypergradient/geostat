@@ -56,7 +56,7 @@ class ParameterSpace:
             sp[name] = v
         return sp
 
-@dataclass
+@dataclass(frozen=True)
 class PaperParameter:
     name: str
     lo: float

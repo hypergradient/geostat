@@ -27,12 +27,13 @@ class Trend(CovarianceFunction):
     def __init__(self, featurizer, alpha='alpha', axes=None):
         fa = dict(alpha=alpha)
         self.featurizer = featurizer
-        super().__init__(fa)
+        super().__init__(fa, [])
 
     def vars(self):
         return ppp(self.fa['alpha'])
 
-    def run(self, x, p):
+    def __call__(self, p, **e):
+        x = e['locs']
         v = get_parameter_values(self.fa, p)
         F = tf.cast(self.featurizer(x), tf.float32)
         return v['alpha'] * tf.einsum('ba,ca->bc', F, F)
@@ -51,16 +52,16 @@ def scale_to_metric(scale, metric):
 class SquaredExponential(CovarianceFunction):
     def __init__(self, sill='sill', range='range', scale=None, metric=None):
         fa = dict(sill=sill, range=range)
-        self.metric = scale_to_metric(scale, metric)
-        super().__init__(fa)
+        autoinputs = dict(d2=scale_to_metric(scale, metric))
+        super().__init__(fa, autoinputs)
 
     def vars(self):
-        return ppp(self.fa['sill']) + ppp(self.fa['range']) \
-            + self.metric.vars()
+        return ppp(self.fa['sill']) + ppp(self.fa['range'])
 
-    def run(self, x, p):
+    def __call__(self, p, **e):
+        x = e['locs']
+        d2 = e['auto']
         v = get_parameter_values(self.fa, p)
-        d2 = self.metric.run(x, p)
         return v['sill'] * tf.exp(-d2 / tf.square(v['range']))
 
     def reg(self, p):
@@ -70,17 +71,16 @@ class SquaredExponential(CovarianceFunction):
 class GammaExponential(CovarianceFunction):
     def __init__(self, range='range', sill='sill', gamma='gamma', scale=None, metric=None):
         fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
-        self.metric = scale_to_metric(scale, metric)
-        super().__init__(fa)
+        autoinputs = dict(d2=scale_to_metric(scale, metric))
+        super().__init__(fa, autoinputs)
 
     def vars(self):
-        return ppp(self.fa['sill']) + ppp(self.fa['range']) \
-            + bpp(self.fa['gamma'], 0., 2.) \
-            + self.metric.vars()
+        return ppp(self.fa['sill']) + ppp(self.fa['range']) + bpp(self.fa['gamma'], 0., 2.)
 
-    def run(self, x, p):
+    def __call__(self, p, **e):
+        x = e['locs']
+        d2 = e['auto']['d2']
         v = get_parameter_values(self.fa, p)
-        d2 = self.metric.run(x, p)
         return v['sill'] * gamma_exp(d2 / tf.square(v['range']), v['gamma'])
 
     def reg(self, p):
@@ -90,12 +90,13 @@ class GammaExponential(CovarianceFunction):
 class Noise(CovarianceFunction):
     def __init__(self, nugget='nugget'):
         fa = dict(nugget=nugget)
-        super().__init__(fa)
+        super().__init__(fa, [])
 
     def vars(self):
         return ppp(self.fa['nugget'])
 
-    def run(self, x, p):
+    def __call__(self, p, **e):
+        x = e['locs']
         v = get_parameter_values(self.fa, p)
 
         return v['nugget'] * tf.eye(tf.shape(x)[0])
@@ -107,18 +108,19 @@ class Delta(CovarianceFunction):
     def __init__(self, dsill='dsill', axes=None):
         fa = dict(dsill=dsill)
         self.axes = axes
-        super().__init__(fa)
+        super().__init__(fa, [])
 
     def vars(self):
         return ppp(self.fa['dsill'])
 
-    def run(self, x, p):
+    def __call__(self, p, **e):
+        x = e['locs']
         v = get_parameter_values(self.fa, p)
 
         if self.axes is not None:
             n = tf.shape(x)[-1]
             mask = tf.math.bincount(self.axes, minlength=n, maxlength=n, dtype=tf.float32)
-            d2 = tf.square(e(x, 0) - e(x, 1))
+            d2 = tf.square(ed(x, 0) - ed(x, 1))
             d2 = tf.einsum('abc,c->ab', d2, mask)
         else:
             d2 = tf.reduce_sum(d2, axis=-1)
@@ -131,7 +133,7 @@ class Delta(CovarianceFunction):
 class Stack(CovarianceFunction):
     def __init__(self, parts: List[CovarianceFunction]):
         self.parts = parts
-        super().__init__({})
+        super().__init__({}, parts)
 
     def vars(self):
         return [p for part in self.parts for p in part.vars()]
@@ -140,8 +142,8 @@ class Stack(CovarianceFunction):
         if isinstance(other, CovarianceFunction):
             return Stack(self.parts + [other])
     
-    def run(self, x, p):
-        return tf.reduce_sum([part.run(x, p) for part in self.parts], axis=0)
+    def __call__(self, p, **e):
+        return tf.reduce_sum([x for x in e['auto']], axis=0)
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)
@@ -149,7 +151,7 @@ class Stack(CovarianceFunction):
     def reg(self, p):
         return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)
 
-def e(x, a=-1):
+def ed(x, a=-1):
     return tf.expand_dims(x, a)
 
 # Gamma exponential covariance function.
@@ -175,7 +177,7 @@ def gamma_exp(d2, gamma):
     return tf.exp(-safepow(tf.maximum(d2, 0.0), 0.5 * gamma))
 
 @dataclass
-class Observation(Op):
+class Observation:
     coefs: List
     offset: Union[float, Callable]
     noise: CovarianceFunction
