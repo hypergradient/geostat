@@ -8,7 +8,7 @@ with warnings.catch_warnings():
     import tensorflow as tf
 
 from .op import Op
-from .metric import Metric
+from .metric import Euclidean
 from .param import get_parameter_values, ppp, upp, bpp
 
 @dataclass
@@ -42,17 +42,15 @@ class Trend(CovarianceFunction):
         return 0.
 
 def scale_to_metric(scale, metric):
-    assert not (scale is None and metric is None)
-    if scale is not None:
-        metric = Scaled(scale)
-    elif metric is None:
-        metric = Euclidean()
+    assert scale is None or metric is None
+    if metric is None:
+        metric = Euclidean(scale)
     return metric
 
 class SquaredExponential(CovarianceFunction):
     def __init__(self, sill='sill', range='range', scale=None, metric=None):
         fa = dict(sill=sill, range=range)
-        autoinputs = dict(d2=scale_to_metric(scale, metric))
+        autoinputs = scale_to_metric(scale, metric)
         super().__init__(fa, autoinputs)
 
     def vars(self):
@@ -71,7 +69,7 @@ class SquaredExponential(CovarianceFunction):
 class GammaExponential(CovarianceFunction):
     def __init__(self, range='range', sill='sill', gamma='gamma', scale=None, metric=None):
         fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
-        autoinputs = dict(d2=scale_to_metric(scale, metric))
+        autoinputs = scale_to_metric(scale, metric)
         super().__init__(fa, autoinputs)
 
     def vars(self):
@@ -79,7 +77,7 @@ class GammaExponential(CovarianceFunction):
 
     def __call__(self, p, **e):
         x = e['locs']
-        d2 = e['auto']['d2']
+        d2 = e['auto']
         v = get_parameter_values(self.fa, p)
         return v['sill'] * gamma_exp(d2 / tf.square(v['range']), v['gamma'])
 
@@ -176,11 +174,17 @@ def unbroadcast(x, shape):
 def gamma_exp(d2, gamma):
     return tf.exp(-safepow(tf.maximum(d2, 0.0), 0.5 * gamma))
 
-@dataclass
-class Observation:
-    coefs: List
-    offset: Union[float, Callable]
-    noise: CovarianceFunction
+class Observation(Op):
+
+    def __init__(self,
+        coefs: List,
+        offset: Union[float, Callable],
+        noise: CovarianceFunction
+    ):
+        self.coefs = coefs
+        self.offset = offset
+        self.noise = noise
+        super().__init__({}, self.noise)
 
     def vars(self):
         vv = [p for c in self.coefs for p in upp(c)]
@@ -192,3 +196,9 @@ class Observation:
             return self.offset(*tf.unstack(locs, axis=1))
         else:
             return self.offset * tf.ones_like(locs[..., 0], tf.float32)
+
+    def __call__(self, p, **e):
+        """
+        Dummy.
+        """
+        return 0.
