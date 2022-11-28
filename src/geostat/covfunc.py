@@ -8,7 +8,7 @@ with warnings.catch_warnings():
     import tensorflow as tf
 
 from .op import Op
-from .metric import Euclidean, EUCLIDEAN, PER_AXIS_DIST_SQ
+from .metric import Euclidean, EUCLIDEAN, PER_AXIS_SQ_DIST
 from .param import get_parameter_values, ppp, upp, bpp
 
 @dataclass
@@ -60,7 +60,6 @@ class SquaredExponential(CovarianceFunction):
         return ppp(self.fa['sill']) + ppp(self.fa['range'])
 
     def __call__(self, p, **e):
-        x = e['locs']
         d2 = e['auto']
         v = get_parameter_values(self.fa, p)
         return v['sill'] * tf.exp(-d2 / tf.square(v['range']))
@@ -79,7 +78,6 @@ class GammaExponential(CovarianceFunction):
         return ppp(self.fa['sill']) + ppp(self.fa['range']) + bpp(self.fa['gamma'], 0., 2.)
 
     def __call__(self, p, **e):
-        x = e['locs']
         d2 = e['auto']
         v = get_parameter_values(self.fa, p)
         return v['sill'] * gamma_exp(d2 / tf.square(v['range']), v['gamma'])
@@ -109,7 +107,7 @@ class Delta(CovarianceFunction):
     def __init__(self, dsill='dsill', axes=None):
         fa = dict(dsill=dsill)
         self.axes = axes
-        super().__init__(fa, PER_AXIS_DIST_SQ)
+        super().__init__(fa, PER_AXIS_SQ_DIST)
 
     def vars(self):
         return ppp(self.fa['dsill'])

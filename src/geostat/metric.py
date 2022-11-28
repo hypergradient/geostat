@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict
 
+import numpy as np
+
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
 with warnings.catch_warnings():
@@ -13,7 +15,7 @@ from .param import get_parameter_values, ppp, upp, bpp
 def ed(x, a=-1):
     return tf.expand_dims(x, a)
 
-class PerAxisDistSq(Op):
+class PerAxisSqDist(Op):
     def __init__(self):
         super().__init__({}, [])
 
@@ -21,7 +23,7 @@ class PerAxisDistSq(Op):
         x = e['locs']
         return tf.square(ed(x, 0) - ed(x, 1))
 
-PER_AXIS_DIST_SQ = PerAxisDistSq()
+PER_AXIS_SQ_DIST = PerAxisSqDist()
 
 class Metric(Op):
     pass
@@ -35,13 +37,12 @@ def get_scale_vars(scale):
 class Euclidean(Metric):
     def __init__(self, scale=None):
         fa = dict(scale=scale)
-        super().__init__(fa, PER_AXIS_DIST_SQ)
+        super().__init__(fa, PER_AXIS_SQ_DIST)
 
     def vars(self):
         return get_scale_vars(self.fa['scale'])
 
     def __call__(self, p, **e):
-        x = e['locs']
         d2 = e['auto']
         v = get_parameter_values(self.fa, p)
         if v['scale'] is not None:
@@ -50,3 +51,57 @@ class Euclidean(Metric):
             return tf.reduce_sum(d2, axis=-1)
 
 EUCLIDEAN = Euclidean()
+
+class Poincare(Metric):
+    def __init__(self, axis: int, zoff='zoff', scale=None):
+        fa = dict(zoff=zoff, scale=scale)
+        self.axis = axis
+        super().__init__(fa, PER_AXIS_SQ_DIST)
+
+    def vars(self):
+        return ppp(self.fa['zoff']) + get_scale_vars(self.fa['scale'])
+
+    def __call__(self, p, **e):
+        d2 = e['auto']
+        v = get_parameter_values(self.fa, p)
+        if v['scale'] is not None:
+            d2 = tf.einsum('abc,c->ab', d2, tf.square(v['scale']))
+        else:
+            d2 = tf.reduce_sum(d2, axis=-1)
+
+        zoff = v['zoff']
+        z = e['locs'][:, self.axis]
+        if v['scale'] is not None:
+            zs = v['scale'][self.axis]
+            z *= zs
+            zoff *= zs
+        z += zoff
+        zz = z * ed(z, -1)
+        # np.set_printoptions(edgeitems=30, linewidth=140, formatter=dict(float=lambda x: "%8.4f" % x))
+        # print('=============')
+        # print(np.sqrt(d2)[:8, :8])
+        # print('-------------')
+        # print(zoff)
+        # print('-------------')
+        # print(z.numpy()[:8])
+        # print('-------------')
+        # print((zoff / tf.sqrt(zz))[:8, :8])
+        # assert is_distance_matrix(np.sqrt(d2.numpy()))
+        d2 = tf.asinh(0.5 * tf.sqrt(d2 / zz))
+        d2 = tf.square(2.0 * zoff * d2)
+        # print('-------------')
+        # print(np.sqrt(d2)[:8, :8])
+        # assert is_distance_matrix(np.sqrt(d2.numpy()))
+
+        return d2
+
+def is_distance_matrix(m):
+    assert len(m.shape) == 2
+    assert m.shape[0] == m.shape[1]
+
+    a = np.ones_like(m) * float('inf')
+    for i in range(m.shape[0]):
+        a = np.minimum(a, m[i:i+1, :] + m[:, i:i+1])
+
+    # print(np.nonzero(~np.equal(a, m)))
+    return np.allclose(a, m)

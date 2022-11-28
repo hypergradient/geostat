@@ -59,7 +59,7 @@ def block_diag(blocks):
     """Return a dense block-diagonal matrix."""
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
-@tf.function
+# @tf.function
 def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
@@ -93,7 +93,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     return m, S
 
-@tf.function
+# @tf.function
 def gp_log_likelihood(u, m, cov):
     """Log likelihood of is the PDF of a multivariate gaussian."""
     u_adj = u - m
