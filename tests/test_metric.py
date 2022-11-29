@@ -45,9 +45,13 @@ def test_poincare():
 
     # Create random locations in a square centered on the origin.
     locs = np.random.uniform(-2., 2., [1000, 3])
-    locs[:, 2] = np.exp(locs[:, 2]) # Constrain z to be positive.
+    locs[:, 2] = 3. - np.exp(locs[:, 2]) # Make z to be 3 or lower.
 
-    metric = gm.Poincare(axis=2, scale=[1., 1., 'zscale'], zoff='zoff')
+    # Transform z to be positive, and make it the first axis.
+    zmax = locs[:, 2].max()
+    def xform(x, y, z): return zmax-z, x, y
+
+    metric = gm.Poincare(xform=xform, scale=['zscale', 1., 1.], zoff='zoff')
     covariance = \
         cf.GammaExponential(metric=metric) + \
         cf.SquaredExponential(metric=metric, range=2., sill='alpha') + \

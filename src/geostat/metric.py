@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Callable, Dict
 
 import numpy as np
 
@@ -53,30 +53,30 @@ class Euclidean(Metric):
 EUCLIDEAN = Euclidean()
 
 class Poincare(Metric):
-    def __init__(self, axis: int, zoff='zoff', scale=None):
+    def __init__(self, xform: Callable, zoff='zoff', scale=None):
         fa = dict(zoff=zoff, scale=scale)
-        self.axis = axis
-        super().__init__(fa, PER_AXIS_SQ_DIST)
+        self.xform = xform
+        super().__init__(fa, [])
 
     def vars(self):
         return ppp(self.fa['zoff']) + get_scale_vars(self.fa['scale'])
 
     def __call__(self, p, **e):
-        d2 = e['auto']
         v = get_parameter_values(self.fa, p)
-        if v['scale'] is not None:
-            d2 = tf.einsum('abc,c->ab', d2, tf.square(v['scale']))
-        else:
-            d2 = tf.reduce_sum(d2, axis=-1)
 
+        xlocs = tf.stack(self.xform(*tf.unstack(e['locs'], axis=1)), axis=1)
         zoff = v['zoff']
-        z = e['locs'][:, self.axis]
+
+        # Maybe scale locations and zoff.
         if v['scale'] is not None:
-            zs = v['scale'][self.axis]
-            z *= zs
-            zoff *= zs
-        z += zoff
+            xlocs *= v['scale']
+            zoff *= v['scale'][0]
+
+        z = xlocs[:, 0] + zoff
         zz = z * ed(z, -1)
+
+        d2 = tf.reduce_sum(tf.square(ed(xlocs, 0) - ed(xlocs, 1)), axis=-1)
+
         # np.set_printoptions(edgeitems=30, linewidth=140, formatter=dict(float=lambda x: "%8.4f" % x))
         # print('=============')
         # print(np.sqrt(d2)[:8, :8])
