@@ -15,15 +15,13 @@ from .param import get_parameter_values, ppp, upp, bpp
 def ed(x, a=-1):
     return tf.expand_dims(x, a)
 
-class PerAxisSqDist(Op):
+class PerAxisDist2(Op):
     def __init__(self):
-        super().__init__({}, [])
+        super().__init__({}, dict(locs='locs'))
 
-    def __call__(self, p, **e):
+    def __call__(self, p, e):
         x = e['locs']
         return tf.square(ed(x, 0) - ed(x, 1))
-
-PER_AXIS_SQ_DIST = PerAxisSqDist()
 
 class Metric(Op):
     pass
@@ -37,31 +35,28 @@ def get_scale_vars(scale):
 class Euclidean(Metric):
     def __init__(self, scale=None):
         fa = dict(scale=scale)
-        super().__init__(fa, PER_AXIS_SQ_DIST)
+        super().__init__(fa, dict(pa_d2='per_axis_dist2'))
 
     def vars(self):
         return get_scale_vars(self.fa['scale'])
 
-    def __call__(self, p, **e):
-        d2 = e['auto']
+    def __call__(self, p, e):
         v = get_parameter_values(self.fa, p)
         if v['scale'] is not None:
-            return tf.einsum('abc,c->ab', d2, tf.square(v['scale']))
+            return tf.einsum('abc,c->ab', e['pa_d2'], tf.square(v['scale']))
         else:
-            return tf.reduce_sum(d2, axis=-1)
-
-EUCLIDEAN = Euclidean()
+            return tf.reduce_sum(e['pa_d2'], axis=-1)
 
 class Poincare(Metric):
     def __init__(self, xform: Callable, zoff='zoff', scale=None):
         fa = dict(zoff=zoff, scale=scale)
         self.xform = xform
-        super().__init__(fa, [])
+        super().__init__(fa, dict(locs='locs'))
 
     def vars(self):
         return ppp(self.fa['zoff']) + get_scale_vars(self.fa['scale'])
 
-    def __call__(self, p, **e):
+    def __call__(self, p, e):
         v = get_parameter_values(self.fa, p)
 
         xlocs = tf.stack(self.xform(*tf.unstack(e['locs'], axis=1)), axis=1)
@@ -76,22 +71,8 @@ class Poincare(Metric):
         zz = z * ed(z, -1)
 
         d2 = tf.reduce_sum(tf.square(ed(xlocs, 0) - ed(xlocs, 1)), axis=-1)
-
-        # np.set_printoptions(edgeitems=30, linewidth=140, formatter=dict(float=lambda x: "%8.4f" % x))
-        # print('=============')
-        # print(np.sqrt(d2)[:8, :8])
-        # print('-------------')
-        # print(zoff)
-        # print('-------------')
-        # print(z.numpy()[:8])
-        # print('-------------')
-        # print((zoff / tf.sqrt(zz))[:8, :8])
-        # assert is_distance_matrix(np.sqrt(d2.numpy()))
         d2 = tf.asinh(0.5 * tf.sqrt(d2 / zz))
         d2 = tf.square(2.0 * zoff * d2)
-        # print('-------------')
-        # print(np.sqrt(d2)[:8, :8])
-        # assert is_distance_matrix(np.sqrt(d2.numpy()))
 
         return d2
 

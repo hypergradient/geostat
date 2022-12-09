@@ -20,7 +20,7 @@ class Op:
         autoinputs.
     """
     fa: Dict[str, object] # Formal arguments.
-    autoinputs: object # Blob of Ops.
+    autoinputs: object # Blob of Ops and strings.
 
     def vars(self): # Parameters
         return []
@@ -28,27 +28,46 @@ class Op:
     def gather_vars(self, cache=None):
         if cache is None: cache = {}
         if id(self) not in cache:
-            vv = {v for op in tf.nest.flatten(self.autoinputs) for v in op.gather_vars(cache)}
+            vv = {v for op in tf.nest.flatten(self.autoinputs) if isinstance(op, Op) for v in op.gather_vars(cache)}
             cache[id(self)] = vv | set(self.vars())
         return cache[id(self)]
 
-    def __call__(self, p, **e):
+    def __call__(self, p, e):
         """
-        `e['auto']` contains evaluated inputs from upstream ops.
-        Other values in `e` are supplied by the caller.
+        `p` is a dict of model parameters.
+
+        `e` is a blob of evaluated inputs from upstream ops and other
+        things inserted by the caller.  Other values in `e` are supplied
+        by the caller.
         """
         pass
 
-    def run(self, cache, p, **e):
+    def run(self, cache, p):
         """
         If op has already been run, return result. Else:
             - Assemble inputs by recursively calling upstream ops.
             - Execute op by calling `__call__`.
             - Store result in cache.
         """
+
+        def eval(op):
+            """
+            Evaluate `op`. If `op` is a string, look up its value.
+            Otherwise execute it.
+            """
+            if isinstance(op, str):
+                return cache[op]
+            else:
+                return op.run(cache, p)
+       
         if id(self) not in cache:
-            xval = tf.nest.map_structure(lambda op: op.run(cache, p, **e), self.autoinputs)
-            cache[id(self)] = self(p, **e, auto=xval)
+            e = tf.nest.map_structure(lambda op: eval(op), self.autoinputs)
+            cache[id(self)] = self(p, e)
+
+            # Save the Op so that its ID remains unique.
+            if '__save__' not in cache: cache['__save__'] = []
+            cache['__save__'].append(self)
+
         return cache[id(self)]
 
     def __tf_tracing_type__(self, context):

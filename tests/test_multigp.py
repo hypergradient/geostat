@@ -4,12 +4,13 @@ import geostat.covfunc as cf
 
 
 def test_multigp():
-    N = 150
 
     # Create random locations in a square centered on the origin.
+    N = 100
     locs1 = np.random.uniform(-1., 1., [3*N, 2])
     # Triple data with offsets.
-    locs1 = np.concatenate([locs1 - [0.1, 0], locs1, locs1 + [0.1, 0]])
+    N *= 3
+    locs1 = np.concatenate([locs1 - [0.1, 0], locs1, locs1 + [0.1, 0]], axis=-1).reshape([-1, 2])
 
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
@@ -20,7 +21,7 @@ def test_multigp():
     obs1 = cf.Observation([1., 0.], 0., cf.Noise(nugget='n1'))
     obs2 = cf.Observation([0., 1.], 1., cf.Noise(nugget='n2'))
     def off3(x, y): return x + y*y
-    obs3 = cf.Observation(['k1', 'k2'], off3, cf.Noise(nugget='n3') + cf.Delta(dsill='d', axes=[0]))
+    obs3 = cf.Observation(['k1', 'k2'], off3, cf.Noise(nugget='n3') + cf.Delta(dsill='d', axes=[1]))
 
     # Generating GP.
     gp1 = GP(

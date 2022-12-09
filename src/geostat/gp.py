@@ -19,6 +19,7 @@ with warnings.catch_warnings():
 from .spatialinterpolator import SpatialInterpolator
 from . import covfunc as cf
 from .param import PaperParameter, ParameterSpace, Bound
+from .metric import Euclidean, PerAxisDist2
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
@@ -59,12 +60,15 @@ def block_diag(blocks):
     """Return a dense block-diagonal matrix."""
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
-@tf.function
+#@tf.function
 def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
     cache = {}
-    C = tf.stack([c.run(cache, p, locs=locs) for c in covariance], axis=-1) # [locs, locs, hidden].
+    cache['locs'] = locs
+    cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
+    cache['euclidean'] = Euclidean().run(cache, p)
+    C = tf.stack([c.run(cache, p) for c in covariance], axis=-1) # [locs, locs, hidden].
 
     numobs = len(observation)
 
@@ -83,7 +87,10 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     NN = [] # Observation noise submatrices.
     for sublocs, o in zip(locsegs, observation):
-        N = o.noise.run(cache, p, locs=sublocs)
+        cache['locs'] = sublocs
+        cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
+        cache['euclidean'] = Euclidean().run(cache, p)
+        N = o.noise.run(cache, p)
         NN.append(N)
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
@@ -93,7 +100,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     return m, S
 
-@tf.function
+# @tf.function
 def gp_log_likelihood(u, m, cov):
     """Log likelihood of is the PDF of a multivariate gaussian."""
     u_adj = u - m
