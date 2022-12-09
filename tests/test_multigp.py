@@ -6,7 +6,7 @@ import geostat.covfunc as cf
 def test_multigp():
 
     # Create random locations in a square centered on the origin.
-    N = 100
+    N = 200
     locs1 = np.random.uniform(-1., 1., [3*N, 2])
     # Triple data with offsets.
     N *= 3
@@ -46,7 +46,7 @@ def test_multigp():
             a1=1., s1=1., r1=1., k1=0.,
             a2=1., s2=1., r2=1., k2=0.,
             n1=0.1, n2=0.1, n3=0.1, d=0.1),
-        hyperparameters = dict(reg=0, train_iters=5000),
+        hyperparameters = dict(reg=0, train_iters=2000),
         verbose=True).fit(locs1, vals1, cats1)
 
     # Interpolate using GP.
