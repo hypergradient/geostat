@@ -16,6 +16,8 @@ with warnings.catch_warnings():
     from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
     from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
+import tensorflow_probability as tfp
+
 from .spatialinterpolator import SpatialInterpolator
 from . import covfunc as cf
 from .param import PaperParameter, ParameterSpace, Bound
@@ -101,22 +103,26 @@ def gp_covariance(covariance, observation, locs, cats, p):
     return m, S
 
 # @tf.function
-def gp_log_likelihood(u, m, cov):
-    """Log likelihood of is the PDF of a multivariate gaussian."""
+def mvn_log_pdf(u, m, cov):
+    """Log PDF of a multivariate gaussian."""
     u_adj = u - m
     logdet = tf.linalg.logdet(2 * np.pi * cov)
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
+# @tf.function
+def gp_log_likelihood(data, parameters, parameter_space, covariance, observation):
+    p = parameter_space.get_surface(parameters)
+
+    m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], p)
+
+    u = tf.cast(data['vals'], tf.float64)
+
+    return mvn_log_pdf(u, m, S)
+
 def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters, covariance, observation):
     with tf.GradientTape() as tape:
-        p = parameter_space.get_surface(parameters)
-
-        m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], p)
-
-        u = tf.cast(data['vals'], tf.float64)
-
-        ll = gp_log_likelihood(u, m, S)
+        ll = gp_log_likelihood(data, parameters, parameter_space, covariance, observation)
 
         if hyperparameters['reg'] != None:
             reg = hyperparameters['reg'] * tf.reduce_sum([c.reg(p) for c in covariance])
@@ -263,6 +269,106 @@ class GP(SpatialInterpolator):
             locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
+
+    def mcmc(self, locs, vals, cats=None):
+        print('---------------')
+        print(self.parameter_space.get_underlying(self.parameters))
+        print('---------------')
+
+        # Permute datapoints if cats is given.
+        if cats is not None:
+            cats = np.array(cats)
+            perm = np.argsort(cats)
+            locs, vals, cats = locs[perm], vals[perm], cats[perm]
+
+        # Data dict.
+        self.data = {
+            'locs': tf.constant(locs, dtype=tf.float32),
+            'vals': tf.constant(vals, dtype=tf.float32),
+            'cats': None if cats is None else tf.constant(cats, dtype=tf.int32)}
+
+        # Initial MCMC state.
+        initial_up = self.parameter_space.get_underlying(self.parameters)
+
+        # Unnormalized log posterior distribution.
+        # def f(*up_flat):
+        #     return -tf.reduce_sum(tf.square(tf.stack(up_flat)))
+
+        # Unnormalized log posterior distribution.
+        def f(*up_flat):
+            up = tf.nest.pack_sequence_as(initial_up, up_flat)
+            ll = gp_log_likelihood(
+                self.data, up, self.parameter_space,
+                self.covariance, self.observation)
+            log_prior = -tf.reduce_sum(tf.math.log(1. + tf.square(up_flat)), axis=0)
+            return ll + log_prior
+
+        num_burst_samples = self.hyperparameters['train_iters'] // 10
+
+        # Initialize the HMC transition kernel.
+        num_results = int(1e2)
+        num_burnin_steps = int(1e1)
+
+        print('---------------')
+        print(initial_up)
+        print('---------------')
+
+        # Run the chain for a burst.
+        @tf.function
+        def run_chain(current_state, final_results, kernel):
+            samples, results, final_results = tfp.mcmc.sample_chain(
+                num_results=num_burst_samples,
+                # num_burnin_steps=num_burnin_steps,
+                current_state=current_state,
+                # kernel=adaptive_hmc,
+                kernel=kernel,
+                # trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
+                return_final_kernel_results=True)
+
+            return samples, results, final_results
+        
+        def make_hmc_kernel(step_size):
+            return tfp.mcmc.HamiltonianMonteCarlo(
+                target_log_prob_fn=f,
+                num_leapfrog_steps=3,
+                step_size=step_size)
+
+        # Do 10 bursts.
+        current_state = tf.nest.flatten(initial_up)
+        final_results = None
+        acc_states = []
+        for i in range(10):
+            if i == 0:
+                kernel = tfp.mcmc.SimpleStepSizeAdaptation(
+                    make_hmc_kernel(0.1),
+                    num_adaptation_steps=num_burst_samples)
+            else:
+                # Stop adjusting step size after first burst.
+                kernel = tfp.mcmc.SimpleStepSizeAdaptation(
+                    make_hmc_kernel(results.new_step_size[-1]),
+                    num_adaptation_steps=0)
+
+            samples, results, final_results = run_chain(current_state, final_results, kernel)
+
+            print('----')
+            if i > 0:
+                acc_states.append(tf.nest.map_structure(lambda x: x.numpy(), samples))
+                all_states = [np.concatenate(x, 0) for x in zip(*acc_states)]
+                up = tf.nest.pack_sequence_as(initial_up, all_states)
+                sp = self.parameter_space.get_surface(up, numpy=True) 
+                mean = tf.nest.map_structure(lambda x: x.mean(), sp)
+                print('Mean:', mean)
+                std = tf.nest.map_structure(lambda x: x.std(), sp)
+                print('Std: ', std)
+            print('Acceptance rate:', results.inner_results.is_accepted.numpy().mean())
+            print('New step size:', results.new_step_size.numpy()[-1])
+
+            current_state = [s[-1] for s in samples]
+
+
+        # new_parameters = self.parameter_space.get_surface(up, numpy=True) 
+
+        return
 
     def generate(self, locs, cats=None):
         assert self.locs is None and self.vals is None, 'Conditional generation not yet supported'
