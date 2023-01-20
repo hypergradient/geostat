@@ -13,6 +13,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
     import tensorflow_probability as tfp
+    tfd = tfp.distributions
     from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
     from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
@@ -300,8 +301,8 @@ class GP(SpatialInterpolator):
             ll = gp_log_likelihood(
                 self.data, up, self.parameter_space,
                 self.covariance, self.observation)
-            log_prior = -tf.reduce_sum(tf.math.log(1. + tf.square(up_flat)), axis=0)
-            return ll + log_prior
+            # log_prior = -tf.reduce_sum(tf.math.log(1. + tf.square(up_flat)), axis=0)
+            return ll # + log_prior
 
         num_burst_samples = self.hyperparameters['train_iters'] // 10
 
@@ -327,26 +328,32 @@ class GP(SpatialInterpolator):
 
             return samples, results, final_results
         
-        def make_hmc_kernel(step_size):
-            return tfp.mcmc.HamiltonianMonteCarlo(
-                target_log_prob_fn=f,
-                num_leapfrog_steps=3,
-                step_size=step_size)
+        def new_state_fn(scale, dtype):
+          direction_dist = tfd.Normal(loc=dtype(0), scale=dtype(1))
+          scale_dist = tfd.Exponential(rate=dtype(1/scale))
+          pick_dist = tfd.Bernoulli(probs=0.5)
+
+          def _fn(state_parts, seed):
+            next_state_parts = []
+            part_seeds = tfp.random.split_seed(
+                seed, n=len(state_parts), salt='rwmcauchy')
+            for sp, ps in zip(state_parts, part_seeds):
+                pick = tf.cast(pick_dist.sample(sample_shape=sp.shape, seed=ps), tf.float32)
+                direction = direction_dist.sample(sample_shape=sp.shape, seed=ps)
+                scale = scale_dist.sample(seed=ps)
+                next_state_parts.append(sp + pick * direction * scale)
+            return next_state_parts
+          return _fn
+
+        kernel = tfp.mcmc.RandomWalkMetropolis(
+            target_log_prob_fn=f,
+            new_state_fn=new_state_fn(scale=0.05, dtype=np.float32))
 
         # Do 10 bursts.
         current_state = tf.nest.flatten(initial_up)
         final_results = None
         acc_states = []
         for i in range(10):
-            if i == 0:
-                kernel = tfp.mcmc.SimpleStepSizeAdaptation(
-                    make_hmc_kernel(0.1),
-                    num_adaptation_steps=num_burst_samples)
-            else:
-                # Stop adjusting step size after first burst.
-                kernel = tfp.mcmc.SimpleStepSizeAdaptation(
-                    make_hmc_kernel(results.new_step_size[-1]),
-                    num_adaptation_steps=0)
 
             samples, results, final_results = run_chain(current_state, final_results, kernel)
 
@@ -360,8 +367,7 @@ class GP(SpatialInterpolator):
                 print('Mean:', mean)
                 std = tf.nest.map_structure(lambda x: x.std(), sp)
                 print('Std: ', std)
-            print('Acceptance rate:', results.inner_results.is_accepted.numpy().mean())
-            print('New step size:', results.new_step_size.numpy()[-1])
+            print('Acceptance rate:', results.is_accepted.numpy().mean())
 
             current_state = [s[-1] for s in samples]
 

@@ -35,7 +35,7 @@ class Bound:
         elif b == 'ub':
             v = self.hi - tf.exp(-v)
         else:
-            v = v
+            v = v + tf.constant(0.)
         return v
 
 @dataclass
