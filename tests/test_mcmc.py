@@ -79,6 +79,7 @@ def test_mcmc_multigp():
             a1=1., s1=1., r1=1., k1=0.,
             a2=1., s2=1., r2=1., k2=0.,
             n1=0.1, n2=0.1, n3=0.1, d=0.1),
-        hyperparameters = dict(reg=0, train_iters=200),
         report=report,
-        verbose=True).mcmc(locs1, vals1, cats1)
+        verbose=True
+    ).mcmc(locs1, vals1, cats1,
+        samples=2000, burnin=500, report_interval=100)

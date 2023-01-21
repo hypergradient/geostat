@@ -63,7 +63,7 @@ def block_diag(blocks):
     """Return a dense block-diagonal matrix."""
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
-#@tf.function
+@tf.function
 def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
@@ -103,7 +103,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     return m, S
 
-# @tf.function
+@tf.function
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m
@@ -111,7 +111,7 @@ def mvn_log_pdf(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-# @tf.function
+@tf.function
 def gp_log_likelihood(data, parameters, parameter_space, covariance, observation):
     p = parameter_space.get_surface(parameters)
 
@@ -271,7 +271,12 @@ class GP(SpatialInterpolator):
 
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
-    def mcmc(self, locs, vals, cats=None):
+    def mcmc(self, locs, vals, cats=None,
+            samples=1000, burnin=500, report_interval=100):
+
+        assert samples % report_interval == 0, '`samples` must be a multiple of `report_interval`'
+        assert burnin % report_interval == 0, '`burnin` must be a multiple of `report_interval`'
+
         # Permute datapoints if cats is given.
         if cats is not None:
             cats = np.array(cats)
@@ -303,22 +308,13 @@ class GP(SpatialInterpolator):
             # log_prior = -tf.reduce_sum(tf.math.log(1. + tf.square(up_flat)), axis=0)
             return ll # + log_prior
 
-        num_burst_samples = self.hyperparameters['train_iters'] // 10
-
-        # Initialize the HMC transition kernel.
-        num_results = int(1e2)
-        num_burnin_steps = int(1e1)
-
         # Run the chain for a burst.
         @tf.function
-        def run_chain(current_state, final_results, kernel):
+        def run_chain(current_state, final_results, kernel, iters):
             samples, results, final_results = tfp.mcmc.sample_chain(
-                num_results=num_burst_samples,
-                # num_burnin_steps=num_burnin_steps,
+                num_results=iters,
                 current_state=current_state,
-                # kernel=adaptive_hmc,
                 kernel=kernel,
-                # trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
                 return_final_kernel_results=True)
 
             return samples, results, final_results
@@ -352,17 +348,22 @@ class GP(SpatialInterpolator):
             inverse_temperatures=inverse_temperatures,
             make_kernel_fn=make_kernel_fn)
 
-
-        # Do 10 bursts.
+        # Do bursts.
         current_state = tf.nest.flatten(initial_up)
         final_results = None
         acc_states = []
-        for i in range(10):
+        num_bursts = (samples + burnin) // report_interval
+        burnin_bursts = burnin // report_interval
+        for i in range(num_bursts):
+            is_burnin = i < burnin_bursts
 
+            if self.verbose and (i == 0 or i == burnin_bursts):
+                print('BURNIN' if is_burnin else 'SAMPLING')
+            
             t0 = time.time()
-            samples, results, final_results = run_chain(current_state, final_results, kernel)
+            samples, results, final_results = run_chain(current_state, final_results, kernel, report_interval)
 
-            if i > 0:
+            if not is_burnin:
                 acc_states.append(tf.nest.map_structure(lambda x: x.numpy(), samples))
                 all_states = [np.concatenate(x, 0) for x in zip(*acc_states)]
                 up = tf.nest.pack_sequence_as(initial_up, all_states)
@@ -377,9 +378,9 @@ class GP(SpatialInterpolator):
 
             if self.verbose == True:
                 accept_rates = results.post_swap_replica_results.is_accepted.numpy().mean(axis=0)
-                print('[time {:.1f}] [accept rates {:.2s}]'.format(
+                print('[time {:.1f}] [accept rates {}]'.format(
                     time.time() - t0,
-                    ' '.join([str(x) for x in accept_rates.tolist()])))
+                    ' '.join([f'{x:.2f}' for x in accept_rates.tolist()])))
                 print('-------')
 
             current_state = [s[-1] for s in samples]

@@ -3,6 +3,7 @@ from typing import Dict
 import tensorflow as tf
 import numpy as np
 from scipy.special import logit
+from .op import SingletonTraceType
 
 @dataclass
 class Bound:
@@ -55,6 +56,9 @@ class ParameterSpace:
             if numpy: v = v.numpy()
             sp[name] = v
         return sp
+
+    def __tf_tracing_type__(self, context):
+            return SingletonTraceType(type(self))
 
 @dataclass(frozen=True)
 class PaperParameter:
