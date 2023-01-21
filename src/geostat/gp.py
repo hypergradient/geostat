@@ -272,7 +272,7 @@ class GP(SpatialInterpolator):
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
     def mcmc(self, locs, vals, cats=None,
-            samples=1000, burnin=500, report_interval=100):
+            step_size=0.1, samples=1000, burnin=500, report_interval=100):
 
         assert samples % report_interval == 0, '`samples` must be a multiple of `report_interval`'
         assert burnin % report_interval == 0, '`burnin` must be a multiple of `report_interval`'
@@ -339,7 +339,7 @@ class GP(SpatialInterpolator):
         def make_kernel_fn(target_log_prob_fn):
             return tfp.mcmc.RandomWalkMetropolis(
                 target_log_prob_fn=target_log_prob_fn,
-                new_state_fn=new_state_fn(scale=0.05, dtype=np.float32))
+                new_state_fn=new_state_fn(scale=step_size, dtype=np.float32))
 
         inverse_temperatures = 0.5**tf.range(4, dtype=np.float32)
 
@@ -358,10 +358,19 @@ class GP(SpatialInterpolator):
             is_burnin = i < burnin_bursts
 
             if self.verbose and (i == 0 or i == burnin_bursts):
+                print()
                 print('BURNIN' if is_burnin else 'SAMPLING')
             
             t0 = time.time()
             samples, results, final_results = run_chain(current_state, final_results, kernel, report_interval)
+
+            if self.verbose == True:
+                print()
+                accept_rates = results.post_swap_replica_results.is_accepted.numpy().mean(axis=0)
+                print('[iter {}] [time {:.1f}] [accept rates {}]'.format(
+                    (i if is_burnin else i - burnin_bursts) * report_interval,
+                    time.time() - t0,
+                    ' '.join([f'{x:.2f}' for x in accept_rates.tolist()])))
 
             if not is_burnin:
                 acc_states.append(tf.nest.map_structure(lambda x: x.numpy(), samples))
@@ -375,13 +384,6 @@ class GP(SpatialInterpolator):
                         x = tf.nest.map_structure(lambda x: np.quantile(x, q), sp)
                         print(f'Quantile {q}:')
                         self.report(x)
-
-            if self.verbose == True:
-                accept_rates = results.post_swap_replica_results.is_accepted.numpy().mean(axis=0)
-                print('[time {:.1f}] [accept rates {}]'.format(
-                    time.time() - t0,
-                    ' '.join([f'{x:.2f}' for x in accept_rates.tolist()])))
-                print('-------')
 
             current_state = [s[-1] for s in samples]
 

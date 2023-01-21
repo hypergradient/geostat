@@ -82,4 +82,4 @@ def test_mcmc_multigp():
         report=report,
         verbose=True
     ).mcmc(locs1, vals1, cats1,
-        samples=2000, burnin=500, report_interval=100)
+        step_size=0.02, samples=2000, burnin=500, report_interval=100)
