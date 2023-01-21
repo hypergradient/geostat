@@ -369,18 +369,18 @@ class GP(SpatialInterpolator):
                 sp = self.parameter_space.get_surface(up, numpy=True) 
 
                 # Reporting
-                time_elapsed = time.time() - t0
                 if self.verbose == True:
+                    for q in [0.05, 0.5, 0.95]:
+                        x = tf.nest.map_structure(lambda x: np.quantile(x, q), sp)
+                        print(f'Quantile {q}:')
+                        self.report(x)
 
-                    mean = tf.nest.map_structure(lambda x: x.mean(), sp)
-                    print('Mean:')
-                    self.report(dict(**mean, time=time_elapsed))
-
-                    std = tf.nest.map_structure(lambda x: x.std(), sp)
-                    print('Std:')
-                    self.report(dict(**std, time=time_elapsed))
-
-            print('Acceptance rate:', results.post_swap_replica_results.is_accepted.numpy().mean(axis=0))
+            if self.verbose == True:
+                accept_rates = results.post_swap_replica_results.is_accepted.numpy().mean(axis=0)
+                print('[time {:.1f}] [accept rates {:.2s}]'.format(
+                    time.time() - t0,
+                    ' '.join([str(x) for x in accept_rates.tolist()])))
+                print('-------')
 
             current_state = [s[-1] for s in samples]
 
