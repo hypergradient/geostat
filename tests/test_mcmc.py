@@ -1,7 +1,7 @@
 import numpy as np
 from geostat import GP, NormalizingFeaturizer
 import geostat.covfunc as cf
-
+from types import SimpleNamespace
 
 def foo_test_mcmc():
     
@@ -63,14 +63,22 @@ def test_mcmc_multigp():
     cats1 = [0] * N + [1] * N + [2] * N
     vals1 = gp1.generate(locs1, cats1).vals
 
+    # Reporting function.
+    def report(p):
+        x = SimpleNamespace(**p)
+        print('{:5.3s} {:5.3s} {:5.3s} {:5.3s} {:5.3s} {:5.3s} {:5.3s}'.format('', 'a', 's', 'r', 'k', 'n', 'd'))
+        print('{:5.3s} {:5.3f} {:5.3f} {:5.3f} {:5.3f} {:5.3f} {:5.3s}'.format('1', x.a1, x.s1, x.r1, x.k1, x.n1, ''))
+        print('{:5.3s} {:5.3f} {:5.3f} {:5.3f} {:5.3f} {:5.3f} {:5.3s}'.format('2', x.a2, x.s2, x.r2, x.k2, x.n2, ''))
+        print('{:5.3s} {:5.3s} {:5.3s} {:5.3s} {:5.3s} {:5.3f} {:5.3f}'.format('3', '', '', '', '', x.n3, x.d))
+
     # Fit GP.
     gp2 = GP(
         covariance = [cov1, cov2],
         observation = [obs1, obs2, obs3],
-
         parameters = dict(
             a1=1., s1=1., r1=1., k1=0.,
             a2=1., s2=1., r2=1., k2=0.,
             n1=0.1, n2=0.1, n3=0.1, d=0.1),
-        hyperparameters = dict(reg=0, train_iters=2000),
+        hyperparameters = dict(reg=0, train_iters=200),
+        report=report,
         verbose=True).mcmc(locs1, vals1, cats1)

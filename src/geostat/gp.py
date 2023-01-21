@@ -272,10 +272,6 @@ class GP(SpatialInterpolator):
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
     def mcmc(self, locs, vals, cats=None):
-        print('---------------')
-        print(self.parameter_space.get_underlying(self.parameters))
-        print('---------------')
-
         # Permute datapoints if cats is given.
         if cats is not None:
             cats = np.array(cats)
@@ -296,11 +292,14 @@ class GP(SpatialInterpolator):
         #     return -tf.reduce_sum(tf.square(tf.stack(up_flat)))
 
         # Unnormalized log posterior distribution.
-        def f(*up_flat):
-            up = tf.nest.pack_sequence_as(initial_up, up_flat)
-            ll = gp_log_likelihood(
+        def g(up):
+            return gp_log_likelihood(
                 self.data, up, self.parameter_space,
                 self.covariance, self.observation)
+
+        def f(*up_flat):
+            up = tf.nest.pack_sequence_as(initial_up, up_flat)
+            ll = tf.map_fn(g, up, fn_output_signature=tf.float32)
             # log_prior = -tf.reduce_sum(tf.math.log(1. + tf.square(up_flat)), axis=0)
             return ll # + log_prior
 
@@ -309,10 +308,6 @@ class GP(SpatialInterpolator):
         # Initialize the HMC transition kernel.
         num_results = int(1e2)
         num_burnin_steps = int(1e1)
-
-        print('---------------')
-        print(initial_up)
-        print('---------------')
 
         # Run the chain for a burst.
         @tf.function
@@ -345,9 +340,18 @@ class GP(SpatialInterpolator):
             return next_state_parts
           return _fn
 
-        kernel = tfp.mcmc.RandomWalkMetropolis(
+        def make_kernel_fn(target_log_prob_fn):
+            return tfp.mcmc.RandomWalkMetropolis(
+                target_log_prob_fn=target_log_prob_fn,
+                new_state_fn=new_state_fn(scale=0.05, dtype=np.float32))
+
+        inverse_temperatures = 0.5**tf.range(4, dtype=np.float32)
+
+        kernel = tfp.mcmc.ReplicaExchangeMC(
             target_log_prob_fn=f,
-            new_state_fn=new_state_fn(scale=0.05, dtype=np.float32))
+            inverse_temperatures=inverse_temperatures,
+            make_kernel_fn=make_kernel_fn)
+
 
         # Do 10 bursts.
         current_state = tf.nest.flatten(initial_up)
@@ -355,19 +359,28 @@ class GP(SpatialInterpolator):
         acc_states = []
         for i in range(10):
 
+            t0 = time.time()
             samples, results, final_results = run_chain(current_state, final_results, kernel)
 
-            print('----')
             if i > 0:
                 acc_states.append(tf.nest.map_structure(lambda x: x.numpy(), samples))
                 all_states = [np.concatenate(x, 0) for x in zip(*acc_states)]
                 up = tf.nest.pack_sequence_as(initial_up, all_states)
                 sp = self.parameter_space.get_surface(up, numpy=True) 
-                mean = tf.nest.map_structure(lambda x: x.mean(), sp)
-                print('Mean:', mean)
-                std = tf.nest.map_structure(lambda x: x.std(), sp)
-                print('Std: ', std)
-            print('Acceptance rate:', results.is_accepted.numpy().mean())
+
+                # Reporting
+                time_elapsed = time.time() - t0
+                if self.verbose == True:
+
+                    mean = tf.nest.map_structure(lambda x: x.mean(), sp)
+                    print('Mean:')
+                    self.report(dict(**mean, time=time_elapsed))
+
+                    std = tf.nest.map_structure(lambda x: x.std(), sp)
+                    print('Std:')
+                    self.report(dict(**std, time=time_elapsed))
+
+            print('Acceptance rate:', results.post_swap_replica_results.is_accepted.numpy().mean(axis=0))
 
             current_state = [s[-1] for s in samples]
 
