@@ -117,22 +117,22 @@ def gp_log_likelihood(data, surf_params, covariance, observation):
     u = tf.cast(data['vals'], tf.float64)
     return mvn_log_pdf(u, m, S)
 
-def gp_train_step(optimizer, data, parameters, parameter_space, covariance, observation, reg_weight=None):
+def gp_train_step(optimizer, data, parameters, parameter_space, covariance, observation, reg=None):
     with tf.GradientTape() as tape:
         sp = parameter_space.get_surface(parameters)
 
         ll = gp_log_likelihood(data, sp, covariance, observation)
 
-        if reg_weight:
-            reg = reg_weight * tf.reduce_sum([c.reg(sp) for c in covariance])
+        if reg:
+            reg_penalty = reg * tf.reduce_sum([c.reg(sp) for c in covariance])
         else:
-            reg = 0.
+            reg_penalty = 0.
 
-        loss = -ll + reg
+        loss = -ll + reg_penalty
 
     gradients = tape.gradient(loss, parameters.values())
     optimizer.apply_gradients(zip(gradients, parameters.values()))
-    return sp, ll, reg
+    return sp, ll, reg_penalty
 
 def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dict[str, Bound]:
     d = defaultdict(list)
@@ -238,7 +238,7 @@ class GP(SpatialInterpolator):
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                p, ll, reg = gp_train_step(optimizer, self.data, up, self.parameter_space,
+                p, ll, reg_penalty = gp_train_step(optimizer, self.data, up, self.parameter_space,
                     self.covariance, self.observation, reg)
                 j += 1
 
@@ -246,11 +246,11 @@ class GP(SpatialInterpolator):
             if self.verbose == True:
                 if self.report is None:
                     s = '[iter %4d, ll %.2f, reg %.2f, time %.1f] [%s]' % (
-                        j, ll, reg, time_elapsed,
+                        j, ll, reg_penalty, time_elapsed,
                         ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
                     print(s)
                 else:
-                    self.report(dict(**p, iter=j, ll=ll, time=time_elapsed, reg=reg))
+                    self.report(dict(**p, iter=j, ll=ll, time=time_elapsed, reg=reg_penalty))
 
         new_parameters = self.parameter_space.get_surface(up, numpy=True)
 
