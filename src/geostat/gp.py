@@ -1,7 +1,7 @@
 import time
 from collections import defaultdict
 from dataclasses import dataclass, replace
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Optional, Union
 import numpy as np
 from scipy.special import expit, logit
 import os
@@ -112,21 +112,19 @@ def mvn_log_pdf(u, m, cov):
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
 @tf.function
-def gp_log_likelihood(data, parameters, parameter_space, covariance, observation):
-    p = parameter_space.get_surface(parameters)
-
-    m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], p)
-
+def gp_log_likelihood(data, surf_params, covariance, observation):
+    m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], surf_params)
     u = tf.cast(data['vals'], tf.float64)
-
     return mvn_log_pdf(u, m, S)
 
 def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters, covariance, observation):
     with tf.GradientTape() as tape:
-        ll = gp_log_likelihood(data, parameters, parameter_space, covariance, observation)
+        sp = parameter_space.get_surface(parameters)
+
+        ll = gp_log_likelihood(data, sp, covariance, observation)
 
         if hyperparameters['reg'] != None:
-            reg = hyperparameters['reg'] * tf.reduce_sum([c.reg(p) for c in covariance])
+            reg = hyperparameters['reg'] * tf.reduce_sum([c.reg(sp) for c in covariance])
         else:
             reg = 0.
 
@@ -134,7 +132,7 @@ def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters,
 
     gradients = tape.gradient(loss, parameters.values())
     optimizer.apply_gradients(zip(gradients, parameters.values()))
-    return p, ll, reg
+    return sp, ll, reg
 
 def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dict[str, Bound]:
     d = defaultdict(list)
@@ -146,7 +144,7 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
         hi = np.min([pp.hi for pp in pps])
         assert lo < hi, 'Conflicting bounds for parameter `%s`' % name
         assert name in values, 'Parameter `%s` is missing' % name
-        assert lo <= values[name] <= hi, 'Parameter `%s` is out of bounds' % name
+        assert np.all(lo <= values[name]) and np.all(values[name] <= hi), 'Parameter `%s` is out of bounds' % name
         out[name] = Bound(lo, hi)
     return out
 
@@ -154,7 +152,8 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 class GP(SpatialInterpolator):
     covariance: Union[cf.CovarianceFunction, List[cf.CovarianceFunction]]
     observation: Union[cf.Observation, List[cf.Observation]] = None
-    parameters: Dict[str, float] = None
+    parameters: Dict[str, np.ndarray] = None
+    parameter_sample_size: Optional[int] = None
     hyperparameters: object = None
     locs: np.ndarray = None
     vals: np.ndarray = None
@@ -210,6 +209,11 @@ class GP(SpatialInterpolator):
         default_hyperparameters = dict(reg=None, train_iters=300)
         if self.hyperparameters is None: self.hyperparameters = dict()
         self.hyperparameters = dict(default_hyperparameters, **self.hyperparameters)
+
+        # Default reporting function.
+        def default_report(p):
+            print('[%s]' % (' '.join('%s %4.2f' % (k, v) for k, v in p.items())))
+        if self.report == None: self.report = default_report
 
         if self.locs is not None: self.locs = np.array(self.locs)
         if self.vals is not None: self.vals = np.array(self.vals)
@@ -272,10 +276,11 @@ class GP(SpatialInterpolator):
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
     def mcmc(self, locs, vals, cats=None,
-            step_size=0.1, samples=1000, burnin=500, report_interval=100):
+            step_size=0.1, samples=1000, burnin=500, report_interval=100, keep=100):
 
         assert samples % report_interval == 0, '`samples` must be a multiple of `report_interval`'
         assert burnin % report_interval == 0, '`burnin` must be a multiple of `report_interval`'
+        assert keep <= samples, '`keep` cannot exceed `samples`'
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -298,9 +303,8 @@ class GP(SpatialInterpolator):
 
         # Unnormalized log posterior distribution.
         def g(up):
-            return gp_log_likelihood(
-                self.data, up, self.parameter_space,
-                self.covariance, self.observation)
+            sp = self.parameter_space.get_surface(self.parameters)
+            return gp_log_likelihood(self.data, sp, self.covariance, self.observation)
 
         def f(*up_flat):
             up = tf.nest.pack_sequence_as(initial_up, up_flat)
@@ -362,7 +366,7 @@ class GP(SpatialInterpolator):
                 print('BURNIN' if is_burnin else 'SAMPLING')
             
             t0 = time.time()
-            samples, results, final_results = run_chain(current_state, final_results, kernel, report_interval)
+            states, results, final_results = run_chain(current_state, final_results, kernel, report_interval)
 
             if self.verbose == True:
                 print()
@@ -373,7 +377,7 @@ class GP(SpatialInterpolator):
                     ' '.join([f'{x:.2f}' for x in accept_rates.tolist()])))
 
             if not is_burnin:
-                acc_states.append(tf.nest.map_structure(lambda x: x.numpy(), samples))
+                acc_states.append(tf.nest.map_structure(lambda x: x.numpy(), states))
                 all_states = [np.concatenate(x, 0) for x in zip(*acc_states)]
                 up = tf.nest.pack_sequence_as(initial_up, all_states)
                 sp = self.parameter_space.get_surface(up, numpy=True) 
@@ -385,15 +389,31 @@ class GP(SpatialInterpolator):
                         print(f'Quantile {q}:')
                         self.report(x)
 
-            current_state = [s[-1] for s in samples]
+            current_state = [s[-1] for s in states]
 
+        posterior = self.parameter_space.get_surface(up, numpy=True)
 
-        # new_parameters = self.parameter_space.get_surface(up, numpy=True) 
+        # Store median from each empirical posterior distribution.
+        # new_parameters = tf.nest.map_structure(lambda x: np.quantile(x, 0.5), posterior)
 
-        return
+        # Thin by picking roughly equally-spaced samples.
+        a = np.arange(samples) * keep / samples % 1
+        pick = np.concatenate([[True], a[1:] >= a[:-1]])
+        thinned_posterior = tf.nest.map_structure(lambda x: x[pick], posterior)
+
+        # Restore order if things were permuted.
+        if cats is not None:
+            revperm = np.argsort(perm)
+            locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
+
+        return replace(self, 
+            parameters=thinned_posterior,
+            parameter_sample_size=keep,
+            locs=locs, vals=vals, cats=cats)
 
     def generate(self, locs, cats=None):
         assert self.locs is None and self.vals is None, 'Conditional generation not yet supported'
+        assert self.parameter_sample_size is None, 'Generation from a distribution not yet supported'
 
         locs = np.array(locs)
 
@@ -453,12 +473,7 @@ class GP(SpatialInterpolator):
         if cats2 is not None:
             assert cats2.shape == locs2.shape[:-1], 'Mismatched shapes in cats and locs'
 
-        x1, u1, cats1 = self.locs, self.vals, self.cats
-
-        # Define inputs.
-        self.batch_size = x1.shape[0] // 2
-
-        def interpolate_gp(locs1, vals1, cats1, locs2, cats2, parameters, hyperparameters):
+        def interpolate_batch(locs1, vals1, cats1, locs2, cats2, parameters):
 
             N1 = len(locs1) # Number of measurements.
 
@@ -474,14 +489,12 @@ class GP(SpatialInterpolator):
                 perm = np.argsort(cats)
                 locs, cats = locs[perm], cats[perm]
 
-            p = self.parameter_space.get_surface(parameters)
-
             m, A = gp_covariance(
                 self.covariance,
                 self.observation,
                 tf.constant(locs, dtype=tf.float32),
                 None if cats is None else tf.constant(cats, dtype=tf.int32),
-                p)
+                parameters)
 
             # Restore order if things were permuted.
             if cats is not None:
@@ -499,32 +512,47 @@ class GP(SpatialInterpolator):
 
             return u2_mean, u2_var
 
-        # Interpolate in batches.
-        for_gp = []
-        locs2r = locs2.reshape([-1, locs2.shape[-1]])
-        if cats2 is not None:
-            cats2r = cats2.ravel()
+        def interpolate(locs1, vals1, cats1, locs2, cats2, parameters):
+            # Interpolate in batches.
+            batch_size = self.locs.shape[0] // 2
+
+            for_gp = []
+            locs2r = locs2.reshape([-1, locs2.shape[-1]])
+            if cats2 is not None:
+                cats2r = cats2.ravel()
+            else:
+                cats2r = np.zeros_like(locs2r[..., 0], np.int32)
+
+            for start in np.arange(0, len(locs2r), batch_size):
+                stop = start + batch_size
+                subset = locs2r[start:stop], cats2r[start:stop]
+                for_gp.append(subset)
+
+            u2_mean_s = []
+            u2_var_s = []
+
+            for locs_subset, cats_subset in for_gp:
+                u2_mean, u2_var = interpolate_batch(locs1, vals1, cats1, locs_subset, cats_subset, parameters)
+                u2_mean = u2_mean.numpy()
+                u2_var = u2_var.numpy()
+                u2_mean_s.append(u2_mean)
+                u2_var_s.append(u2_var)
+
+            u2_mean = np.concatenate(u2_mean_s).reshape(locs2.shape[:-1])
+            u2_var = np.concatenate(u2_var_s).reshape(locs2.shape[:-1])
+
+            return u2_mean, u2_var
+
+        if self.parameter_sample_size is None:
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, self.parameters)
         else:
-            cats2r = np.zeros_like(locs2r[..., 0], np.int32)
+            results = []
+            for i in range(self.parameter_sample_size):
+                p = tf.nest.map_structure(lambda x: x[i], self.parameters)
+                results.append(interpolate(self.locs, self.vals, self.cats, locs2, cats2, p))
 
-        for start in np.arange(0, len(locs2r), self.batch_size):
-            stop = start + self.batch_size
-            subset = locs2r[start:stop], cats2r[start:stop]
-            for_gp.append(subset)
+            mm, vv = [np.stack(x) for x in zip(*results)]
+            m = mm.mean(axis=0)
+            v = (np.square(mm) + vv).mean(axis=0) - m
 
-        up = self.parameter_space.get_underlying(self.parameters)
-
-        u2_mean_s = []
-        u2_var_s = []
-
-        for locs_subset, cats_subset in for_gp:
-            u2_mean, u2_var = interpolate_gp(x1, u1, cats1, locs_subset, cats_subset, up, self.hyperparameters)
-            u2_mean = u2_mean.numpy()
-            u2_var = u2_var.numpy()
-            u2_mean_s.append(u2_mean)
-            u2_var_s.append(u2_var)
-
-        u2_mean = np.concatenate(u2_mean_s).reshape(locs2.shape[:-1])
-        u2_var = np.concatenate(u2_var_s).reshape(locs2.shape[:-1])
-
-        return u2_mean, u2_var
+        return m, v
