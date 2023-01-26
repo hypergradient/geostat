@@ -26,7 +26,6 @@ def test_mcmc():
     gp2 = GP(
         covariance = covariance,
         parameters = dict(alpha=2., range=1., nugget=0.5),
-        hyperparameters = dict(reg=0, train_iters=500),
         verbose=True).mcmc(locs1, vals1,
             step_size=0.1, samples=200, burnin=100, report_interval=50, keep=20)
 

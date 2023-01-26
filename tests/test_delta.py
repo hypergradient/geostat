@@ -86,7 +86,6 @@ def test_multigp():
         covariance = [covu, covp, covt],
         observation = [obsu, obsp, obst, obsR],
         parameters = p_init,
-        hyperparameters = dict(reg=1., train_iters=100),
         report = report,
         verbose = True)
 
@@ -97,9 +96,8 @@ def test_multigp():
         covariance = [covu, covp, covt],
         observation = [obsu, obsp, obst, obsR],
         parameters = {k: 2*v if 'g' not in k else v for k, v in p_init.items()},
-        hyperparameters = dict(reg=1., train_iters=500),
         report = report,
-        verbose=True).fit(locs1, vals1, cats1)
+        verbose=True).fit(locs1, vals1, cats1, reg=1., iters=500)
 
     # # Interpolate using GP.
     # N = 20

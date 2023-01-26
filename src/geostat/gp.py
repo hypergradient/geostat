@@ -117,14 +117,14 @@ def gp_log_likelihood(data, surf_params, covariance, observation):
     u = tf.cast(data['vals'], tf.float64)
     return mvn_log_pdf(u, m, S)
 
-def gp_train_step(optimizer, data, parameters, parameter_space, hyperparameters, covariance, observation):
+def gp_train_step(optimizer, data, parameters, parameter_space, covariance, observation, reg_weight=None):
     with tf.GradientTape() as tape:
         sp = parameter_space.get_surface(parameters)
 
         ll = gp_log_likelihood(data, sp, covariance, observation)
 
-        if hyperparameters['reg'] != None:
-            reg = hyperparameters['reg'] * tf.reduce_sum([c.reg(sp) for c in covariance])
+        if reg_weight:
+            reg = reg_weight * tf.reduce_sum([c.reg(sp) for c in covariance])
         else:
             reg = 0.
 
@@ -154,7 +154,6 @@ class GP(SpatialInterpolator):
     observation: Union[cf.Observation, List[cf.Observation]] = None
     parameters: Dict[str, np.ndarray] = None
     parameter_sample_size: Optional[int] = None
-    hyperparameters: object = None
     locs: np.ndarray = None
     vals: np.ndarray = None
     cats: np.ndarray = None
@@ -186,11 +185,6 @@ class GP(SpatialInterpolator):
                     Example: parameters=dict(range=2.0, sill=5.0, nugget=1.0).
                     Default is None.
 
-                hyperparameters : dict
-                    Dictionary of the hyperparameters.
-                      - reg: how much regularization to use. Default None (no regularization).
-                      - train_iters: number of training iterations. Default 300.
-
                 verbose : boolean, optional
                     Whether or not to print parameters.
                     Default is True.
@@ -204,11 +198,6 @@ class GP(SpatialInterpolator):
             self.covariance = [self.covariance]
 
         if self.observation is None: self.observation = []
-
-        # Supply defaults.
-        default_hyperparameters = dict(reg=None, train_iters=300)
-        if self.hyperparameters is None: self.hyperparameters = dict()
-        self.hyperparameters = dict(default_hyperparameters, **self.hyperparameters)
 
         # Default reporting function.
         def default_report(p):
@@ -226,7 +215,8 @@ class GP(SpatialInterpolator):
 
         self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))
 
-    def fit(self, locs, vals, cats=None):
+    def fit(self, locs, vals, cats=None,
+        step_size=0.01, iters=100, reg=None):
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -240,31 +230,27 @@ class GP(SpatialInterpolator):
             'vals': tf.constant(vals, dtype=tf.float32),
             'cats': None if cats is None else tf.constant(cats, dtype=tf.int32)}
 
-        # Train the GP.
-        def gpm_fit(data, parameters, hyperparameters):
-            optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
-
-            j = 0 # Iteration count.
-            for i in range(10):
-                t0 = time.time()
-                while j < (i + 1) * self.hyperparameters['train_iters'] / 10:
-                    p, ll, reg = gp_train_step(optimizer, data, parameters, self.parameter_space,
-                        hyperparameters, self.covariance, self.observation)
-                    j += 1
-
-                time_elapsed = time.time() - t0
-                if self.verbose == True:
-                    if self.report is None:
-                        s = '[iter %4d, ll %.2f, reg %.2f, time %.1f] [%s]' % (
-                            j, ll, reg, time_elapsed,
-                            ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
-                        print(s)
-                    else:
-                        self.report(dict(**p, iter=j, ll=ll, time=time_elapsed, reg=reg))
-
         up = self.parameter_space.get_underlying(self.parameters)
 
-        gpm_fit(self.data, up, self.hyperparameters)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=step_size)
+
+        j = 0 # Iteration count.
+        for i in range(10):
+            t0 = time.time()
+            while j < (i + 1) * iters / 10:
+                p, ll, reg = gp_train_step(optimizer, self.data, up, self.parameter_space,
+                    self.covariance, self.observation, reg)
+                j += 1
+
+            time_elapsed = time.time() - t0
+            if self.verbose == True:
+                if self.report is None:
+                    s = '[iter %4d, ll %.2f, reg %.2f, time %.1f] [%s]' % (
+                        j, ll, reg, time_elapsed,
+                        ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
+                    print(s)
+                else:
+                    self.report(dict(**p, iter=j, ll=ll, time=time_elapsed, reg=reg))
 
         new_parameters = self.parameter_space.get_surface(up, numpy=True)
 
