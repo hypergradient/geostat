@@ -284,12 +284,8 @@ class GP(SpatialInterpolator):
         initial_up = self.parameter_space.get_underlying(self.parameters)
 
         # Unnormalized log posterior distribution.
-        # def f(*up_flat):
-        #     return -tf.reduce_sum(tf.square(tf.stack(up_flat)))
-
-        # Unnormalized log posterior distribution.
         def g(up):
-            sp = self.parameter_space.get_surface(self.parameters)
+            sp = self.parameter_space.get_surface(up)
             return gp_log_likelihood(self.data, sp, self.covariance, self.observation)
 
         def f(*up_flat):
