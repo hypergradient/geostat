@@ -200,8 +200,9 @@ class GP(SpatialInterpolator):
         if self.observation is None: self.observation = []
 
         # Default reporting function.
-        def default_report(p):
-            print('[%s]' % (' '.join('%s %4.2f' % (k, v) for k, v in p.items())))
+        def default_report(p, prefix=None):
+            if prefix: print(prefix, end=' ')
+            print('[%s]' % (' '.join('%s %5.2f' % (k, v) for k, v in p.items())))
         if self.report == None: self.report = default_report
 
         if self.locs is not None: self.locs = np.array(self.locs)
@@ -244,13 +245,7 @@ class GP(SpatialInterpolator):
 
             time_elapsed = time.time() - t0
             if self.verbose == True:
-                if self.report is None:
-                    s = '[iter %4d, ll %.2f, reg %.2f, time %.1f] [%s]' % (
-                        j, ll, reg_penalty, time_elapsed,
-                        ' '.join('%s %4.2f' % (k, v) for k, v in p.items()))
-                    print(s)
-                else:
-                    self.report(dict(**p, iter=j, ll=ll, time=time_elapsed, reg=reg_penalty))
+                self.report(dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty, **p))
 
         new_parameters = self.parameter_space.get_surface(up, numpy=True)
 
@@ -262,11 +257,10 @@ class GP(SpatialInterpolator):
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
     def mcmc(self, locs, vals, cats=None,
-            step_size=0.1, samples=1000, burnin=500, report_interval=100, keep=100):
+            step_size=0.1, samples=1000, burnin=500, report_interval=100):
 
         assert samples % report_interval == 0, '`samples` must be a multiple of `report_interval`'
         assert burnin % report_interval == 0, '`burnin` must be a multiple of `report_interval`'
-        assert keep <= samples, '`keep` cannot exceed `samples`'
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -301,7 +295,8 @@ class GP(SpatialInterpolator):
                 num_results=iters,
                 current_state=current_state,
                 kernel=kernel,
-                return_final_kernel_results=True)
+                return_final_kernel_results=True,
+                trace_fn=lambda _, results: results)
 
             return samples, results, final_results
         
@@ -344,16 +339,15 @@ class GP(SpatialInterpolator):
             is_burnin = i < burnin_bursts
 
             if self.verbose and (i == 0 or i == burnin_bursts):
-                print()
-                print('BURNIN' if is_burnin else 'SAMPLING')
+                print('BURNIN\n' if is_burnin else '\nSAMPLING')
             
             t0 = time.time()
             states, results, final_results = run_chain(current_state, final_results, kernel, report_interval)
 
             if self.verbose == True:
-                print()
+                if not is_burnin: print()
                 accept_rates = results.post_swap_replica_results.is_accepted.numpy().mean(axis=0)
-                print('[iter {}] [time {:.1f}] [accept rates {}]'.format(
+                print('[iter {:4d}] [time {:.1f}] [accept rates {}]'.format(
                     (i if is_burnin else i - burnin_bursts) * report_interval,
                     time.time() - t0,
                     ' '.join([f'{x:.2f}' for x in accept_rates.tolist()])))
@@ -366,22 +360,13 @@ class GP(SpatialInterpolator):
 
                 # Reporting
                 if self.verbose == True:
-                    for q in [0.05, 0.5, 0.95]:
-                        x = tf.nest.map_structure(lambda x: np.quantile(x, q), sp)
-                        print(f'Quantile {q}:')
-                        self.report(x)
+                    for p in [5, 50, 95]:
+                        x = tf.nest.map_structure(lambda x: np.percentile(x, p), sp)
+                        self.report(x, prefix=f'{p:02d}%ile')
 
             current_state = [s[-1] for s in states]
 
         posterior = self.parameter_space.get_surface(up, numpy=True)
-
-        # Store median from each empirical posterior distribution.
-        # new_parameters = tf.nest.map_structure(lambda x: np.quantile(x, 0.5), posterior)
-
-        # Thin by picking roughly equally-spaced samples.
-        a = np.arange(samples) * keep / samples % 1
-        pick = np.concatenate([[True], a[1:] >= a[:-1]])
-        thinned_posterior = tf.nest.map_structure(lambda x: x[pick], posterior)
 
         # Restore order if things were permuted.
         if cats is not None:
@@ -389,8 +374,8 @@ class GP(SpatialInterpolator):
             locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
         return replace(self, 
-            parameters=thinned_posterior,
-            parameter_sample_size=keep,
+            parameters=posterior,
+            parameter_sample_size=samples,
             locs=locs, vals=vals, cats=cats)
 
     def generate(self, locs, cats=None):
@@ -425,31 +410,22 @@ class GP(SpatialInterpolator):
 
         return replace(self, locs=locs, vals=vals, cats=cats)
 
-    def predict(self, locs2, cats2=None):
-
+    def predict(self, locs2, cats2=None, subsample=None, reduce=None, tracker=None):
         '''
-        Parameters:
-                locs2 : n-dim array
-                    Locations to make predictions.
-
-        Returns:
-                u2_mean : array
-                    GP mean.
-
-                u2_var : array
-                    GP variance.
-
-
         Performs GP predictions of the mean and variance.
         Has support for batch predictions for large data sets.
-
         '''
 
-        if self.locs is None:
-            self.locs = np.zeros([0, locs2.shape[0]], np.float32)
+        assert subsample is None or self.parameter_sample_size is not None, \
+            '`subsample` is only valid with sampled parameters'
 
-        if self.vals is None:
-            self.vals = np.zeros([0], np.float32)
+        assert reduce is None or self.parameter_sample_size is not None, \
+            '`reduce` is only valid with sampled parameters'
+
+        assert subsample is None or reduce is None, \
+            '`subsample` and `reduce` cannot both be given'
+
+        if tracker is None: tracker = lambda x: x
 
         assert self.locs.shape[-1] == locs2.shape[-1], 'Mismatch in location dimentions'
         if cats2 is not None:
@@ -527,14 +503,33 @@ class GP(SpatialInterpolator):
 
         if self.parameter_sample_size is None:
             m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, self.parameters)
+        elif reduce == 'median':
+            p = tf.nest.map_structure(lambda x: np.quantile(x, 0.5, axis=0).astype(np.float32), self.parameters)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p)
+        elif reduce == 'mean':
+            p = tf.nest.map_structure(lambda x: x.mean(axis=0).astype(np.float32), self.parameters)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p)
         else:
+            samples = self.parameter_sample_size
+
+            if subsample is not None:
+                assert subsample <= samples, '`subsample` may not exceed sample size'
+            else:
+                subsample = samples
+
+            # Thin by picking roughly equally-spaced samples.
+            a = np.arange(samples) * subsample / samples % 1
+            pick = np.concatenate([[True], a[1:] >= a[:-1]])
+            parameters = tf.nest.map_structure(lambda x: x[pick], self.parameters)
+
+            # Make a prediction for each sample.
             results = []
-            for i in range(self.parameter_sample_size):
-                p = tf.nest.map_structure(lambda x: x[i], self.parameters)
+            for i in tracker(range(subsample)):
+                p = tf.nest.map_structure(lambda x: x[i], parameters)
                 results.append(interpolate(self.locs, self.vals, self.cats, locs2, cats2, p))
 
             mm, vv = [np.stack(x) for x in zip(*results)]
             m = mm.mean(axis=0)
-            v = (np.square(mm) + vv).mean(axis=0) - m
+            v = (np.square(mm) + vv).mean(axis=0) - np.square(m)
 
         return m, v
