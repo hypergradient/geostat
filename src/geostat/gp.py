@@ -28,7 +28,7 @@ from .param import get_parameter_values, ppp, upp, bpp
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['GP', 'NormalizingFeaturizer', 'ExplicitTrend']
+__all__ = ['GP', 'NormalizingFeaturizer', 'Trend']
 
 # Produces featurized locations (F matrix) and remembers normalization parameters.
 class NormalizingFeaturizer:
@@ -58,7 +58,7 @@ class NormalizingFeaturizer:
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
         return tf.concat([ones, F_norm], axis=1)
 
-class ExplicitTrend(Op):
+class Trend(Op):
     def __init__(self, featurizer, beta='beta'):
         fa = dict(beta=beta)
         self.featurizer = featurizer
@@ -173,8 +173,8 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 
 @dataclass
 class GP(SpatialInterpolator):
-    trend: Union[ExplicitTrend, List[ExplicitTrend]]
-    covariance: Union[cf.CovarianceFunction, List[cf.CovarianceFunction]]
+    trend: Union[Trend, List[Trend]] = None
+    covariance: Union[cf.CovarianceFunction, List[cf.CovarianceFunction]] = None
     observation: Union[cf.Observation, List[cf.Observation]] = None
     parameters: Dict[str, np.ndarray] = None
     parameter_sample_size: Optional[int] = None
@@ -219,9 +219,10 @@ class GP(SpatialInterpolator):
         super().__init__()
 
         if self.trend is None: self.trend = []
-        elif isinstance(self.trend, ExplicitTrend):
+        elif isinstance(self.trend, Trend):
             self.trend = [self.trend]
 
+        assert self.covariance is not None, 'I need a covariance model'
         if isinstance(self.covariance, cf.CovarianceFunction):
             self.covariance = [self.covariance]
 

@@ -27,11 +27,11 @@ def test_multigp():
     def trend_terms(x, y, z, t): return z, z*z, z*z*z
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
 
-    covu = cf.Trend(featurizer, alpha='au') \
+    covu = cf.TrendPrior(featurizer, alpha='au') \
          + cf.SquaredExponential(sill='su1', range='ru1', scale=[1., 1., 'zu', 'tu'])
-    covp = cf.Trend(featurizer, alpha='ap') \
+    covp = cf.TrendPrior(featurizer, alpha='ap') \
          + cf.SquaredExponential(sill='sp1', range='rp1', scale=[1., 1., 'zp', 0.  ])
-    covt = cf.Trend(featurizer, alpha='at') \
+    covt = cf.TrendPrior(featurizer, alpha='at') \
          + cf.SquaredExponential(sill='st1', range='rt1', scale=[1., 1., 'zt', 'tt'])
 
     feat_r = NormalizingFeaturizer(lambda x, y, z, t: (), locs1)
@@ -44,7 +44,7 @@ def test_multigp():
     obsp = Observation([0., 1., 0.], 0., cf.Noise(nugget='np') + cf.Delta(dsill='wp', axes=[0, 1]))
     obst = Observation([0., 0., 1.], 0., cf.Noise(nugget='nt') + cf.Delta(dsill='wt', axes=[0, 1]))
     obsR = Observation(['cu', 'cp', 0.], neg_transformed_natural_gradient,
-        cf.Noise(nugget='nr') + cf.Delta(dsill='wr', axes=[0, 1]) + cf.Trend(feat_r, alpha='ar'))
+        cf.Noise(nugget='nr') + cf.Delta(dsill='wr', axes=[0, 1]) + cf.TrendPrior(feat_r, alpha='ar'))
 
     p_init = {'au': 1.,
      'su1': 0.01,
