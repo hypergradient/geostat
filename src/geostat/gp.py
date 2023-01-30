@@ -21,12 +21,14 @@ import tensorflow_probability as tfp
 
 from .spatialinterpolator import SpatialInterpolator
 from . import covfunc as cf
+from .op import Op
 from .param import PaperParameter, ParameterSpace, Bound
 from .metric import Euclidean, PerAxisDist2
+from .param import get_parameter_values, ppp, upp, bpp
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['GP', 'NormalizingFeaturizer']
+__all__ = ['GP', 'NormalizingFeaturizer', 'ExplicitTrend']
 
 # Produces featurized locations (F matrix) and remembers normalization parameters.
 class NormalizingFeaturizer:
@@ -56,6 +58,20 @@ class NormalizingFeaturizer:
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
         return tf.concat([ones, F_norm], axis=1)
 
+class ExplicitTrend(Op):
+    def __init__(self, featurizer, beta='beta'):
+        fa = dict(beta=beta)
+        self.featurizer = featurizer
+        super().__init__(fa, dict(locs='locs'))
+
+    def vars(self):
+        return upp(self.fa['beta'])
+
+    def __call__(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        x = tf.cast(self.featurizer(e['locs']), tf.float32)
+        return tf.einsum('ab,b->a', x, v['beta']) # [locs]
+
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
@@ -64,7 +80,7 @@ def block_diag(blocks):
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 @tf.function
-def gp_covariance(covariance, observation, locs, cats, p):
+def gp_covariance(trend, covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
     cache = {}
@@ -73,12 +89,18 @@ def gp_covariance(covariance, observation, locs, cats, p):
     cache['euclidean'] = Euclidean().run(cache, p)
     C = tf.stack([c.run(cache, p) for c in covariance], axis=-1) # [locs, locs, hidden].
 
+    if len(trend) == 0:
+        M = tf.zeros_like(C[0, :, :])
+    else:
+        assert len(trend) == len(covariance), 'I need one trend model per covariance model'
+        M = tf.stack([m.run(cache, p) for m in trend], axis=-1) # [locs, hidden].
+
     numobs = len(observation)
 
     if numobs == 0:
         C = tf.cast(C[..., 0], tf.float64)
-        m = tf.zeros_like(C[0, :])
-        return m, C
+        M = tf.cast(M[..., 0], tf.float64)
+        return M, C
 
     A = tf.convert_to_tensor(cf.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
     Aaug = tf.gather(A, cats) # [locs, hidden].
@@ -98,10 +120,11 @@ def gp_covariance(covariance, observation, locs, cats, p):
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
 
-    m = tf.concat([o.mu(sublocs) for sublocs, o in zip(locsegs, observation)], 0)
-    m = tf.cast(m, tf.float64)
+    M = tf.einsum('lh,sh->ls', M, A)
+    M += tf.concat([o.mu(sublocs) for sublocs, o in zip(locsegs, observation)], 0)
+    M = tf.cast(M, tf.float64)
 
-    return m, S
+    return M, S
 
 @tf.function
 def mvn_log_pdf(u, m, cov):
@@ -112,16 +135,16 @@ def mvn_log_pdf(u, m, cov):
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
 @tf.function
-def gp_log_likelihood(data, surf_params, covariance, observation):
-    m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], surf_params)
+def gp_log_likelihood(data, surf_params, trend, covariance, observation):
+    m, S = gp_covariance(trend, covariance, observation, data['locs'], data['cats'], surf_params)
     u = tf.cast(data['vals'], tf.float64)
     return mvn_log_pdf(u, m, S)
 
-def gp_train_step(optimizer, data, parameters, parameter_space, covariance, observation, reg=None):
+def gp_train_step(optimizer, data, parameters, parameter_space, trend, covariance, observation, reg=None):
     with tf.GradientTape() as tape:
         sp = parameter_space.get_surface(parameters)
 
-        ll = gp_log_likelihood(data, sp, covariance, observation)
+        ll = gp_log_likelihood(data, sp, trend, covariance, observation)
 
         if reg:
             reg_penalty = reg * tf.reduce_sum([c.reg(sp) for c in covariance])
@@ -150,6 +173,7 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 
 @dataclass
 class GP(SpatialInterpolator):
+    trend: Union[ExplicitTrend, List[ExplicitTrend]]
     covariance: Union[cf.CovarianceFunction, List[cf.CovarianceFunction]]
     observation: Union[cf.Observation, List[cf.Observation]] = None
     parameters: Dict[str, np.ndarray] = None
@@ -194,6 +218,10 @@ class GP(SpatialInterpolator):
 
         super().__init__()
 
+        if self.trend is None: self.trend = []
+        elif isinstance(self.trend, ExplicitTrend):
+            self.trend = [self.trend]
+
         if isinstance(self.covariance, cf.CovarianceFunction):
             self.covariance = [self.covariance]
 
@@ -202,7 +230,21 @@ class GP(SpatialInterpolator):
         # Default reporting function.
         def default_report(p, prefix=None):
             if prefix: print(prefix, end=' ')
-            print('[%s]' % (' '.join('%s %5.2f' % (k, v) for k, v in p.items())))
+
+            def fmt(x):
+                if isinstance(x, tf.Tensor):
+                    x = x.numpy()
+
+                if isinstance(x, (int, np.int32, np.int64)):
+                    return '{:5d}'.format(x)
+                if isinstance(x, (float, np.float32, np.float64)):
+                    return '{:5.2f}'.format(x)
+                else:
+                    with np.printoptions(precision=2, formatter={'floatkind': '{:5.2f}'.format}):
+                        return str(x)
+
+            print('[%s]' % (' '.join('%s %s' % (k, fmt(v)) for k, v in p.items())))
+
         if self.report == None: self.report = default_report
 
         if self.locs is not None: self.locs = np.array(self.locs)
@@ -211,7 +253,8 @@ class GP(SpatialInterpolator):
 
         # Collect paraameters.
         if self.parameters is None: self.parameters = {}
-        vv = {v for c in self.covariance for v in c.gather_vars()}
+        vv = {v for t in self.trend for v in t.gather_vars()}
+        vv |= {v for c in self.covariance for v in c.gather_vars()}
         vv |= {v for o in self.observation for v in o.gather_vars()}
 
         self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))
@@ -240,7 +283,7 @@ class GP(SpatialInterpolator):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
                 p, ll, reg_penalty = gp_train_step(optimizer, self.data, up, self.parameter_space,
-                    self.covariance, self.observation, reg)
+                    self.trend, self.covariance, self.observation, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
@@ -280,7 +323,7 @@ class GP(SpatialInterpolator):
         # Unnormalized log posterior distribution.
         def g(up):
             sp = self.parameter_space.get_surface(up)
-            return gp_log_likelihood(self.data, sp, self.covariance, self.observation)
+            return gp_log_likelihood(self.data, sp, self.trend, self.covariance, self.observation)
 
         def f(*up_flat):
             up = tf.nest.pack_sequence_as(initial_up, up_flat)
@@ -361,7 +404,7 @@ class GP(SpatialInterpolator):
                 # Reporting
                 if self.verbose == True:
                     for p in [5, 50, 95]:
-                        x = tf.nest.map_structure(lambda x: np.percentile(x, p), sp)
+                        x = tf.nest.map_structure(lambda x: np.percentile(x, p, axis=0), sp)
                         self.report(x, prefix=f'{p:02d}%ile')
 
             current_state = [s[-1] for s in states]
@@ -395,6 +438,7 @@ class GP(SpatialInterpolator):
         p = self.parameter_space.get_surface(up)
 
         m, S = gp_covariance(
+            self.trend,
             self.covariance,
             self.observation,
             tf.constant(locs, dtype=tf.float32),
@@ -448,6 +492,7 @@ class GP(SpatialInterpolator):
                 locs, cats = locs[perm], cats[perm]
 
             m, A = gp_covariance(
+                self.trend,
                 self.covariance,
                 self.observation,
                 tf.constant(locs, dtype=tf.float32),

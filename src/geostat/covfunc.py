@@ -24,7 +24,7 @@ class CovarianceFunction(Op):
         pass
 
 class Trend(CovarianceFunction):
-    def __init__(self, featurizer, alpha='alpha', axes=None):
+    def __init__(self, featurizer, alpha='alpha'):
         fa = dict(alpha=alpha)
         self.featurizer = featurizer
         super().__init__(fa, dict(locs='locs'))
