@@ -10,7 +10,7 @@ def test_gp2d():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
-    covariance = cf.Trend(featurizer) + cf.SquaredExponential(sill=1.) + cf.Noise()
+    covariance = cf.TrendPrior(featurizer) + cf.SquaredExponential(sill=1.) + cf.Noise()
 
     # Generating GP.
     gp1 = GP(
@@ -25,8 +25,7 @@ def test_gp2d():
     gp2 = GP(
         covariance = covariance,
         parameters = dict(alpha=2., range=1., nugget=0.5),
-        hyperparameters = dict(reg=0, train_iters=200),
-        verbose=True).fit(locs1, vals1)
+        verbose=True).fit(locs1, vals1, iters=200)
 
     # Interpolate using GP.
     N = 20
@@ -48,7 +47,7 @@ def test_gp3d():
     def trend_terms(x, y, z): return z, z*z
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
     covariance = \
-        cf.Trend(featurizer) + \
+        cf.TrendPrior(featurizer) + \
         cf.GammaExponential(scale=[1., 1., 'zscale']) + \
         cf.Delta(axes=[0, 1]) + \
         cf.Noise()
@@ -66,8 +65,7 @@ def test_gp3d():
     gp2 = GP(
         covariance = covariance,
         parameters = dict(alpha=2., zscale=1., range=1.0, sill=0.5, gamma=0.5, dsill=0.5, nugget=0.5),
-        hyperparameters = dict(reg=0, train_iters=500),
-        verbose=True).fit(locs1, vals1)
+        verbose=True).fit(locs1, vals1, iters=500)
 
     # Interpolate using GP.
     N = 10
@@ -91,7 +89,7 @@ def test_gp3d_stacked():
 
     # Covariance structure
     covariance = \
-        cf.Trend(featurizer) + \
+        cf.TrendPrior(featurizer) + \
         cf.SquaredExponential(range='r1', sill='s1', scale=[1., 1., 'zscale']) + \
         cf.SquaredExponential(range='r2', sill='s2', scale=[1., 1., 0.]) + \
         cf.Noise()
@@ -109,8 +107,7 @@ def test_gp3d_stacked():
     gp2 = GP(
         covariance = covariance,
         parameters = dict(alpha=2., zscale=2.5, r1=0.125, s1=0.5, r2=0.5, s2=0.125, nugget=0.5),
-        hyperparameters = dict(reg=0, train_iters=500),
-        verbose=True).fit(locs1, vals1)
+        verbose=True).fit(locs1, vals1, iters=500)
 
     # Interpolate using GP.
     N = 10

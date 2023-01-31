@@ -23,8 +23,8 @@ class CovarianceFunction(Op):
     def reg(self, p):
         pass
 
-class Trend(CovarianceFunction):
-    def __init__(self, featurizer, alpha='alpha', axes=None):
+class TrendPrior(CovarianceFunction):
+    def __init__(self, featurizer, alpha='alpha'):
         fa = dict(alpha=alpha)
         self.featurizer = featurizer
         super().__init__(fa, dict(locs='locs'))

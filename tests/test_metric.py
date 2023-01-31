@@ -26,8 +26,7 @@ def test_euclidean():
     gp2 = GP(
         covariance = covariance,
         parameters = dict(alpha=2., zscale=1., range=1.0, sill=0.5, gamma=0.5, nugget=0.5),
-        hyperparameters = dict(reg=0, train_iters=500),
-        verbose=True).fit(locs, vals)
+        verbose=True).fit(locs, vals, iters=500)
 
     # Interpolate using GP.
     N = 10
@@ -70,8 +69,7 @@ def test_poincare():
     gp2 = GP(
         covariance = covariance,
         parameters = dict(zoff=2.0, alpha=2., zscale=1., range=1.0, sill=0.5, gamma=0.5, nugget=0.5),
-        hyperparameters = dict(reg=0, train_iters=500),
-        verbose=True).fit(locs, vals)
+        verbose=True).fit(locs, vals, iters=500)
 
     # Interpolate using GP.
     N = 10

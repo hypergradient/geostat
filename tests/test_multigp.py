@@ -15,8 +15,8 @@ def test_multigp():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
-    cov1 = cf.Trend(featurizer, alpha='a1') + cf.SquaredExponential(sill='s1', range='r1')
-    cov2 = cf.Trend(featurizer, alpha='a2') + cf.SquaredExponential(sill='s2', range='r2')
+    cov1 = cf.TrendPrior(featurizer, alpha='a1') + cf.SquaredExponential(sill='s1', range='r1')
+    cov2 = cf.TrendPrior(featurizer, alpha='a2') + cf.SquaredExponential(sill='s2', range='r2')
 
     obs1 = cf.Observation([1., 0.], 0., cf.Noise(nugget='n1'))
     obs2 = cf.Observation([0., 1.], 1., cf.Noise(nugget='n2'))
@@ -46,8 +46,7 @@ def test_multigp():
             a1=1., s1=1., r1=1., k1=0.,
             a2=1., s2=1., r2=1., k2=0.,
             n1=0.1, n2=0.1, n3=0.1, d=0.1),
-        hyperparameters = dict(reg=0, train_iters=2000),
-        verbose=True).fit(locs1, vals1, cats1)
+        verbose=True).fit(locs1, vals1, cats1, iters=2000)
 
     # Interpolate using GP.
     N = 20
