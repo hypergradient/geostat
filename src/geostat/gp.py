@@ -98,6 +98,7 @@ def gp_covariance(trend, covariance, observation, locs, cats, p):
     numobs = len(observation)
 
     if numobs == 0:
+        assert len(covariance) == 1, 'With no observation model, I need only one covariance model'
         C = tf.cast(C[..., 0], tf.float64)
         M = tf.cast(M[..., 0], tf.float64)
         return M, C
@@ -120,7 +121,7 @@ def gp_covariance(trend, covariance, observation, locs, cats, p):
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
 
-    M = tf.einsum('lh,sh->ls', M, A)
+    M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats, batch_dims=1) # [locs]
     M += tf.concat([o.mu(sublocs) for sublocs, o in zip(locsegs, observation)], 0)
     M = tf.cast(M, tf.float64)
 
