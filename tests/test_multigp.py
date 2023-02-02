@@ -17,7 +17,7 @@ def test_multigp():
     cov1 = cf.TrendPrior(featurizer, alpha='a1') + cf.SquaredExponential(sill='s1', range='r1')
     cov2 = cf.TrendPrior(featurizer, alpha='a2') + cf.SquaredExponential(sill='s2', range='r2')
 
-    f2 = Featurizer(lambda x, y: (x - x + 1, x + y*y))
+    f2 = Featurizer(lambda x, y: (1, x + y*y))
     obs1 = cf.Observation([1., 0.], cf.Trend(f2, beta=[0., 0.]), cf.Noise(nugget='n1'))
     obs2 = cf.Observation([0., 1.], cf.Trend(f2, beta=['c2', 0.]), cf.Noise(nugget='n2'))
     obs3 = cf.Observation(['k1', 'k2'], cf.Trend(f2, beta=[0., 1.]), cf.Noise(nugget='n3') + cf.Delta(dsill='d', axes=[1]))

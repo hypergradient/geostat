@@ -73,7 +73,9 @@ class Featurizer:
             if len(feats) == 0:
                 return tf.ones([tf.shape(locs)[0], 0], dtype=tf.float32)
             else:
-                return tf.stack(self.featurization(*tf.unstack(locs, axis=1)), axis=1)
+                feats = self.featurization(*tf.unstack(locs, axis=1))
+                feats = [tf.broadcast_to(tf.cast(f, tf.float32), [tf.shape(locs)[0]]) for f in feats]
+                return tf.stack(feats, axis=1)
         else: # One feature.
             return e(feats)
 
