@@ -58,6 +58,14 @@ class NormalizingFeaturizer:
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
         return tf.concat([ones, F_norm], axis=1)
 
+def get_trend_coefs(beta):
+    if isinstance(beta, (list, tuple)):
+        return [p for s in beta for p in upp(s)]
+    elif isinstance(beta, str):
+        return upp(beta)
+    else:
+        return []
+
 class Trend(Op):
     def __init__(self, featurizer, beta='beta'):
         fa = dict(beta=beta)
@@ -65,11 +73,13 @@ class Trend(Op):
         super().__init__(fa, dict(locs='locs'))
 
     def vars(self):
-        return upp(self.fa['beta'])
+        return get_trend_coefs(self.fa['beta'])
 
     def __call__(self, p, e):
         v = get_parameter_values(self.fa, p)
         x = tf.cast(self.featurizer(e['locs']), tf.float32)
+        if isinstance(v['beta'], (tuple, list)):
+            v['beta'] = tf.stack(v['beta'])
         return tf.einsum('ab,b->a', x, v['beta']) # [locs]
 
 def e(x, a=-1):
@@ -393,7 +403,7 @@ class GP(SpatialInterpolator):
                 if not is_burnin: print()
                 accept_rates = results.post_swap_replica_results.is_accepted.numpy().mean(axis=0)
                 print('[iter {:4d}] [time {:.1f}] [accept rates {}]'.format(
-                    (i if is_burnin else i - burnin_bursts) * report_interval,
+                    ((i if is_burnin else i - burnin_bursts) + 1) * report_interval,
                     time.time() - t0,
                     ' '.join([f'{x:.2f}' for x in accept_rates.tolist()])))
 
