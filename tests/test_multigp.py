@@ -1,7 +1,6 @@
 import numpy as np
-from geostat import GP, NormalizingFeaturizer
+from geostat import GP, Featurizer, NormalizingFeaturizer
 import geostat.covfunc as cf
-
 
 def test_multigp():
 
@@ -18,10 +17,10 @@ def test_multigp():
     cov1 = cf.TrendPrior(featurizer, alpha='a1') + cf.SquaredExponential(sill='s1', range='r1')
     cov2 = cf.TrendPrior(featurizer, alpha='a2') + cf.SquaredExponential(sill='s2', range='r2')
 
-    obs1 = cf.Observation([1., 0.], 0., cf.Noise(nugget='n1'))
-    obs2 = cf.Observation([0., 1.], 1., cf.Noise(nugget='n2'))
-    def off3(x, y): return x + y*y
-    obs3 = cf.Observation(['k1', 'k2'], off3, cf.Noise(nugget='n3') + cf.Delta(dsill='d', axes=[1]))
+    f2 = Featurizer(lambda x, y: (x - x + 1, x + y*y))
+    obs1 = cf.Observation([1., 0.], cf.Trend(f2, beta=[0., 0.]), cf.Noise(nugget='n1'))
+    obs2 = cf.Observation([0., 1.], cf.Trend(f2, beta=['c2', 0.]), cf.Noise(nugget='n2'))
+    obs3 = cf.Observation(['k1', 'k2'], cf.Trend(f2, beta=[0., 1.]), cf.Noise(nugget='n3') + cf.Delta(dsill='d', axes=[1]))
 
     # Generating GP.
     gp1 = GP(
@@ -29,7 +28,7 @@ def test_multigp():
         observation = [obs1, obs2, obs3],
         parameters = dict(
             a1=1., s1=1., r1=0.5, k1=2.,
-            a2=1., s2=1., r2=0.5, k2=3.,
+            a2=1., s2=1., r2=0.5, k2=3., c2=1.,
             n1=0.1, n2=0.2, n3=0.3, d=0.1),
         verbose=True)
 
@@ -44,7 +43,7 @@ def test_multigp():
 
         parameters = dict(
             a1=1., s1=1., r1=1., k1=0.,
-            a2=1., s2=1., r2=1., k2=0.,
+            a2=1., s2=1., r2=1., k2=0., c2=0.,
             n1=0.1, n2=0.1, n3=0.1, d=0.1),
         verbose=True).fit(locs1, vals1, cats1, iters=2000)
 

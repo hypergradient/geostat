@@ -1,5 +1,5 @@
 import numpy as np
-from geostat import GP, NormalizingFeaturizer, Trend
+from geostat import GP, NormalizingFeaturizer
 import geostat.covfunc as cf
 
 def test_explicit_coefs():
@@ -13,7 +13,7 @@ def test_explicit_coefs():
 
     # Generating GP.
     gp1 = GP(
-        trend = Trend(featurizer, beta=[1., 'b1', 'b2', 'b3']),
+        trend = cf.Trend(featurizer, beta=[1., 'b1', 'b2', 'b3']),
         covariance = covariance,
         parameters = dict(b1=0.5, b2=0.5, b3=0.25, range=0.5, nugget=1.),
         verbose = True)
@@ -23,7 +23,7 @@ def test_explicit_coefs():
 
     # Fit GP.
     gp2 = GP(
-        trend = Trend(featurizer, beta=[1., 'b1', 'b2', 'b3']),
+        trend = cf.Trend(featurizer, beta=[1., 'b1', 'b2', 'b3']),
         covariance = covariance,
         parameters = dict(b1=0., b2=0., b3=0., range=1., nugget=0.5),
         verbose = True).fit(locs1, vals1, iters=200)
@@ -31,7 +31,7 @@ def test_explicit_coefs():
 
     # MCMC.
     gp3 = GP(
-        trend = Trend(featurizer, beta=[1., 'b1', 'b2', 'b3']),
+        trend = cf.Trend(featurizer, beta=[1., 'b1', 'b2', 'b3']),
         covariance = covariance,
         parameters = dict(b1=0., b2=0., b3=0., range=1., nugget=0.5),
         verbose = True).mcmc(locs1, vals1, burnin=500, samples=500)
@@ -58,7 +58,7 @@ def test_explicit_trend():
 
     # Generating GP.
     gp1 = GP(
-        trend = Trend(featurizer, beta='beta'),
+        trend = cf.Trend(featurizer, beta='beta'),
         covariance = covariance,
         parameters = dict(beta=[1., 0.5, 0.5, 0.25], range=0.5, nugget=1.),
         verbose = True)
@@ -68,7 +68,7 @@ def test_explicit_trend():
 
     # Fit GP.
     gp2 = GP(
-        trend = Trend(featurizer, beta='beta'),
+        trend = cf.Trend(featurizer, beta='beta'),
         covariance = covariance,
         parameters = dict(beta=[0., 0., 0., 0.], range=1., nugget=0.5),
         verbose = True).fit(locs1, vals1, iters=200)
@@ -76,7 +76,7 @@ def test_explicit_trend():
 
     # MCMC.
     gp3 = GP(
-        trend = Trend(featurizer, beta='beta'),
+        trend = cf.Trend(featurizer, beta='beta'),
         covariance = covariance,
         parameters = dict(beta=[0., 0., 0., 0.], range=1., nugget=0.5),
         verbose = True).mcmc(locs1, vals1, burnin=500, samples=500)

@@ -23,6 +23,30 @@ class CovarianceFunction(Op):
     def reg(self, p):
         pass
 
+def get_trend_coefs(beta):
+    if isinstance(beta, (list, tuple)):
+        return [p for s in beta for p in upp(s)]
+    elif isinstance(beta, str):
+        return upp(beta)
+    else:
+        return []
+
+class Trend(Op):
+    def __init__(self, featurizer, beta='beta'):
+        fa = dict(beta=beta)
+        self.featurizer = featurizer
+        super().__init__(fa, dict(locs='locs'))
+
+    def vars(self):
+        return get_trend_coefs(self.fa['beta'])
+
+    def __call__(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        x = tf.cast(self.featurizer(e['locs']), tf.float32)
+        if isinstance(v['beta'], (tuple, list)):
+            v['beta'] = tf.stack(v['beta'])
+        return tf.einsum('ab,b->a', x, v['beta']) # [locs]
+
 class TrendPrior(CovarianceFunction):
     def __init__(self, featurizer, alpha='alpha'):
         fa = dict(alpha=alpha)
@@ -170,24 +194,19 @@ class Observation(Op):
 
     def __init__(self,
         coefs: List,
-        offset: Union[float, Callable],
+        trend: Trend,
         noise: CovarianceFunction
     ):
         self.coefs = coefs
-        self.offset = offset
+        self.trend = trend
         self.noise = noise
         super().__init__({}, self.noise)
 
     def vars(self):
         vv = [p for c in self.coefs for p in upp(c)]
+        vv += self.trend.vars()
         vv += self.noise.vars()
         return vv
-
-    def mu(self, locs):
-        if callable(self.offset):
-            return self.offset(*tf.unstack(locs, axis=1))
-        else:
-            return self.offset * tf.ones_like(locs[..., 0], tf.float32)
 
     def __call__(self, p, e):
         """

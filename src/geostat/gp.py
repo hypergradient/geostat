@@ -28,7 +28,7 @@ from .param import get_parameter_values, ppp, upp, bpp
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['GP', 'NormalizingFeaturizer', 'Trend']
+__all__ = ['GP', 'Featurizer', 'NormalizingFeaturizer']
 
 # Produces featurized locations (F matrix) and remembers normalization parameters.
 class NormalizingFeaturizer:
@@ -58,29 +58,24 @@ class NormalizingFeaturizer:
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
         return tf.concat([ones, F_norm], axis=1)
 
-def get_trend_coefs(beta):
-    if isinstance(beta, (list, tuple)):
-        return [p for s in beta for p in upp(s)]
-    elif isinstance(beta, str):
-        return upp(beta)
-    else:
-        return []
+# Produces featurized locations (F matrix) and remembers normalization parameters.
+class Featurizer:
+    def __init__(self, featurization):
+        self.featurization = featurization
 
-class Trend(Op):
-    def __init__(self, featurizer, beta='beta'):
-        fa = dict(beta=beta)
-        self.featurizer = featurizer
-        super().__init__(fa, dict(locs='locs'))
+    def __call__(self, locs):
+        locs = tf.cast(locs, tf.float32)
+        if self.featurization is None: # No features.
+            return tf.ones([tf.shape(locs)[0], 0], dtype=tf.float32)
 
-    def vars(self):
-        return get_trend_coefs(self.fa['beta'])
-
-    def __call__(self, p, e):
-        v = get_parameter_values(self.fa, p)
-        x = tf.cast(self.featurizer(e['locs']), tf.float32)
-        if isinstance(v['beta'], (tuple, list)):
-            v['beta'] = tf.stack(v['beta'])
-        return tf.einsum('ab,b->a', x, v['beta']) # [locs]
+        feats = self.featurization(*tf.unstack(locs, axis=1))
+        if isinstance(feats, tuple): # One or many features.
+            if len(feats) == 0:
+                return tf.ones([tf.shape(locs)[0], 0], dtype=tf.float32)
+            else:
+                return tf.stack(self.featurization(*tf.unstack(locs, axis=1)), axis=1)
+        else: # One feature.
+            return e(feats)
 
 def e(x, a=-1):
     return tf.expand_dims(x, a)
@@ -122,17 +117,18 @@ def gp_covariance(trend, covariance, observation, locs, cats, p):
     locsegs = tf.split(locs, tf.math.bincount(cats, minlength=numobs, maxlength=numobs), num=numobs)
 
     NN = [] # Observation noise submatrices.
+    MM = [] # Mean subvectors.
     for sublocs, o in zip(locsegs, observation):
         cache['locs'] = sublocs
         cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
         cache['euclidean'] = Euclidean().run(cache, p)
-        N = o.noise.run(cache, p)
-        NN.append(N)
+        NN.append(o.noise.run(cache, p))
+        MM.append(o.trend.run(cache, p))
     S += block_diag(NN)
     S = tf.cast(S, tf.float64)
 
     M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats, batch_dims=1) # [locs]
-    M += tf.concat([o.mu(sublocs) for sublocs, o in zip(locsegs, observation)], 0)
+    M += tf.concat(MM, axis=0)
     M = tf.cast(M, tf.float64)
 
     return M, S
@@ -184,7 +180,7 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 
 @dataclass
 class GP(SpatialInterpolator):
-    trend: Union[Trend, List[Trend]] = None
+    trend: Union[cf.Trend, List[cf.Trend]] = None
     covariance: Union[cf.CovarianceFunction, List[cf.CovarianceFunction]] = None
     observation: Union[cf.Observation, List[cf.Observation]] = None
     parameters: Dict[str, np.ndarray] = None
@@ -230,7 +226,7 @@ class GP(SpatialInterpolator):
         super().__init__()
 
         if self.trend is None: self.trend = []
-        elif isinstance(self.trend, Trend):
+        elif isinstance(self.trend, cf.Trend):
             self.trend = [self.trend]
 
         assert self.covariance is not None, 'I need a covariance model'
