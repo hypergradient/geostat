@@ -6,8 +6,6 @@ import scipy.stats as stats
 from scipy.optimize import curve_fit
 import pandas as pd
 
-from .spatialinterpolator import SpatialInterpolator
-
 __all__ = ['Krige']
 
 ########################################################################
@@ -58,7 +56,7 @@ def spherical(D, *parameter_vals):
 
 
 
-class Krige(SpatialInterpolator):
+class Krige():
     
     def __init__(self, 
                  x1, u1, 
