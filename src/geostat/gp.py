@@ -13,8 +13,32 @@ from .param import get_parameter_values, ppp, upp, bpp
 
 @dataclass
 class GP(Op):
+    def __init__(self, fa, autoinputs):
+        if 'locs' not in autoinputs: autoinputs['locs'] = 'locs'
+        super().__init__(fa, autoinputs)
+
     def __add__(self, other):
         return Stack([self]) + other
+
+    def call(self, p, e):
+        """
+        Returns tuple `(mean, covariance)` for locations.
+        Return values may be unbroadcasted.
+        """
+        pass
+
+    def __call__(self, p, e):
+        """
+        Returns tuple `(mean, covariance)` for locations.
+        Return values have correct shapes.
+        """
+        M, C = self.call(p, e)
+        if M is None: M = 0.
+        if C is None: C = 0.
+        n = tf.shape(e['locs'])[0]
+        M = tf.broadcast_to(M, [n])
+        C = tf.broadcast_to(C, [n, n])
+        return M, C
 
     def report(self, p):
         string = ', '.join('%s %4.2f' % (v.name, p[v.name]) for v in self.vars())
@@ -40,7 +64,7 @@ class Trend(GP):
     def vars(self):
         return get_trend_coefs(self.fa['beta'])
 
-    def __call__(self, p, e):
+    def call(self, p, e):
         v = get_parameter_values(self.fa, p)
         x = tf.cast(self.featurizer(e['locs']), tf.float32)
         if isinstance(v['beta'], (tuple, list)):
@@ -56,7 +80,7 @@ class TrendPrior(GP):
     def vars(self):
         return ppp(self.fa['alpha'])
 
-    def __call__(self, p, e):
+    def call(self, p, e):
         v = get_parameter_values(self.fa, p)
         F = tf.cast(self.featurizer(e['locs']), tf.float32)
         return None, v['alpha'] * tf.einsum('ba,ca->bc', F, F)
@@ -82,7 +106,7 @@ class SquaredExponential(GP):
     def vars(self):
         return ppp(self.fa['sill']) + ppp(self.fa['range'])
 
-    def __call__(self, p, e):
+    def call(self, p, e):
         v = get_parameter_values(self.fa, p)
         return None, v['sill'] * tf.exp(-e['d2'] / tf.square(v['range']))
 
@@ -99,7 +123,7 @@ class GammaExponential(GP):
     def vars(self):
         return ppp(self.fa['sill']) + ppp(self.fa['range']) + bpp(self.fa['gamma'], 0., 2.)
 
-    def __call__(self, p, e):
+    def call(self, p, e):
         v = get_parameter_values(self.fa, p)
         return None, v['sill'] * gamma_exp(e['d2'] / tf.square(v['range']), v['gamma'])
 
@@ -115,7 +139,7 @@ class Noise(GP):
     def vars(self):
         return ppp(self.fa['nugget'])
 
-    def __call__(self, p, e):
+    def call(self, p, e):
         v = get_parameter_values(self.fa, p)
 
         return None, v['nugget'] * tf.eye(tf.shape(e['locs'])[0])
@@ -132,7 +156,7 @@ class Delta(GP):
     def vars(self):
         return ppp(self.fa['dsill'])
 
-    def __call__(self, p, e):
+    def call(self, p, e):
         v = get_parameter_values(self.fa, p)
 
         if self.axes is not None:
@@ -159,13 +183,12 @@ class Stack(GP):
         if isinstance(other, GP):
             return Stack(self.parts + [other])
     
-    def __call__(self, p, e):
+    def call(self, p, e):
         MM, CC = zip(*e['parts'])
         MM = [M for M in MM if M is not None]
         CC = [C for C in CC if C is not None]
-        n = tf.shape(e['locs'])[0]
-        M = tf.broadcast_to(tf.reduce_sum(MM, axis=0), [n])
-        C = tf.broadcast_to(tf.reduce_sum(CC, axis=0), [n, n])
+        M = tf.reduce_sum(MM, axis=0)
+        C = tf.reduce_sum(CC, axis=0)
         return M, C
 
     def report(self, p):

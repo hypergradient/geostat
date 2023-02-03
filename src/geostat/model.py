@@ -101,27 +101,27 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     Aaug = tf.gather(A, cats) # [locs, hidden].
     outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
-    S = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
+    C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
 
     locsegs = tf.split(locs, tf.math.bincount(cats, minlength=numobs, maxlength=numobs), num=numobs)
 
-    NN = [] # Observation noise submatrices.
+    CC = [] # Observation noise submatrices.
     MM = [] # Mean subvectors.
     for sublocs, o in zip(locsegs, observation):
         cache['locs'] = sublocs
         cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
         cache['euclidean'] = Euclidean().run(cache, p)
-        Msub, N = o.noise.run(cache, p)
-        NN.append(N)
+        Msub, Csub = o.noise.run(cache, p)
+        CC.append(Csub)
         MM.append(Msub)
 
-    S += block_diag(NN)
-    S = tf.cast(S, tf.float64)
+    C += block_diag(CC)
+    C = tf.cast(C, tf.float64)
 
     M += tf.concat(MM, axis=0)
     M = tf.cast(M, tf.float64)
 
-    return M, S
+    return M, C
 
 @tf.function
 def mvn_log_pdf(u, m, cov):
