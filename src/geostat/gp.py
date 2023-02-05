@@ -71,6 +71,9 @@ class Trend(GP):
             v['beta'] = tf.stack(v['beta'])
         return tf.einsum('ab,b->a', x, v['beta']), None # [locs]
 
+    def reg(self, p):
+        return 0.
+
 class TrendPrior(GP):
     def __init__(self, featurizer, alpha='alpha'):
         fa = dict(alpha=alpha)
