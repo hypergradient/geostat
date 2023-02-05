@@ -76,7 +76,7 @@ def block_diag(blocks):
     """Return a dense block-diagonal matrix."""
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
-#@tf.function
+@tf.function
 def gp_covariance(covariance, observation, locs, cats, p):
     # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
     locs = tf.cast(locs, tf.float32)
@@ -123,7 +123,7 @@ def gp_covariance(covariance, observation, locs, cats, p):
 
     return M, C
 
-#@tf.function
+tf.function
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m
@@ -131,7 +131,7 @@ def mvn_log_pdf(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-#@tf.function
+@tf.function
 def gp_log_likelihood(data, surf_params, covariance, observation):
     m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], surf_params)
     u = tf.cast(data['vals'], tf.float64)
@@ -324,7 +324,7 @@ class Model():
             return ll # + log_prior
 
         # Run the chain for a burst.
-        #@tf.function
+        @tf.function
         def run_chain(current_state, final_results, kernel, iters):
             samples, results, final_results = tfp.mcmc.sample_chain(
                 num_results=iters,
