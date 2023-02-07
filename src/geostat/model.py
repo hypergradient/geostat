@@ -292,7 +292,8 @@ class Model():
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
     def mcmc(self, locs, vals, cats=None,
-            chains=4, step_size=0.1, samples=1000, burnin=500, report_interval=100):
+            chains=4, step_size=0.1, move_prob=0.5,
+            samples=1000, burnin=500, report_interval=100):
 
         assert samples % report_interval == 0, '`samples` must be a multiple of `report_interval`'
         assert burnin % report_interval == 0, '`burnin` must be a multiple of `report_interval`'
@@ -338,7 +339,7 @@ class Model():
         def new_state_fn(scale, dtype):
           direction_dist = tfd.Normal(loc=dtype(0), scale=dtype(1))
           scale_dist = tfd.Exponential(rate=dtype(1/scale))
-          pick_dist = tfd.Bernoulli(probs=0.5)
+          pick_dist = tfd.Bernoulli(probs=move_prob)
 
           def _fn(state_parts, seed):
             next_state_parts = []
