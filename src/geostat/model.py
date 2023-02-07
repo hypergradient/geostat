@@ -292,7 +292,7 @@ class Model():
         return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
 
     def mcmc(self, locs, vals, cats=None,
-            step_size=0.1, samples=1000, burnin=500, report_interval=100):
+            chains=5, step_size=0.1, samples=1000, burnin=500, report_interval=100):
 
         assert samples % report_interval == 0, '`samples` must be a multiple of `report_interval`'
         assert burnin % report_interval == 0, '`burnin` must be a multiple of `report_interval`'
@@ -348,11 +348,11 @@ class Model():
                 pick = tf.cast(pick_dist.sample(sample_shape=sp.shape, seed=ps), tf.float32)
                 direction = direction_dist.sample(sample_shape=sp.shape, seed=ps)
                 scale = scale_dist.sample(seed=ps)
-                next_state_parts.append(sp + pick * direction * scale)
+                next_state_parts.append(sp + tf.einsum('a...,a->...', pick * direction, scale))
             return next_state_parts
           return _fn
 
-        inv_temps = 0.5**np.arange(4, dtype=np.float32)
+        inv_temps = 0.5**np.arange(chains, dtype=np.float32)
 
         def make_kernel_fn(target_log_prob_fn):
             return tfp.mcmc.RandomWalkMetropolis(
