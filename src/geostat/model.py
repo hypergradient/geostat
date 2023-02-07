@@ -347,8 +347,8 @@ class Model():
             for sp, ps in zip(state_parts, part_seeds):
                 pick = tf.cast(pick_dist.sample(sample_shape=sp.shape, seed=ps), tf.float32)
                 direction = direction_dist.sample(sample_shape=sp.shape, seed=ps)
-                scale = scale_dist.sample(seed=ps)
-                next_state_parts.append(sp + tf.einsum('a...,a->...', pick * direction, scale))
+                scale_val = scale_dist.sample(seed=ps)
+                next_state_parts.append(sp + tf.einsum('a...,a->...', pick * direction, scale_val))
             return next_state_parts
           return _fn
 

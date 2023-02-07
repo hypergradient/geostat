@@ -26,7 +26,7 @@ def test_mcmc():
         latent = covariance,
         parameters = dict(alpha=2., range=1., nugget=0.5),
         verbose=True).mcmc(locs1, vals1,
-            step_size=0.1, samples=100, burnin=100, report_interval=50)
+            step_size=0.05, samples=100, burnin=100, report_interval=50)
 
     # Interpolate using GP.
     N = 20
