@@ -352,16 +352,16 @@ class Model():
             return next_state_parts
           return _fn
 
+        inv_temps = 0.5**np.arange(4, dtype=np.float32)
+
         def make_kernel_fn(target_log_prob_fn):
             return tfp.mcmc.RandomWalkMetropolis(
                 target_log_prob_fn=target_log_prob_fn,
-                new_state_fn=new_state_fn(scale=step_size, dtype=np.float32))
-
-        inverse_temperatures = 0.5**tf.range(4, dtype=np.float32)
+                new_state_fn=new_state_fn(scale=step_size / np.sqrt(inv_temps), dtype=np.float32))
 
         kernel = tfp.mcmc.ReplicaExchangeMC(
             target_log_prob_fn=f,
-            inverse_temperatures=inverse_temperatures,
+            inverse_temperatures=inv_temps,
             make_kernel_fn=make_kernel_fn)
 
         # Do bursts.
