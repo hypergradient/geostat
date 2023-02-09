@@ -14,7 +14,8 @@ from .param import get_parameter_values, ppp, upp, bpp
 @dataclass
 class GP(Op):
     def __init__(self, fa, autoinputs):
-        if 'locs' not in autoinputs: autoinputs['locs'] = 'locs'
+        if 'locs1' not in autoinputs: autoinputs['locs1'] = 'locs1'
+        if 'locs2' not in autoinputs: autoinputs['locs2'] = 'locs2'
         super().__init__(fa, autoinputs)
 
     def __add__(self, other):
@@ -35,9 +36,10 @@ class GP(Op):
         M, C = self.call(p, e)
         if M is None: M = 0.
         if C is None: C = 0.
-        n = tf.shape(e['locs'])[0]
-        M = tf.broadcast_to(M, [n])
-        C = tf.broadcast_to(C, [n, n])
+        n1 = tf.shape(e['locs1'])[0]
+        n2 = tf.shape(e['locs2'])[0]
+        M = tf.broadcast_to(M, [n1])
+        C = tf.broadcast_to(C, [n1, n2])
         return M, C
 
     def report(self, p):
@@ -59,17 +61,17 @@ class Trend(GP):
     def __init__(self, featurizer, beta='beta'):
         fa = dict(beta=beta)
         self.featurizer = featurizer
-        super().__init__(fa, dict(locs='locs'))
+        super().__init__(fa, dict(locs1='locs1'))
 
     def vars(self):
         return get_trend_coefs(self.fa['beta'])
 
     def call(self, p, e):
         v = get_parameter_values(self.fa, p)
-        x = tf.cast(self.featurizer(e['locs']), tf.float32)
+        x = tf.cast(self.featurizer(e['locs1']), tf.float32)
         if isinstance(v['beta'], (tuple, list)):
             v['beta'] = tf.stack(v['beta'])
-        return tf.einsum('ab,b->a', x, v['beta']), None # [locs]
+        return tf.einsum('ab,b->a', x, v['beta']), None # [locs1]
 
     def reg(self, p):
         return 0.
@@ -78,15 +80,16 @@ class TrendPrior(GP):
     def __init__(self, featurizer, alpha='alpha'):
         fa = dict(alpha=alpha)
         self.featurizer = featurizer
-        super().__init__(fa, dict(locs='locs'))
+        super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
 
     def vars(self):
         return ppp(self.fa['alpha'])
 
     def call(self, p, e):
         v = get_parameter_values(self.fa, p)
-        F = tf.cast(self.featurizer(e['locs']), tf.float32)
-        return None, v['alpha'] * tf.einsum('ba,ca->bc', F, F)
+        F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
+        F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
+        return None, v['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
 
     def reg(self, p):
         return 0.
@@ -137,7 +140,7 @@ class GammaExponential(GP):
 class Noise(GP):
     def __init__(self, nugget='nugget'):
         fa = dict(nugget=nugget)
-        super().__init__(fa, dict(locs='locs'))
+        super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
 
     def vars(self):
         return ppp(self.fa['nugget'])
@@ -145,7 +148,7 @@ class Noise(GP):
     def call(self, p, e):
         v = get_parameter_values(self.fa, p)
 
-        return None, v['nugget'] * tf.eye(tf.shape(e['locs'])[0])
+        return None, v['nugget'] * tf.eye(tf.shape(e['locs1'])[0])
 
     def reg(self, p):
         return 0.
@@ -177,7 +180,7 @@ class Delta(GP):
 class Stack(GP):
     def __init__(self, parts: List[GP]):
         self.parts = parts
-        super().__init__({}, dict(locs='locs', parts=parts))
+        super().__init__({}, dict(locs1='locs1', locs2='locs2', parts=parts))
 
     def vars(self):
         return [p for part in self.parts for p in part.vars()]

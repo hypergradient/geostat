@@ -78,12 +78,23 @@ def block_diag(blocks):
 
 @tf.function
 def gp_covariance(covariance, observation, locs, cats, p):
-    # assert np.all(cats == np.sort(cats)), '`cats` must be in non-descending order'
-    locs = tf.cast(locs, tf.float32)
+    return gp_covariance2(covariance, observation, locs, cats, locs, cats, p)
+
+@tf.function
+def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, p):
+
+    # assert np.all(cats1 == np.sort(cats1)), '`cats1` must be in non-descending order'
+    # assert np.all(cats2 == np.sort(cats2)), '`cats2` must be in non-descending order'
+
+    locs1 = tf.cast(locs1, tf.float32)
+    locs2 = tf.cast(locs2, tf.float32)
+
     cache = {}
-    cache['locs'] = locs
+    cache['locs1'] = locs1
+    cache['locs2'] = locs2
     cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
     cache['euclidean'] = Euclidean().run(cache, p)
+
     MM, CC = zip(*[c.run(cache, p) for c in covariance])
     M = tf.stack(MM, axis=-1) # [locs, hidden].
     C = tf.stack(CC, axis=-1) # [locs, locs, hidden].
@@ -91,24 +102,26 @@ def gp_covariance(covariance, observation, locs, cats, p):
     numobs = len(observation)
 
     if numobs == 0:
-        assert len(covariance) == 1, 'With no observation model, I need only one covariance model'
+        assert len(covariance) == 1, 'With no observation model, I only want one covariance model'
         C = tf.cast(C[..., 0], tf.float64)
         M = tf.cast(M[..., 0], tf.float64)
         return M, C
 
     A = tf.convert_to_tensor(gp.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
-    M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats, batch_dims=1) # [locs]
+    M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats1, batch_dims=1) # [locs]
 
-    Aaug = tf.gather(A, cats) # [locs, hidden].
+    Aaug = tf.gather(A, cats1) # [locs, hidden].
     outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
     C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
 
-    locsegs = tf.split(locs, tf.math.bincount(cats, minlength=numobs, maxlength=numobs), num=numobs)
+    locsegs1 = tf.split(locs1, tf.math.bincount(cats1, minlength=numobs, maxlength=numobs), num=numobs)
+    locsegs2 = tf.split(locs2, tf.math.bincount(cats2, minlength=numobs, maxlength=numobs), num=numobs)
 
     CC = [] # Observation noise submatrices.
     MM = [] # Mean subvectors.
-    for sublocs, o in zip(locsegs, observation):
-        cache['locs'] = sublocs
+    for sublocs1, sublocs2, o in zip(locsegs1, locsegs2, observation):
+        cache['locs1'] = sublocs1
+        cache['locs2'] = sublocs2
         cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
         cache['euclidean'] = Euclidean().run(cache, p)
         Msub, Csub = o.noise.run(cache, p)

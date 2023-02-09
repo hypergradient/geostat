@@ -10,9 +10,13 @@ with warnings.catch_warnings():
 @dataclass
 class Op:
     """
-    The `autoinputs` parameter contains a list of upstream ops,
-    so it links ops together in a DAG. We walk the DAG for various
-    reasons.
+    The `autoinputs` parameter contains a blob of upstream ops. The leaves
+    in the blob are either the op itself or a string identifier. In the
+    latter case, the string identifier should be present as a key in the
+    `cache` that gets passed in.
+
+    This parameter links ops together in a DAG. We walk the DAG for
+    various reasons.
 
       - `run` calls the op and puts the output in `self.out`,
         after recursively doing this for autoinputs.
