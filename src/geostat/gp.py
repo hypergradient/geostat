@@ -14,6 +14,7 @@ from .param import get_parameter_values, ppp, upp, bpp
 @dataclass
 class GP(Op):
     def __init__(self, fa, autoinputs):
+        if 'offset' not in autoinputs: autoinputs['offset'] = 'offset'
         if 'locs1' not in autoinputs: autoinputs['locs1'] = 'locs1'
         if 'locs2' not in autoinputs: autoinputs['locs2'] = 'locs2'
         super().__init__(fa, autoinputs)
@@ -148,7 +149,10 @@ class Noise(GP):
     def call(self, p, e):
         v = get_parameter_values(self.fa, p)
 
-        return None, v['nugget'] * tf.eye(tf.shape(e['locs1'])[0])
+        indices1 = tf.range(tf.shape(e['locs1'])[0])
+        indices2 = tf.range(tf.shape(e['locs2'])[0]) + e['offset']
+        C = tf.where(tf.equal(tf.expand_dims(indices1, -1), indices2), v['nugget'], 0.)
+        return None, C
 
     def reg(self, p):
         return 0.

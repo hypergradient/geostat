@@ -78,10 +78,16 @@ def block_diag(blocks):
 
 @tf.function
 def gp_covariance(covariance, observation, locs, cats, p):
-    return gp_covariance2(covariance, observation, locs, cats, locs, cats, p)
+    return gp_covariance2(covariance, observation, locs, cats, locs, cats, 0, p)
 
 @tf.function
-def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, p):
+def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, offset, p):
+    """
+    `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
+    and locs2.  It is used to create the diagonal non-zero elements
+    of a Noise covariance function.  An non-zero offset results in a
+    covariance matrix with non-zero entries along an off-center diagonal.
+    """
 
     # assert np.all(cats1 == np.sort(cats1)), '`cats1` must be in non-descending order'
     # assert np.all(cats2 == np.sort(cats2)), '`cats2` must be in non-descending order'
@@ -90,6 +96,7 @@ def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, p):
     locs2 = tf.cast(locs2, tf.float32)
 
     cache = {}
+    cache['offset'] = offset
     cache['locs1'] = locs1
     cache['locs2'] = locs2
     cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
@@ -114,12 +121,18 @@ def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, p):
     outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
     C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
 
-    locsegs1 = tf.split(locs1, tf.math.bincount(cats1, minlength=numobs, maxlength=numobs), num=numobs)
-    locsegs2 = tf.split(locs2, tf.math.bincount(cats2, minlength=numobs, maxlength=numobs), num=numobs)
+    catcounts1 = tf.math.bincount(cats1, minlength=numobs, maxlength=numobs)
+    catcounts2 = tf.math.bincount(cats2, minlength=numobs, maxlength=numobs)
+    catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
+    catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
+    catdiffs = catindices2 - catindices1
+    locsegs1 = tf.split(locs1, catcounts1, num=numobs)
+    locsegs2 = tf.split(locs2, catcounts2, num=numobs)
 
     CC = [] # Observation noise submatrices.
     MM = [] # Mean subvectors.
-    for sublocs1, sublocs2, o in zip(locsegs1, locsegs2, observation):
+    for sublocs1, sublocs2, catdiff, o in zip(locsegs1, locsegs2, catdiffs, observation):
+        cache['offset'] = offset + catdiff
         cache['locs1'] = sublocs1
         cache['locs2'] = sublocs2
         cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
