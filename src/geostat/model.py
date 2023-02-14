@@ -117,15 +117,16 @@ def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, offset, 
     A = tf.convert_to_tensor(gp.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
     M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats1, batch_dims=1) # [locs]
 
-    Aaug = tf.gather(A, cats1) # [locs, hidden].
-    outer = tf.einsum('ac,bc->abc', Aaug, Aaug) # [locs, locs, hidden].
+    Aaug1 = tf.gather(A, cats1) # [locs, hidden].
+    Aaug2 = tf.gather(A, cats2) # [locs, hidden].
+    outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, hidden].
     C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
 
     catcounts1 = tf.math.bincount(cats1, minlength=numobs, maxlength=numobs)
     catcounts2 = tf.math.bincount(cats2, minlength=numobs, maxlength=numobs)
     catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
     catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
-    catdiffs = catindices2 - catindices1
+    catdiffs = tf.unstack(catindices2 - catindices1, num=numobs)
     locsegs1 = tf.split(locs1, catcounts1, num=numobs)
     locsegs2 = tf.split(locs2, catcounts2, num=numobs)
 
@@ -149,7 +150,7 @@ def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, offset, 
 
     return M, C
 
-tf.function
+@tf.function
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m
@@ -493,45 +494,41 @@ class Model():
         if cats2 is not None:
             assert cats2.shape == locs2.shape[:-1], 'Mismatched shapes in cats and locs'
 
-        def interpolate_batch(locs1, vals1, cats1, locs2, cats2, parameters):
+        def interpolate_batch(A11i, locs1, vals1diff, cats1, locs2, cats2, parameters):
 
             N1 = len(locs1) # Number of measurements.
 
-            locs = np.concatenate([locs1, locs2], axis=0)
-
-            if cats1 is None:
-                cats = None
-            else:
-                cats = np.concatenate([cats1, cats2], axis=0)
-
             # Permute datapoints if cats is given.
-            if cats is not None:
-                perm = np.argsort(cats)
-                locs, cats = locs[perm], cats[perm]
+            if cats2 is not None:
+                perm = np.argsort(cats2)
+                locs2, cats2 = locs2[perm], cats2[perm]
 
-            m, A = gp_covariance(
+            _, A12 = gp_covariance2(
                 self.latent,
                 self.observed,
-                tf.constant(locs, dtype=tf.float32),
-                None if cats is None else tf.constant(cats, dtype=tf.int32),
+                tf.constant(locs1, dtype=tf.float32),
+                None if cats1 is None else tf.constant(cats1, dtype=tf.int32),
+                tf.constant(locs2, dtype=tf.float32),
+                None if cats2 is None else tf.constant(cats2, dtype=tf.int32),
+                N1,
+                parameters)
+
+            m2, A22 = gp_covariance(
+                self.latent,
+                self.observed,
+                tf.constant(locs2, dtype=tf.float32),
+                None if cats2 is None else tf.constant(cats2, dtype=tf.int32),
                 parameters)
 
             # Restore order if things were permuted.
-            if cats is not None:
+            if cats2 is not None:
                 revperm = np.argsort(perm)
-                m = tf.gather(m, revperm)
-                A = tf.gather(tf.gather(A, revperm), revperm, axis=-1)
+                m2 = tf.gather(m2, revperm)
+                A12 = tf.gather(A12, revperm, axis=-1)
+                A22 = tf.gather(tf.gather(A22, revperm), revperm, axis=-1)
 
-            m1 = m[:N1]
-            m2 = m[N1:]
-
-            A11 = A[:N1, :N1]
-            A12 = A[:N1, N1:]
-            A21 = A[N1:, :N1]
-            A22 = A[N1:, N1:]
-
-            u2_mean = m2 + tf.matmul(A21, tf.linalg.solve(A11, e(vals1 - m1, -1)))[:, 0]
-            u2_var = tf.linalg.diag_part(A22) -  tf.reduce_sum(A12 * tf.linalg.solve(A11, A12), axis=0)
+            u2_mean = m2 + tf.einsum('ab,a->b', A12, tf.einsum('ab,b->a', A11i, vals1diff))
+            u2_var = tf.linalg.diag_part(A22) -  tf.einsum('ab,ab->b', A12, tf.matmul(A11i, A12))
 
             return u2_mean, u2_var
 
@@ -551,11 +548,25 @@ class Model():
                 subset = locs2r[start:stop], cats2r[start:stop]
                 for_gp.append(subset)
 
+            # Permute datapoints if cats is given.
+            if cats1 is not None:
+                perm = np.argsort(cats1)
+                locs1, vals1, cats1 = locs1[perm], vals1[perm], cats1[perm]
+
+            m1, A11 = gp_covariance(
+                self.latent,
+                self.observed,
+                tf.constant(locs1, dtype=tf.float32),
+                None if cats1 is None else tf.constant(cats1, dtype=tf.int32),
+                parameters)
+
+            A11i = tf.linalg.inv(A11)
+
             u2_mean_s = []
             u2_var_s = []
 
             for locs_subset, cats_subset in for_gp:
-                u2_mean, u2_var = interpolate_batch(locs1, vals1, cats1, locs_subset, cats_subset, parameters)
+                u2_mean, u2_var = interpolate_batch(A11i, locs1, vals1 - m1, cats1, locs_subset, cats_subset, parameters)
                 u2_mean = u2_mean.numpy()
                 u2_var = u2_var.numpy()
                 u2_mean_s.append(u2_mean)

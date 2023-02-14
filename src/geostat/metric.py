@@ -22,7 +22,7 @@ class PerAxisDist2(Op):
     def __call__(self, p, e):
         x1 = e['locs1']
         x2 = e['locs2']
-        return tf.square(ed(x1, 0) - ed(x2, 1))
+        return tf.square(ed(x1, 1) - ed(x2, 0))
 
 class Metric(Op):
     pass
