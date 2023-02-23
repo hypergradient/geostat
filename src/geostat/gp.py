@@ -121,6 +121,27 @@ class SquaredExponential(GP):
         v = get_parameter_values(self.fa, p)
         return v['range']
 
+class SquaredExponentialInt(GP):
+    def __init__(self, axis, sill='sill', range='range', scale=None, metric=None):
+        fa = dict(sill=sill, range=range)
+        self.axis = axis
+        autoinputs = scale_to_metric(scale, metric)
+        super().__init__(fa, dict(d2=autoinputs, pa_d2='per_axis_dist2'))
+
+    def vars(self):
+        return ppp(self.fa['sill']) + ppp(self.fa['range'])
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        envelope = 10. - v['sill'] * tf.sqrt(e['pa_d2'][..., self.axis])
+        c = envelope * tf.exp(-e['d2'] / tf.square(v['range']))
+        # tf.debugging.Assert(tf.reduce_min(c) > 0., tf.linalg.eigvals(c))
+        return None, c
+
+    def reg(self, p):
+        v = get_parameter_values(self.fa, p)
+        return v['range']
+
 class GammaExponential(GP):
     def __init__(self, range='range', sill='sill', gamma='gamma', scale=None, metric=None):
         fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
