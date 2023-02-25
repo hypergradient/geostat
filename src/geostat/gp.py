@@ -205,6 +205,50 @@ class GammaExponential(GP):
         v = get_parameter_values(self.fa, p)
         return v['range']
 
+class GammaExponentialInt(GP):
+    def __init__(self, axis, start, sill='sill', range='range', gamma='gamma', scale=None, metric=None):
+
+        # Too much of a pain to implement a default isotropic scale,
+        # so make the user supply it.
+        assert scale is not None
+
+        self.axis = axis
+        self.start = start
+
+        # Zero out the element of scale corresponding to the axis of
+        # integration.
+        zeroed_scale = scale.copy()
+        zeroed_scale[self.axis] = 0.
+        d2 = scale_to_metric(zeroed_scale, metric)
+
+        # Include the element of scale corresponding to the axis of
+        # integration as an explicit formal argument.
+        fa = dict(sill=sill, range=range, gamma=gamma, scale_on_axis=scale[self.axis])
+
+        super().__init__(fa, dict(d2=d2, locs1='locs1', locs2='locs2'))
+
+    def vars(self):
+        return ppp(self.fa['sill']) + ppp(self.fa['range']) + \
+               bpp(self.fa['gamma'], 0., 2.) + ppp(self.fa['scale_on_axis'])
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        x1 = e['locs1'][..., self.axis] - self.start
+        x2 = e['locs2'][..., self.axis] - self.start
+
+        r = v['range'] / v['scale_on_axis']
+        diff = ed(x1, 1) - ed(x2, 0)
+        sdiff = diff / (r * np.sqrt(2.))
+        envelope = -tf.square(r) * (np.sqrt(np.pi) * sdiff * tf.math.erf(sdiff) + tf.exp(-tf.square(sdiff)))
+        plus = ed(x1, 1) + ed(x2, 0)
+        envelope += np.sqrt(np.pi / 2.) * r * plus + tf.square(r)
+        c = v['sill'] * envelope * gamma_exp(e['d2'] / tf.square(v['range']), v['gamma'])
+        return None, c
+
+    def reg(self, p):
+        v = get_parameter_values(self.fa, p)
+        return v['range']
+
 class Noise(GP):
     def __init__(self, nugget='nugget'):
         fa = dict(nugget=nugget)
