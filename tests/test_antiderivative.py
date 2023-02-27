@@ -5,8 +5,8 @@ from geostat import gp, Model, Mesh, NormalizingFeaturizer
 
 def test_int_sq_exp():
 
-    np.random.seed(1)
-    tf.random.set_seed(1)
+    np.random.seed(2)
+    tf.random.set_seed(2)
 
     numsteps = 160
     xdim = 4.
@@ -18,7 +18,7 @@ def test_int_sq_exp():
 
     mesh_vals = Model(
         gp.SquaredExponential(scale=[1., 1.]) + gp.Noise(nugget=1e-4),
-        parameters = dict(range=0.2, sill=1.),
+        parameters = dict(range=0.1, sill=1.),
         verbose=True).generate(mesh.locations()).vals
 
     vmin, vmax = mesh_vals.min(), mesh_vals.max()
@@ -35,12 +35,17 @@ def test_int_sq_exp():
         gp.IntSquaredExponential(axis=0, start=0., range='x_range') + \
         gp.Noise(nugget=1e-4),
         parameters = dict(x_range=1., y_range=1., sill=2.),
-        verbose=True).fit(locs, vals, iters=1000, step_size=1e-1)
+        verbose=True).fit(locs, vals, iters=2000, step_size=1e-1)
+
+    assert np.allclose(
+        [model.parameters[p] for p in ['x_range', 'y_range', 'sill']],
+        [0.1, 0.1, 1.],
+        rtol=0.5)
 
 def test_int_exp():
 
-    np.random.seed(1)
-    tf.random.set_seed(1)
+    np.random.seed(2)
+    tf.random.set_seed(2)
 
     numsteps = 160
     xdim = 4.
@@ -53,7 +58,7 @@ def test_int_exp():
     mesh_vals = Model(
         gp.SquaredExponential(scale=[0., 1.]) *
         gp.GammaExponential(scale=[1., 0.], sill=1., gamma=1.) + gp.Noise(nugget=1e-4),
-        parameters = dict(range=0.2, sill=1.),
+        parameters = dict(range=0.1, sill=1.),
         verbose=True).generate(mesh.locations()).vals
 
     vmin, vmax = mesh_vals.min(), mesh_vals.max()
@@ -70,12 +75,17 @@ def test_int_exp():
         gp.IntExponential(axis=0, start=0., range='x_range') + \
         gp.Noise(nugget=1e-3),
         parameters = dict(x_range=1., y_range=1., sill=2.),
-        verbose=True).fit(locs, vals, iters=1000, step_size=1e-1)
+        verbose=True).fit(locs, vals, iters=2000, step_size=1e-1)
+
+    assert np.allclose(
+        [model.parameters[p] for p in ['x_range', 'y_range', 'sill']],
+        [0.1, 0.1, 1.],
+        rtol=0.5)
 
 def test_wiener():
 
-    np.random.seed(1)
-    tf.random.set_seed(1)
+    np.random.seed(2)
+    tf.random.set_seed(2)
 
     numsteps = 80
     xdim = 2.
@@ -103,5 +113,9 @@ def test_wiener():
     model = Model(
         gp.SquaredExponential(scale=[0., 1.]) * gp.Wiener(axis=0, start=0.) + gp.Noise(nugget=1e-4),
         parameters = dict(range=1., sill=2.),
-        verbose=True).fit(locs, vals, iters=1000, step_size=1e-1)
+        verbose=True).fit(locs, vals, iters=2000, step_size=1e-1)
 
+    assert np.allclose(
+        [model.parameters[p] for p in ['range', 'sill']],
+        [0.3, 1.],
+        rtol=0.5)
