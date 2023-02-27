@@ -119,30 +119,7 @@ class SquaredExponential(GP):
 
     def call(self, p, e):
         v = get_parameter_values(self.fa, p)
-        return None, v['sill'] * tf.exp(-e['d2'] / tf.square(v['range']))
-
-    def reg(self, p):
-        v = get_parameter_values(self.fa, p)
-        return v['range']
-
-class SquaredExponentialIntRough(GP):
-    def __init__(self, axis, start, sill='sill', range='range', scale=None, metric=None):
-        fa = dict(sill=sill, range=range)
-        self.axis = axis
-        self.start = start
-        autoinputs = scale_to_metric(scale, metric)
-        super().__init__(fa, dict(d2=autoinputs, locs1='locs1', locs2='locs2'))
-
-    def vars(self):
-        return ppp(self.fa['sill']) + ppp(self.fa['range'])
-
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
-        x1 = e['locs1'][..., self.axis]
-        x2 = e['locs2'][..., self.axis]
-        envelope = (tf.minimum(ed(x1, 1), ed(x2, 0)) - self.start) * v['sill']
-        c = envelope * tf.exp(-e['d2'] / tf.square(v['range']))
-        return None, c
+        return None, v['sill'] * tf.exp(-0.5 * e['d2'] / tf.square(v['range']))
 
     def reg(self, p):
         v = get_parameter_values(self.fa, p)

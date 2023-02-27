@@ -17,8 +17,8 @@ def test_int_sq_exp():
     featurizer = NormalizingFeaturizer(trend_terms, mesh.locations())
 
     mesh_vals = Model(
-        gp.SquaredExponential(scale=[1., 1.]) + gp.Noise(),
-        parameters = dict(range=0.2, sill=1., nugget=1e-4),
+        gp.SquaredExponential(scale=[1., 1.]) + gp.Noise(nugget=1e-4),
+        parameters = dict(range=0.2, sill=1.),
         verbose=True).generate(mesh.locations()).vals
 
     vmin, vmax = mesh_vals.min(), mesh_vals.max()
@@ -31,11 +31,11 @@ def test_int_sq_exp():
     vals = int_vals.ravel()[sample_indices]
 
     model = Model(
-        gp.GammaExponential(gamma=1.99, scale=[0., 1.]) * \
+        gp.SquaredExponential(scale=[0., 1.], range='y_range') * \
         gp.IntSquaredExponential(axis=0, start=0., range='x_range') + \
         gp.Noise(nugget=1e-4),
-        parameters = dict(range=1., x_range=1., sill=2.),
-        verbose=True).fit(locs, vals, iters=2000)
+        parameters = dict(x_range=1., y_range=1., sill=2.),
+        verbose=True).fit(locs, vals, iters=1000, step_size=1e-1)
 
 def test_int_exp():
 
@@ -52,8 +52,8 @@ def test_int_exp():
 
     mesh_vals = Model(
         gp.SquaredExponential(scale=[0., 1.]) *
-        gp.GammaExponential(scale=[1., 0.], sill=1., gamma=1.) + gp.Noise(),
-        parameters = dict(range=0.2, sill=1., nugget=1e-4),
+        gp.GammaExponential(scale=[1., 0.], sill=1., gamma=1.) + gp.Noise(nugget=1e-4),
+        parameters = dict(range=0.2, sill=1.),
         verbose=True).generate(mesh.locations()).vals
 
     vmin, vmax = mesh_vals.min(), mesh_vals.max()
@@ -66,11 +66,11 @@ def test_int_exp():
     vals = int_vals.ravel()[sample_indices]
 
     model = Model(
-        gp.SquaredExponential(scale=[0., 1.]) * \
+        gp.SquaredExponential(scale=[0., 1.], range='y_range') * \
         gp.IntExponential(axis=0, start=0., range='x_range') + \
-        gp.Noise(nugget=1e-4),
-        parameters = dict(range=1., x_range=1., sill=2.),
-        verbose=True).fit(locs, vals, iters=3000)
+        gp.Noise(nugget=1e-3),
+        parameters = dict(x_range=1., y_range=1., sill=2.),
+        verbose=True).fit(locs, vals, iters=1000, step_size=1e-1)
 
 def test_wiener():
 
@@ -103,5 +103,5 @@ def test_wiener():
     model = Model(
         gp.SquaredExponential(scale=[0., 1.]) * gp.Wiener(axis=0, start=0.) + gp.Noise(nugget=1e-4),
         parameters = dict(range=1., sill=2.),
-        verbose=True).fit(locs, vals, iters=4000)
+        verbose=True).fit(locs, vals, iters=1000, step_size=1e-1)
 
