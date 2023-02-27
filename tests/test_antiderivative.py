@@ -16,8 +16,8 @@ def test_gp2d():
     featurizer = NormalizingFeaturizer(trend_terms, mesh.locations())
 
     mesh_vals = Model(
-        gp.GammaExponential(scale=[1., 1.]),
-        parameters = dict(range=0.33, sill=1., gamma=1.99),
+        gp.SquaredExponential(scale=[1., 1.]) + gp.Noise(),
+        parameters = dict(range=0.15, sill=1., nugget=1e-3),
         verbose=True).generate(mesh.locations()).vals
 
     vmin, vmax = mesh_vals.min(), mesh_vals.max()
@@ -34,7 +34,7 @@ def test_gp2d():
     vals = int_vals.ravel()[sample_indices]
 
     model = Model(
-        gp.GammaExponentialInt(axis=0, start=0., scale=['sx', 1.], gamma=tf.constant(1.99)) + \
+        gp.GammaExponentialInt(axis=0, start=0., gamma=1.99, scale=['sx', 1.]) + \
         gp.Noise(),
         parameters = dict(range=1., sill=2., nugget=0.01, sx=1.),
         verbose=True).fit(locs, vals, iters=1500)
