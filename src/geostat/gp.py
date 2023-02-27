@@ -23,6 +23,9 @@ class GP(Op):
     def __add__(self, other):
         return Stack([self]) + other
 
+    def __mul__(self, other):
+        return Product([self]) * other
+
     def call(self, p, e):
         """
         Returns tuple `(mean, covariance)` for locations.
@@ -252,6 +255,70 @@ class GammaExponentialInt(GP):
         v = get_parameter_values(self.fa, p)
         return v['range']
 
+class IntSquaredExponential(GP):
+    def __init__(self, axis, start, range='range'):
+
+        self.axis = axis
+        self.start = start
+
+        # Include the element of scale corresponding to the axis of
+        # integration as an explicit formal argument.
+        fa = dict(range=range)
+
+        super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
+
+    def vars(self):
+        return ppp(self.fa['range'])
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        x1 = tf.pad(e['locs1'][..., self.axis] - self.start, [[1, 0]])
+        x2 = tf.pad(e['locs2'][..., self.axis] - self.start, [[1, 0]])
+
+        r = v['range']
+        sdiff = (ed(x1, 1) - ed(x2, 0)) / (r * np.sqrt(2.))
+        k = -tf.square(r) * (np.sqrt(np.pi) * sdiff * tf.math.erf(sdiff) + tf.exp(-tf.square(sdiff)))
+        k -= k[0:1, :]
+        k -= k[:, 0:1]
+        k = k[1:, 1:]
+
+        return None, k
+
+    def reg(self, p):
+        return 0.
+
+class IntExponential(GP):
+    def __init__(self, axis, start, range='range'):
+
+        self.axis = axis
+        self.start = start
+
+        # Include the element of scale corresponding to the axis of
+        # integration as an explicit formal argument.
+        fa = dict(range=range)
+
+        super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
+
+    def vars(self):
+        return ppp(self.fa['range'])
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        x1 = tf.pad(e['locs1'][..., self.axis] - self.start, [[1, 0]])
+        x2 = tf.pad(e['locs2'][..., self.axis] - self.start, [[1, 0]])
+
+        r = v['range']
+        sdiff = tf.abs(ed(x1, 1) - ed(x2, 0)) / r
+        k = -tf.square(r) * (sdiff + tf.exp(-sdiff))
+        k -= k[0:1, :]
+        k -= k[:, 0:1]
+        k = k[1:, 1:]
+
+        return None, k
+
+    def reg(self, p):
+        return 0.
+
 class GammaExponentialIntExponential(GP):
     def __init__(self, axis, start, sill='sill', range='range', gamma='gamma', scale=None, metric=None):
 
@@ -358,6 +425,32 @@ class Stack(GP):
         CC = [C for C in CC if C is not None]
         M = tf.reduce_sum(MM, axis=0)
         C = tf.reduce_sum(CC, axis=0)
+        return M, C
+
+    def report(self, p):
+        return ' '.join(part.report(p) for part in self.parts)
+
+    def reg(self, p):
+        return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)
+
+class Product(GP):
+    def __init__(self, parts: List[GP]):
+        self.parts = parts
+        super().__init__({}, dict(locs1='locs1', locs2='locs2', parts=parts))
+
+    def vars(self):
+        return [p for part in self.parts for p in part.vars()]
+
+    def __mul__(self, other):
+        if isinstance(other, GP):
+            return Product(self.parts + [other])
+    
+    def call(self, p, e):
+        MM, CC = zip(*e['parts'])
+        MM = [M for M in MM if M is not None]
+        CC = [C for C in CC if C is not None]
+        M = tf.reduce_prod(MM, axis=0)
+        C = tf.reduce_prod(CC, axis=0)
         return M, C
 
     def report(self, p):
