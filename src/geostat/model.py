@@ -253,8 +253,6 @@ class Model():
         Performs Gaussian process training and prediction.
         '''
 
-        super().__init__()
-
         assert self.latent is not None, 'I need at least one latent variable'
         if isinstance(self.latent, GP):
             self.latent = [self.latent]
@@ -288,7 +286,7 @@ class Model():
         # Collect paraameters.
         if self.parameters is None: self.parameters = {}
         vv = {v for gp in self.latent for v in gp.mean.gather_vars()}
-        vv = {v for gp in self.latent for v in gp.kernel.gather_vars()}
+        vv |= {v for gp in self.latent for v in gp.kernel.gather_vars()}
         vv |= {v for o in self.observed for v in o.gather_vars()}
 
         self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))

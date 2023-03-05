@@ -64,9 +64,10 @@ def get_trend_coefs(beta):
 
 class Trend(Op):
     def __init__(self, featurizer, beta='beta'):
-        fa = dict(beta=beta)
         self.featurizer = featurizer
-        super().__init__(fa, dict(locs1='locs1'))
+        super().__init__(
+            dict(beta=beta),
+            dict(locs1='locs1'))
 
     def vars(self):
         return get_trend_coefs(self.fa['beta'])

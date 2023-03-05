@@ -1,7 +1,50 @@
 import numpy as np
 import tensorflow as tf
-from geostat import GP, Model, NormalizingFeaturizer
+from geostat import Featurizer, GP, Model, NormalizingFeaturizer
 import geostat.kernel as krn
+
+def test_gp_with_trend():
+    np.random.seed(2)
+    tf.random.set_seed(2)
+
+    # Create random locations in a square centered on the origin.
+    locs1 = np.random.normal(-1., 1., [1000, 2])
+
+    # Initialize featurizer of location for trends.
+    def trend_terms(x, y): return 1., x, y, x*y
+    featurizer = Featurizer(trend_terms)
+    trend = krn.Trend(featurizer, beta='beta')
+    kernel = krn.SquaredExponential(sill=1.) + krn.Noise()
+
+    # Generate data.
+    vals1 = Model(
+        latent = GP(trend, kernel),
+        parameters = dict(range=0.33, nugget=1., beta=[4., 3., 2., 1.]),
+        verbose=True).generate(locs1).vals
+
+    # Fit GP.
+    model = Model(
+        latent = GP(trend, kernel),
+        parameters = dict(range=1., nugget=0.5, beta=[0., 0., 0., 0.]),
+        verbose=True).fit(locs1, vals1, iters=100, step_size=1e-1)
+
+    assert np.allclose(model.parameters['beta'], [4., 3., 2., 1.], rtol=0.3)
+
+    assert np.allclose(
+        [model.parameters[p] for p in ['range', 'nugget']],
+        [0.33, 1.],
+        rtol=0.3)
+
+    # Interpolate using GP.
+    N = 20
+    xx, yy = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N))
+    locs2 = np.stack([xx, yy], axis=-1).reshape([-1, 2])
+
+    mean, var = model.predict(locs2)
+    mean2, var2 = model.predict(locs2)
+
+    assert np.all(mean == mean2)
+    assert np.all(var == var2)
 
 def test_gp2d():
     np.random.seed(2)
