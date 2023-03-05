@@ -1,7 +1,5 @@
 import numpy as np
-from geostat import GP, NormalizingFeaturizer
-import geostat.covfunc as cf
-
+from geostat import gp, Model, Featurizer, NormalizingFeaturizer
 
 def test_multigp():
 
@@ -15,36 +13,36 @@ def test_multigp():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
-    cov1 = cf.TrendPrior(featurizer, alpha='a1') + cf.SquaredExponential(sill='s1', range='r1')
-    cov2 = cf.TrendPrior(featurizer, alpha='a2') + cf.SquaredExponential(sill='s2', range='r2')
+    cov1 = gp.TrendPrior(featurizer, alpha='a1') + gp.SquaredExponential(sill='s1', range='r1')
+    cov2 = gp.TrendPrior(featurizer, alpha='a2') + gp.SquaredExponential(sill='s2', range='r2')
 
-    obs1 = cf.Observation([1., 0.], 0., cf.Noise(nugget='n1'))
-    obs2 = cf.Observation([0., 1.], 1., cf.Noise(nugget='n2'))
-    def off3(x, y): return x + y*y
-    obs3 = cf.Observation(['k1', 'k2'], off3, cf.Noise(nugget='n3') + cf.Delta(dsill='d', axes=[1]))
+    f2 = Featurizer(lambda x, y: (1, x + y*y))
+    obs1 = gp.Observation([1., 0.], gp.Trend(f2, beta=[0., 0.]) + gp.Noise(nugget='n1'))
+    obs2 = gp.Observation([0., 1.], gp.Trend(f2, beta=['c2', 0.]) + gp.Noise(nugget='n2'))
+    obs3 = gp.Observation(['k1', 'k2'], gp.Trend(f2, beta=[0., 1.]) + gp.Noise(nugget='n3') + gp.Delta(dsill='d', axes=[1]))
 
     # Generating GP.
-    gp1 = GP(
-        covariance = [cov1, cov2],
-        observation = [obs1, obs2, obs3],
+    model1 = Model(
+        latent = [cov1, cov2],
+        observed = [obs1, obs2, obs3],
         parameters = dict(
             a1=1., s1=1., r1=0.5, k1=2.,
-            a2=1., s2=1., r2=0.5, k2=3.,
+            a2=1., s2=1., r2=0.5, k2=3., c2=1.,
             n1=0.1, n2=0.2, n3=0.3, d=0.1),
         verbose=True)
 
     # Generate data.
     cats1 = [0] * N + [1] * N + [2] * N
-    vals1 = gp1.generate(locs1, cats1).vals
+    vals1 = model1.generate(locs1, cats1).vals
 
     # Fit GP.
-    gp2 = GP(
-        covariance = [cov1, cov2],
-        observation = [obs1, obs2, obs3],
+    model2 = Model(
+        latent = [cov1, cov2],
+        observed = [obs1, obs2, obs3],
 
         parameters = dict(
             a1=1., s1=1., r1=1., k1=0.,
-            a2=1., s2=1., r2=1., k2=0.,
+            a2=1., s2=1., r2=1., k2=0., c2=0.,
             n1=0.1, n2=0.1, n3=0.1, d=0.1),
         verbose=True).fit(locs1, vals1, cats1, iters=2000)
 
@@ -53,4 +51,4 @@ def test_multigp():
     xx, yy = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N))
     locs2 = np.stack([xx, yy], axis=-1)
     for cats in range(3):
-        mean, var = gp2.predict(locs2, cats * np.ones_like(locs2[..., 0], dtype=np.int32))
+        mean, var = model2.predict(locs2, cats * np.ones_like(locs2[..., 0], dtype=np.int32))

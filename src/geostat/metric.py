@@ -17,11 +17,12 @@ def ed(x, a=-1):
 
 class PerAxisDist2(Op):
     def __init__(self):
-        super().__init__({}, dict(locs='locs'))
+        super().__init__({}, dict(locs1='locs1', locs2='locs2'))
 
     def __call__(self, p, e):
-        x = e['locs']
-        return tf.square(ed(x, 0) - ed(x, 1))
+        x1 = e['locs1']
+        x2 = e['locs2']
+        return tf.square(ed(x1, 1) - ed(x2, 0))
 
 class Metric(Op):
     pass
@@ -51,7 +52,7 @@ class Poincare(Metric):
     def __init__(self, xform: Callable, zoff='zoff', scale=None):
         fa = dict(zoff=zoff, scale=scale)
         self.xform = xform
-        super().__init__(fa, dict(locs='locs'))
+        super().__init__({}, dict(locs1='locs1', locs2='locs2'))
 
     def vars(self):
         return ppp(self.fa['zoff']) + get_scale_vars(self.fa['scale'])
@@ -59,7 +60,8 @@ class Poincare(Metric):
     def __call__(self, p, e):
         v = get_parameter_values(self.fa, p)
 
-        xlocs = tf.stack(self.xform(*tf.unstack(e['locs'], axis=1)), axis=1)
+        xlocs1 = tf.stack(self.xform(*tf.unstack(e['locs1'], axis=1)), axis=1)
+        xlocs2 = tf.stack(self.xform(*tf.unstack(e['locs2'], axis=1)), axis=1)
         zoff = v['zoff']
 
         # Maybe scale locations and zoff.
@@ -70,7 +72,7 @@ class Poincare(Metric):
         z = xlocs[:, 0] + zoff
         zz = z * ed(z, -1)
 
-        d2 = tf.reduce_sum(tf.square(ed(xlocs, 0) - ed(xlocs, 1)), axis=-1)
+        d2 = tf.reduce_sum(tf.square(ed(xlocs1, 0) - ed(xlocs2, 1)), axis=-1)
         d2 = tf.asinh(0.5 * tf.sqrt(d2 / zz))
         d2 = tf.square(2.0 * zoff * d2)
 

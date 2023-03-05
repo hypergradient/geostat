@@ -10,9 +10,13 @@ with warnings.catch_warnings():
 @dataclass
 class Op:
     """
-    The `autoinputs` parameter contains a list of upstream ops,
-    so it links ops together in a DAG. We walk the DAG for various
-    reasons.
+    The `autoinputs` parameter contains a blob of upstream ops. The leaves
+    in the blob are either the op itself or a string identifier. In the
+    latter case, the string identifier should be present as a key in the
+    `cache` that gets passed in.
+
+    This parameter links ops together in a DAG. We walk the DAG for
+    various reasons.
 
       - `run` calls the op and puts the output in `self.out`,
         after recursively doing this for autoinputs.
@@ -71,7 +75,7 @@ class Op:
         return cache[id(self)]
 
     def __tf_tracing_type__(self, context):
-        return SingletonTraceType(type(self))
+        return SingletonTraceType(self)
 
 class SingletonTraceType(tf.types.experimental.TraceType):
     """
@@ -79,19 +83,19 @@ class SingletonTraceType(tf.types.experimental.TraceType):
     to treat dataclass-based onjects as dicts.
     """
 
-    def __init__(self, classtype):
-       self.classtype = classtype
+    def __init__(self, thing):
+       self.thing = thing
        pass
 
     def is_subtype_of(self, other):
        return type(other) is SingletonTraceType \
-           and self.classtype is other.classtype
+           and self.thing is other.thing
 
     def most_specific_common_supertype(self, others):
        return self if all(self == other for other in others) else None
 
     def __eq__(self, other):
-       return isinstance(other, SingletonTraceType) and self.classtype == other.classtype
+       return isinstance(other, SingletonTraceType) and self.thing == other.thing
 
     def __hash__(self):
-       return hash(self.classtype)
+       return hash(id(self.thing))
