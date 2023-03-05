@@ -19,15 +19,28 @@ with warnings.catch_warnings():
 
 import tensorflow_probability as tfp
 
-from . import gp
-from .op import Op
+from . import kernel as krn
+from .op import Op, SingletonTraceType
 from .param import PaperParameter, ParameterSpace, Bound
 from .metric import Euclidean, PerAxisDist2
 from .param import get_parameter_values, ppp, upp, bpp
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['Model', 'Featurizer', 'NormalizingFeaturizer']
+__all__ = ['GP', 'Model', 'Featurizer', 'NormalizingFeaturizer']
+
+@dataclass
+class GP:
+    mean: krn.Trend = None
+    kernel: krn.Kernel = None
+
+    def __post_init__(self):
+        if self.mean is None or self.mean == 0:
+            self.mean = krn.ZeroTrend()
+        assert self.kernel is not None
+
+    def __tf_tracing_type__(self, context):
+            return SingletonTraceType(self)
 
 class NormalizingFeaturizer:
     """
@@ -77,11 +90,11 @@ def block_diag(blocks):
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 @tf.function
-def gp_covariance(covariance, observation, locs, cats, p):
-    return gp_covariance2(covariance, observation, locs, cats, locs, cats, 0, p)
+def gp_covariance(latent, observation, locs, cats, p):
+    return gp_covariance2(latent, observation, locs, cats, locs, cats, 0, p)
 
 @tf.function
-def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, offset, p):
+def gp_covariance2(latent, observation, locs1, cats1, locs2, cats2, offset, p):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
     and locs2.  It is used to create the diagonal non-zero elements
@@ -102,19 +115,20 @@ def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, offset, 
     cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
     cache['euclidean'] = Euclidean().run(cache, p)
 
-    MM, CC = zip(*[c.run(cache, p) for c in covariance])
+    MM = [gp.mean.run(cache, p) for gp in latent]
+    CC = [gp.kernel.run(cache, p) for gp in latent]
     M = tf.stack(MM, axis=-1) # [locs, hidden].
     C = tf.stack(CC, axis=-1) # [locs, locs, hidden].
 
     numobs = len(observation)
 
     if numobs == 0:
-        assert len(covariance) == 1, 'With no observation model, I only want one covariance model'
+        assert len(latent) == 1, 'With no observation model, I only want one covariance model'
         C = tf.cast(C[..., 0], tf.float64)
         M = tf.cast(M[..., 0], tf.float64)
         return M, C
 
-    A = tf.convert_to_tensor(gp.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
+    A = tf.convert_to_tensor(krn.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
     M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats1, batch_dims=1) # [locs]
 
     Aaug1 = tf.gather(A, cats1) # [locs, hidden].
@@ -197,8 +211,8 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 
 @dataclass
 class Model():
-    latent: List[gp.GP] = None
-    observed: List[gp.Observation] = None
+    latent: List[GP] = None
+    observed: List[krn.Observation] = None
     parameters: Dict[str, np.ndarray] = None
     parameter_sample_size: Optional[int] = None
     locs: np.ndarray = None
@@ -222,7 +236,7 @@ class Model():
                                 return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
                     Default is None.
 
-                latent : List[gp.GP]
+                latent : List[GP]
                      Name of the covariance function to use in the GP.
                      Should be 'squared-exp' or 'gamma-exp'.
                      Default is 'squared-exp'.
@@ -242,7 +256,7 @@ class Model():
         super().__init__()
 
         assert self.latent is not None, 'I need at least one latent variable'
-        if isinstance(self.latent, gp.GP):
+        if isinstance(self.latent, GP):
             self.latent = [self.latent]
 
         if self.observed is None: self.observed = []
@@ -273,7 +287,8 @@ class Model():
 
         # Collect paraameters.
         if self.parameters is None: self.parameters = {}
-        vv = {v for c in self.latent for v in c.gather_vars()}
+        vv = {v for gp in self.latent for v in gp.mean.gather_vars()}
+        vv = {v for gp in self.latent for v in gp.kernel.gather_vars()}
         vv |= {v for o in self.observed for v in o.gather_vars()}
 
         self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))
