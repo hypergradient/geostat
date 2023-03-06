@@ -18,13 +18,13 @@ def test_gp_with_trend():
 
     # Generate data.
     vals1 = Model(
-        latent = GP(trend, kernel),
+        GP(trend, kernel),
         parameters = dict(range=0.33, nugget=1., beta=[4., 3., 2., 1.]),
         verbose=True).generate(locs1).vals
 
     # Fit GP.
     model = Model(
-        latent = GP(trend, kernel),
+        GP(trend, kernel),
         parameters = dict(range=1., nugget=0.5, beta=[0., 0., 0., 0.]),
         verbose=True).fit(locs1, vals1, iters=100, step_size=1e-1)
 
@@ -60,13 +60,13 @@ def test_gp2d():
 
     # Generate data.
     vals1 = Model(
-        latent = GP(0, kernel),
+        GP(0, kernel),
         parameters = dict(alpha=1., range=0.33, nugget=1.),
         verbose=True).generate(locs1).vals
 
     # Fit GP.
     model = Model(
-        latent = GP(kernel=kernel),
+        GP(0, kernel),
         parameters = dict(alpha=2., range=1., nugget=0.5),
         verbose=True).fit(locs1, vals1, iters=100, step_size=1e-1)
 
@@ -105,13 +105,13 @@ def test_gp3d():
 
     # Generate data.
     vals1 = Model(
-        latent = GP(0, kernel),
+        GP(0, kernel),
         parameters = dict(alpha=1., zscale=5., range=0.5, sill=1., gamma=1., dsill=1., nugget=1.),
         verbose=True).generate(locs1).vals
 
     # Fit GP.
     model = Model(
-        latent = GP(0, kernel),
+        GP(0, kernel),
         parameters = dict(alpha=2., zscale=1., range=1., sill=0.5, gamma=0.5, dsill=0.5, nugget=0.5),
         verbose=True).fit(locs1, vals1, iters=200, step_size=1e-1)
 
@@ -152,13 +152,13 @@ def test_gp3d_stacked():
 
     # Generate data.
     vals1 = Model(
-        latent = GP(0, kernel),
+        GP(0, kernel),
         parameters = dict(alpha=1., zscale=5., r1=0.25, s1=1., r2=1.0, s2=0.25, nugget=1.),
         verbose=True).generate(locs1).vals
 
     # Fit GP.
     model = Model(
-        latent = GP(0, kernel),
+        GP(0, kernel),
         parameters = dict(alpha=2., zscale=2.5, r1=0.125, s1=0.5, r2=0.5, s2=0.125, nugget=0.5),
         verbose=True).fit(locs1, vals1, iters=100, step_size=1e-1)
 

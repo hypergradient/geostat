@@ -45,7 +45,10 @@ class GP:
         return GP(self.mean + other.mean, self.kernel + other.kernel)
 
     def __tf_tracing_type__(self, context):
-            return SingletonTraceType(self)
+        return SingletonTraceType(self)
+
+    def gather_vars(self):
+        return set(self.mean.gather_vars()) | set(self.kernel.gather_vars())
 
 class NormalizingFeaturizer:
     """
@@ -95,11 +98,11 @@ def block_diag(blocks):
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 @tf.function
-def gp_covariance(latent, observation, locs, cats, p):
-    return gp_covariance2(latent, observation, locs, cats, locs, cats, 0, p)
+def gp_covariance(gp, locs, cats, p):
+    return gp_covariance2(gp, locs, cats, locs, cats, 0, p)
 
 @tf.function
-def gp_covariance2(latent, observation, locs1, cats1, locs2, cats2, offset, p):
+def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset, p):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
     and locs2.  It is used to create the diagonal non-zero elements
@@ -120,18 +123,16 @@ def gp_covariance2(latent, observation, locs1, cats1, locs2, cats2, offset, p):
     cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
     cache['euclidean'] = Euclidean().run(cache, p)
 
-    MM = [gp.mean.run(cache, p) for gp in latent]
-    CC = [gp.kernel.run(cache, p) for gp in latent]
+    MM = [gp.mean.run(cache, p)]
+    CC = [gp.kernel.run(cache, p)]
     M = tf.stack(MM, axis=-1) # [locs, hidden].
     C = tf.stack(CC, axis=-1) # [locs, locs, hidden].
 
-    numobs = len(observation)
+    C = tf.cast(C[..., 0], tf.float64)
+    M = tf.cast(M[..., 0], tf.float64)
+    return M, C
 
-    if numobs == 0:
-        assert len(latent) == 1, 'With no observation model, I only want one covariance model'
-        C = tf.cast(C[..., 0], tf.float64)
-        M = tf.cast(M[..., 0], tf.float64)
-        return M, C
+    # What's below needs to move.
 
     A = tf.convert_to_tensor(krn.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
     M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats1, batch_dims=1) # [locs]
@@ -178,16 +179,16 @@ def mvn_log_pdf(u, m, cov):
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
 @tf.function
-def gp_log_likelihood(data, surf_params, covariance, observation):
-    m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], surf_params)
+def gp_log_likelihood(data, surf_params, gp):
+    m, S = gp_covariance(gp, data['locs'], data['cats'], surf_params)
     u = tf.cast(data['vals'], tf.float64)
     return mvn_log_pdf(u, m, S)
 
-def gp_train_step(optimizer, data, parameters, parameter_space, covariance, observation, reg=None):
+def gp_train_step(optimizer, data, parameters, parameter_space, gp, reg=None):
     with tf.GradientTape() as tape:
         sp = parameter_space.get_surface(parameters)
 
-        ll = gp_log_likelihood(data, sp, covariance, observation)
+        ll = gp_log_likelihood(data, sp, gp)
 
         if reg:
             reg_penalty = reg * tf.reduce_sum([c.reg(sp) for c in covariance])
@@ -216,8 +217,7 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 
 @dataclass
 class Model():
-    latent: List[GP] = None
-    observed: List[krn.Observation] = None
+    gp: GP
     parameters: Dict[str, np.ndarray] = None
     parameter_sample_size: Optional[int] = None
     locs: np.ndarray = None
@@ -258,12 +258,6 @@ class Model():
         Performs Gaussian process training and prediction.
         '''
 
-        assert self.latent is not None, 'I need at least one latent variable'
-        if isinstance(self.latent, GP):
-            self.latent = [self.latent]
-
-        if self.observed is None: self.observed = []
-
         # Default reporting function.
         def default_report(p, prefix=None):
             if prefix: print(prefix, end=' ')
@@ -290,11 +284,8 @@ class Model():
 
         # Collect paraameters.
         if self.parameters is None: self.parameters = {}
-        vv = {v for gp in self.latent for v in gp.mean.gather_vars()}
-        vv |= {v for gp in self.latent for v in gp.kernel.gather_vars()}
-        vv |= {v for o in self.observed for v in o.gather_vars()}
 
-        self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))
+        self.parameter_space = ParameterSpace(check_parameters(self.gp.gather_vars(), self.parameters))
 
     def fit(self, locs, vals, cats=None,
         step_size=0.01, iters=100, reg=None):
@@ -320,7 +311,7 @@ class Model():
             t0 = time.time()
             while j < (i + 1) * iters / 10:
                 p, ll, reg_penalty = gp_train_step(optimizer, self.data, up, self.parameter_space,
-                    self.latent, self.observed, reg)
+                    self.gp, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
@@ -361,7 +352,7 @@ class Model():
         # Unnormalized log posterior distribution.
         def g(up):
             sp = self.parameter_space.get_surface(up)
-            return gp_log_likelihood(self.data, sp, self.latent, self.observed)
+            return gp_log_likelihood(self.data, sp, self.gp)
 
         def f(*up_flat):
             up = tf.nest.pack_sequence_as(initial_up, up_flat)
@@ -476,8 +467,7 @@ class Model():
         p = self.parameter_space.get_surface(up)
 
         m, S = gp_covariance(
-            self.latent,
-            self.observed,
+            self.gp,
             tf.constant(locs, dtype=tf.float32),
             None if cats is None else tf.constant(cats, dtype=tf.int32),
             p)
@@ -522,8 +512,7 @@ class Model():
                 locs2, cats2 = locs2[perm], cats2[perm]
 
             _, A12 = gp_covariance2(
-                self.latent,
-                self.observed,
+                self.gp,
                 tf.constant(locs1, dtype=tf.float32),
                 None if cats1 is None else tf.constant(cats1, dtype=tf.int32),
                 tf.constant(locs2, dtype=tf.float32),
@@ -532,8 +521,7 @@ class Model():
                 parameters)
 
             m2, A22 = gp_covariance(
-                self.latent,
-                self.observed,
+                self.gp,
                 tf.constant(locs2, dtype=tf.float32),
                 None if cats2 is None else tf.constant(cats2, dtype=tf.int32),
                 parameters)
@@ -572,8 +560,7 @@ class Model():
                 locs1, vals1, cats1 = locs1[perm], vals1[perm], cats1[perm]
 
             m1, A11 = gp_covariance(
-                self.latent,
-                self.observed,
+                self.gp,
                 tf.constant(locs1, dtype=tf.float32),
                 None if cats1 is None else tf.constant(cats1, dtype=tf.int32),
                 parameters)
