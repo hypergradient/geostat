@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from geostat import Featurizer, GP, Model, NormalizingFeaturizer
+from geostat import Featurizer, GP, Model, NormalizingFeaturizer, Trend
 import geostat.kernel as krn
 
 def test_gp_with_trend():
@@ -13,7 +13,7 @@ def test_gp_with_trend():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return 1., x, y, x*y
     featurizer = Featurizer(trend_terms)
-    trend = krn.Trend(featurizer, beta='beta')
+    trend = Trend(featurizer, beta='beta')
     kernel = krn.SquaredExponential(sill=1.) + krn.Noise()
 
     # Generate data.

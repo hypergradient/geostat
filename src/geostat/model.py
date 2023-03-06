@@ -19,6 +19,7 @@ with warnings.catch_warnings():
 
 import tensorflow_probability as tfp
 
+from . import mean as mn
 from . import kernel as krn
 from .op import Op, SingletonTraceType
 from .param import PaperParameter, ParameterSpace, Bound
@@ -27,17 +28,21 @@ from .param import get_parameter_values, ppp, upp, bpp
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['GP', 'Model', 'Featurizer', 'NormalizingFeaturizer']
+# __all__ = ['Featurizer', 'GP', 'Mix', 'Model', 'Mux', 'NormalizingFeaturizer', 'Trend']
+__all__ = ['Featurizer', 'GP', 'Model', 'NormalizingFeaturizer']
 
 @dataclass
 class GP:
-    mean: krn.Trend = None
+    mean: mn.Trend = None
     kernel: krn.Kernel = None
 
     def __post_init__(self):
         if self.mean is None or self.mean == 0:
-            self.mean = krn.ZeroTrend()
+            self.mean = mn.ZeroTrend()
         assert self.kernel is not None
+
+    def __add__(self, other):
+        return GP(self.mean + other.mean, self.kernel + other.kernel)
 
     def __tf_tracing_type__(self, context):
             return SingletonTraceType(self)

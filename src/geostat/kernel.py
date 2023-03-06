@@ -12,9 +12,8 @@ from .op import Op
 from .metric import Euclidean, ed
 from .param import get_parameter_values, ppp, upp, bpp
 
-__all__ = ['Kernel', 'Trend']
+__all__ = ['Kernel']
 
-@dataclass
 class Kernel(Op):
     def __init__(self, fa, autoinputs):
         if 'offset' not in autoinputs: autoinputs['offset'] = 'offset'
@@ -23,7 +22,10 @@ class Kernel(Op):
         super().__init__(fa, autoinputs)
 
     def __add__(self, other):
-        return Stack([self]) + other
+        if other is None:
+            return self
+        else:
+            return Stack([self]) + other
 
     def __mul__(self, other):
         return Product([self]) * other
@@ -53,41 +55,6 @@ class Kernel(Op):
 
     def reg(self, p):
         pass
-
-def get_trend_coefs(beta):
-    if isinstance(beta, (list, tuple)):
-        return [p for s in beta for p in upp(s)]
-    elif isinstance(beta, str):
-        return upp(beta)
-    else:
-        return []
-
-class Trend(Op):
-    def __init__(self, featurizer, beta='beta'):
-        self.featurizer = featurizer
-        super().__init__(
-            dict(beta=beta),
-            dict(locs1='locs1'))
-
-    def vars(self):
-        return get_trend_coefs(self.fa['beta'])
-
-    def __call__(self, p, e):
-        v = get_parameter_values(self.fa, p)
-        x = tf.cast(self.featurizer(e['locs1']), tf.float32)
-        if isinstance(v['beta'], (tuple, list)):
-            v['beta'] = tf.stack(v['beta'])
-        return tf.einsum('ab,b->a', x, v['beta']) # [locs1]
-
-class ZeroTrend(Op):
-    def __init__(self):
-        super().__init__({}, dict(locs1='locs1'))
-
-    def vars(self):
-        return []
-
-    def __call__(self, p, e):
-        return tf.zeros_like(e['locs1'][:, 0])
 
 class TrendPrior(Kernel):
     def __init__(self, featurizer, alpha='alpha'):
