@@ -11,6 +11,7 @@ with warnings.catch_warnings():
 from .op import Op
 from .metric import Euclidean, ed
 from .param import get_parameter_values, ppp, upp, bpp
+from .mean import get_trend_coefs
 
 __all__ = ['Kernel']
 
@@ -248,6 +249,62 @@ class Delta(Kernel):
 
     def reg(self, p):
         return 0.
+
+class Mix(Kernel):
+    def __init__(self, inputs, weights):
+        super().__init__(
+            dict(weights=weights),
+            dict(inputs=inputs, cats1='cats1', cats2='cats2'))
+
+    def vars(self):
+        return [p for row in self.fa['weights']
+                  for p in get_trend_coefs(row)]
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        weights = []
+        for row in v['weights']:
+            if isinstance(row, (tuple, list)):
+                row = tf.stack(row)
+                weights.append(row)
+        weights = tf.stack(weights)
+        C = tf.stack(e['inputs'], axis=-1) # [locs, locs, numinputs].
+        Aaug1 = tf.gather(weights, cats1) # [locs, numinputs].
+        Aaug2 = tf.gather(weights, cats2) # [locs, numinputs].
+        outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, numinputs].
+        C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
+        return C
+
+class Mux(Kernel):
+    def __init__(self, inputs):
+        super().__init__(
+            dict(),
+            dict(inputs=inputs, locs1='locs1', locs2='locs2', cats1='cats1', cats2='cats2'))
+
+    def vars(self):
+        return []
+
+    def call(self, p, e):
+        catcounts1 = tf.math.bincount(e['cats1'], minlength=numobs, maxlength=numobs)
+        catcounts2 = tf.math.bincount(e['cats2'], minlength=numobs, maxlength=numobs)
+        catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
+        catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
+        catdiffs = tf.unstack(catindices2 - catindices1, num=numobs)
+        locsegs1 = tf.split(e['locs1'], catcounts1, num=numobs)
+        locsegs2 = tf.split(e['locs2'], catcounts2, num=numobs)
+
+        CC = [] # Observation noise submatrices.
+        for sublocs1, sublocs2, catdiff, i in zip(locsegs1, locsegs2, catdiffs, e['inputs']):
+            cache = dict(
+                offset = offset + catdiff,
+                locs1 = sublocs1,
+                locs2 = sublocs2)
+            cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
+            cache['euclidean'] = Euclidean().run(cache, p)
+            Csub = i.run(cache, p)
+            CC.append(Csub)
+
+        return block_diag(CC)
 
 class Stack(Kernel):
     def __init__(self, parts: List[Kernel]):

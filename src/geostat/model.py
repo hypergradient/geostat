@@ -28,8 +28,7 @@ from .param import get_parameter_values, ppp, upp, bpp
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-# __all__ = ['Featurizer', 'GP', 'Mix', 'Model', 'Mux', 'NormalizingFeaturizer', 'Trend']
-__all__ = ['Featurizer', 'GP', 'Model', 'NormalizingFeaturizer']
+__all__ = ['Featurizer', 'GP', 'Mix', 'Model', 'Mux', 'NormalizingFeaturizer']
 
 @dataclass
 class GP:
@@ -49,6 +48,16 @@ class GP:
 
     def gather_vars(self):
         return set(self.mean.gather_vars()) | set(self.kernel.gather_vars())
+
+def Mix(inputs, weights):
+    return GP(
+        mn.Mix([i.mean for i in inputs], weights), 
+        krn.Mix([i.kernel for i in inputs], weights))
+
+def Mux(inputs):
+    return GP(
+        mn.Mux([i.mean for i in inputs]), 
+        krn.Mux([i.kernel for i in inputs]))
 
 class NormalizingFeaturizer:
     """
@@ -120,54 +129,15 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset, p):
     cache['offset'] = offset
     cache['locs1'] = locs1
     cache['locs2'] = locs2
+    cache['cats1'] = cats1
+    cache['cats2'] = cats2
     cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
     cache['euclidean'] = Euclidean().run(cache, p)
 
-    MM = [gp.mean.run(cache, p)]
-    CC = [gp.kernel.run(cache, p)]
-    M = tf.stack(MM, axis=-1) # [locs, hidden].
-    C = tf.stack(CC, axis=-1) # [locs, locs, hidden].
-
-    C = tf.cast(C[..., 0], tf.float64)
-    M = tf.cast(M[..., 0], tf.float64)
-    return M, C
-
-    # What's below needs to move.
-
-    A = tf.convert_to_tensor(krn.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
-    M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats1, batch_dims=1) # [locs]
-
-    Aaug1 = tf.gather(A, cats1) # [locs, hidden].
-    Aaug2 = tf.gather(A, cats2) # [locs, hidden].
-    outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, hidden].
-    C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
-
-    catcounts1 = tf.math.bincount(cats1, minlength=numobs, maxlength=numobs)
-    catcounts2 = tf.math.bincount(cats2, minlength=numobs, maxlength=numobs)
-    catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
-    catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
-    catdiffs = tf.unstack(catindices2 - catindices1, num=numobs)
-    locsegs1 = tf.split(locs1, catcounts1, num=numobs)
-    locsegs2 = tf.split(locs2, catcounts2, num=numobs)
-
-    CC = [] # Observation noise submatrices.
-    MM = [] # Mean subvectors.
-    for sublocs1, sublocs2, catdiff, o in zip(locsegs1, locsegs2, catdiffs, observation):
-        cache['offset'] = offset + catdiff
-        cache['locs1'] = sublocs1
-        cache['locs2'] = sublocs2
-        cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
-        cache['euclidean'] = Euclidean().run(cache, p)
-        Msub, Csub = o.noise.run(cache, p)
-        CC.append(Csub)
-        MM.append(Msub)
-
-    C += block_diag(CC)
-    C = tf.cast(C, tf.float64)
-
-    M += tf.concat(MM, axis=0)
+    M = gp.mean.run(cache, p)
+    C = gp.kernel.run(cache, p)
     M = tf.cast(M, tf.float64)
-
+    C = tf.cast(C, tf.float64)
     return M, C
 
 @tf.function

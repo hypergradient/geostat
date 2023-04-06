@@ -12,6 +12,8 @@ from .param import get_parameter_values, ppp, upp, bpp
 
 __all__ = ['Mean', 'Trend']
 
+# TODO: in `call` methods, call get_parameter_values beforehand?
+
 def get_trend_coefs(beta):
     if isinstance(beta, (list, tuple)):
         return [p for s in beta for p in upp(s)]
@@ -50,9 +52,7 @@ class Mean(Op):
 class Trend(Mean):
     def __init__(self, featurizer, beta='beta'):
         self.featurizer = featurizer
-        super().__init__(
-            dict(beta=beta),
-            dict(locs1='locs1'))
+        super().__init__(dict(beta=beta), dict(locs1='locs1'))
 
     def vars(self):
         return get_trend_coefs(self.fa['beta'])
@@ -74,6 +74,51 @@ class ZeroTrend(Op):
     def __call__(self, p, e):
         return tf.zeros_like(e['locs1'][:, 0])
 
+class Mix(Mean):
+    def __init__(self, inputs, weights):
+        super().__init__(
+            dict(weights=weights),
+            dict(inputs=inputs, cats1='cats1'))
+
+    def vars(self):
+        return [p for row in self.fa['weights']
+                  for p in get_trend_coefs(row)]
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        weights = []
+        for row in v['weights']:
+            if isinstance(row, (tuple, list)):
+                row = tf.stack(row)
+                weights.append(row)
+        weights = tf.stack(weights)
+        M = tf.stack(e['inputs'], axis=-1) # [locs, numinputs].
+        M = tf.gather(tf.einsum('lh,sh->ls', M, weights), e['cats1'], batch_dims=1) # [locs]
+        return M
+
+class Mux(Mean):
+    def __init__(self, inputs):
+        super().__init__(
+            dict(),
+            dict(inputs=inputs, locs1='locs1', cats1='cats1'))
+
+    def vars(self):
+        return []
+
+    def call(self, p, e):
+        N = len(e['inputs'])
+        catcounts1 = tf.math.bincount(e['cats1'], minlength=N, maxlength=N)
+        catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
+        locsegs1 = tf.split(e['locs1'], catcounts1, num=N)
+
+        MM = [] # Observation noise submatrices.
+        for sublocs1, i in zip(locsegs1, e['inputs']):
+            cache = dict(locs1 = sublocs1)
+            Msub = i.run(cache, p)
+            MM.append(Msub)
+
+        return tf.concat(MM, axis=0)
+        
 class Stack(Mean):
     def __init__(self, parts: List[Mean]):
         self.parts = parts

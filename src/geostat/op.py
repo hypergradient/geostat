@@ -33,6 +33,7 @@ class Op:
         if cache is None: cache = {}
         if id(self) not in cache:
             vv = {v for op in tf.nest.flatten(self.autoinputs) if isinstance(op, Op) for v in op.gather_vars(cache)}
+            # print(self, '<-', [x.name for x in vv], '|', [x.name for x in set(self.vars())], '\n')
             cache[id(self)] = vv | set(self.vars())
         return cache[id(self)]
 
