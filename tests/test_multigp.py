@@ -1,7 +1,7 @@
 from argparse import Namespace
 import numpy as np
 import tensorflow as tf
-from geostat import Featurizer, GP, Model, NormalizingFeaturizer, Mix, Mux, Trend
+from geostat import Featurizer, GP, Model, NormalizingFeaturizer, Mix, Trend
 import geostat.kernel as krn
 
 def test_multigp():
@@ -25,7 +25,7 @@ def test_multigp():
     out2 = GP(Trend(f2, beta=['c2', 0.]), krn.Noise(nugget='n2'))
     out3 = GP(Trend(f2, beta=[0., 1.]), krn.Noise(nugget='n3'))
 
-    gp = Mix([in1, in2], [[1., 0.], [0., 1.], ['k1', 'k2']]) + Mux([out1, out2, out3])
+    gp = Mix([in1, in2], [[1., 0.], [0., 1.], ['k1', 'k2']]) + Mix([out1, out2, out3])
 
     def report(p, prefix=''):
         p = {k: (v.numpy() if hasattr(v, 'numpy') else v) for k, v in p.items()}

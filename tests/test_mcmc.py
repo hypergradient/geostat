@@ -1,5 +1,5 @@
 import numpy as np
-from geostat import GP, Model, Featurizer, NormalizingFeaturizer, Mix, Mux, Trend
+from geostat import GP, Model, Featurizer, NormalizingFeaturizer, Mix, Trend
 import geostat.kernel as krn
 from types import SimpleNamespace
 
@@ -56,7 +56,7 @@ def test_mcmc_multigp():
     out2 = GP(Trend(f2, beta=[1., 0.]), krn.Noise(nugget='n2'))
     out3 = GP(Trend(f2, beta=[0., 1.]), krn.Noise(nugget='n3') + krn.Delta(dsill='d', axes=[1]))
 
-    gp = Mix([in1, in2], [[1., 0.], [0., 1.], ['k1', 'k2']]) + Mux([out1, out2, out3])
+    gp = Mix([in1, in2], [[1., 0.], [0., 1.], ['k1', 'k2']]) + Mix([out1, out2, out3])
 
     # Generating GP.
     model1 = Model(

@@ -1,5 +1,5 @@
 import numpy as np
-from geostat import GP, Model, Featurizer, NormalizingFeaturizer, Mix, Mux, Trend
+from geostat import GP, Model, Featurizer, NormalizingFeaturizer, Mix, Trend
 import geostat.kernel as krn
 import numpy as np
 import tensorflow as tf
@@ -43,7 +43,7 @@ def test_delta():
              + krn.TrendPrior(feat_r, alpha='ar'))
 
     gp = Mix([i_u, i_p, i_t], [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], ['cu', 'cp', 0.]]) \
-       + Mux([o_u, o_p, o_t, o_r])
+       + Mix([o_u, o_p, o_t, o_r])
         
     p_init = {'au': 1.,
      'su1': 0.01,

@@ -26,7 +26,7 @@ from .param import get_parameter_values, ppp, upp, bpp
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['Featurizer', 'GP', 'Mix', 'Model', 'Mux', 'NormalizingFeaturizer']
+__all__ = ['Featurizer', 'GP', 'Mix', 'Model', 'NormalizingFeaturizer']
 
 @dataclass
 class GP:
@@ -50,15 +50,10 @@ class GP:
     def reg(self, sp):
         return self.kernel.reg(sp)
 
-def Mix(inputs, weights):
+def Mix(inputs, weights=None):
     return GP(
         mn.Mix([i.mean for i in inputs], weights), 
         krn.Mix([i.kernel for i in inputs], weights))
-
-def Mux(inputs):
-    return GP(
-        mn.Mux([i.mean for i in inputs]), 
-        krn.Mux([i.kernel for i in inputs]))
 
 class NormalizingFeaturizer:
     """

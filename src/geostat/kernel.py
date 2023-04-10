@@ -257,76 +257,73 @@ class Delta(Kernel):
         return 0.
 
 class Mix(Kernel):
-    def __init__(self, inputs, weights):
+    def __init__(self, inputs, weights=None):
         self.inputs = inputs
-        super().__init__(
-            dict(weights=weights),
-            dict(inputs=inputs, cats1='cats1', cats2='cats2'))
+        fa = {}
+        ai = dict(cats1='cats1', cats2='cats2')
 
-    def vars(self):
-        return [p for row in self.fa['weights']
-                  for p in get_trend_coefs(row)]
+        # Special case if weights is not given.
+        if weights is not None:
+            fa['weights'] = weights
+            ai['inputs'] = inputs
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
-        weights = []
-        for row in v['weights']:
-            if isinstance(row, (tuple, list)):
-                row = tf.stack(row)
-                weights.append(row)
-        weights = tf.stack(weights)
-        C = tf.stack(e['inputs'], axis=-1) # [locs, locs, numinputs].
-        Aaug1 = tf.gather(weights, e['cats1']) # [locs, numinputs].
-        Aaug2 = tf.gather(weights, e['cats2']) # [locs, numinputs].
-        outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, numinputs].
-        C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
-        return C
-
-    def reg(self, sp):
-        return tf.reduce_sum([iput.reg(sp) for iput in self.inputs])
-        
-
-class Mux(Kernel):
-    def __init__(self, inputs):
-        self.inputs = inputs
-        super().__init__(
-            dict(),
-            dict(cats1='cats1', cats2='cats2'))
-
-    def vars(self):
-        return []
+        super().__init__(fa, ai)
 
     def gather_vars(self, cache=None):
         """Make a special version of gather_vars because
-           we can want to gather variables from `inputs`,
-           even though it's not in autoinputs"""
+           we want to gather variables from `inputs`
+           even when it's not in autoinputs"""
         vv = super().gather_vars(cache)
         for iput in self.inputs:
             cache[id(self)] |= iput.gather_vars(cache)
         return cache[id(self)]
 
+    def vars(self):
+        if 'weights' in self.fa:
+            return [p for row in self.fa['weights']
+                      for p in get_trend_coefs(row)]
+        else:
+            return []
+
     def call(self, p, e):
-        N = len(self.inputs)
-        catcounts1 = tf.math.bincount(e['cats1'], minlength=N, maxlength=N)
-        catcounts2 = tf.math.bincount(e['cats2'], minlength=N, maxlength=N)
-        catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
-        catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
-        catdiffs = tf.unstack(catindices2 - catindices1, num=N)
-        locsegs1 = tf.split(e['locs1'], catcounts1, num=N)
-        locsegs2 = tf.split(e['locs2'], catcounts2, num=N)
+        v = get_parameter_values(self.fa, p)
+        if 'weights' in v:
+            weights = []
+            for row in v['weights']:
+                if isinstance(row, (tuple, list)):
+                    row = tf.stack(row)
+                    weights.append(row)
+            weights = tf.stack(weights)
+            C = tf.stack(e['inputs'], axis=-1) # [locs, locs, numinputs].
+            Aaug1 = tf.gather(weights, e['cats1']) # [locs, numinputs].
+            Aaug2 = tf.gather(weights, e['cats2']) # [locs, numinputs].
+            outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, numinputs].
+            C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
+            return C
+        else:
+            # When weights is not given, exploit the fact that we don't have
+            # to compute every element in component covariance matrices.
+            N = len(self.inputs)
+            catcounts1 = tf.math.bincount(e['cats1'], minlength=N, maxlength=N)
+            catcounts2 = tf.math.bincount(e['cats2'], minlength=N, maxlength=N)
+            catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
+            catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
+            catdiffs = tf.unstack(catindices2 - catindices1, num=N)
+            locsegs1 = tf.split(e['locs1'], catcounts1, num=N)
+            locsegs2 = tf.split(e['locs2'], catcounts2, num=N)
 
-        CC = [] # Observation noise submatrices.
-        for sublocs1, sublocs2, catdiff, iput in zip(locsegs1, locsegs2, catdiffs, self.inputs):
-            cache = dict(
-                offset = e['offset'] + catdiff,
-                locs1 = sublocs1,
-                locs2 = sublocs2)
-            cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
-            cache['euclidean'] = Euclidean().run(cache, p)
-            Csub = iput.run(cache, p)
-            CC.append(Csub)
+            CC = [] # Observation noise submatrices.
+            for sublocs1, sublocs2, catdiff, iput in zip(locsegs1, locsegs2, catdiffs, self.inputs):
+                cache = dict(
+                    offset = e['offset'] + catdiff,
+                    locs1 = sublocs1,
+                    locs2 = sublocs2)
+                cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
+                cache['euclidean'] = Euclidean().run(cache, p)
+                Csub = iput.run(cache, p)
+                CC.append(Csub)
 
-        return block_diag(CC)
+            return block_diag(CC)
 
     def reg(self, sp):
         return tf.reduce_sum([iput.reg(sp) for iput in self.inputs])
