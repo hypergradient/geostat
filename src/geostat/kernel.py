@@ -7,13 +7,19 @@ import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
+    from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
+    from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
 from .op import Op
-from .metric import Euclidean, ed
+from .metric import Euclidean, PerAxisDist2, ed
 from .param import get_parameter_values, ppp, upp, bpp
 from .mean import get_trend_coefs
 
 __all__ = ['Kernel']
+
+def block_diag(blocks):
+    """Return a dense block-diagonal matrix."""
+    return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 class Kernel(Op):
     def __init__(self, fa, autoinputs):
@@ -269,39 +275,50 @@ class Mix(Kernel):
                 weights.append(row)
         weights = tf.stack(weights)
         C = tf.stack(e['inputs'], axis=-1) # [locs, locs, numinputs].
-        Aaug1 = tf.gather(weights, cats1) # [locs, numinputs].
-        Aaug2 = tf.gather(weights, cats2) # [locs, numinputs].
+        Aaug1 = tf.gather(weights, e['cats1']) # [locs, numinputs].
+        Aaug2 = tf.gather(weights, e['cats2']) # [locs, numinputs].
         outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, numinputs].
         C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
         return C
 
 class Mux(Kernel):
     def __init__(self, inputs):
+        self.inputs = inputs
         super().__init__(
             dict(),
-            dict(inputs=inputs, locs1='locs1', locs2='locs2', cats1='cats1', cats2='cats2'))
+            dict(cats1='cats1', cats2='cats2'))
 
     def vars(self):
         return []
 
+    def gather_vars(self, cache=None):
+        """Make a special version of gather_vars because
+           we can want to gather variables from `inputs`,
+           even though it's not in autoinputs"""
+        vv = super().gather_vars(cache)
+        for iput in self.inputs:
+            cache[id(self)] |= iput.gather_vars(cache)
+        return cache[id(self)]
+
     def call(self, p, e):
-        catcounts1 = tf.math.bincount(e['cats1'], minlength=numobs, maxlength=numobs)
-        catcounts2 = tf.math.bincount(e['cats2'], minlength=numobs, maxlength=numobs)
+        N = len(self.inputs)
+        catcounts1 = tf.math.bincount(e['cats1'], minlength=N, maxlength=N)
+        catcounts2 = tf.math.bincount(e['cats2'], minlength=N, maxlength=N)
         catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
         catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
-        catdiffs = tf.unstack(catindices2 - catindices1, num=numobs)
-        locsegs1 = tf.split(e['locs1'], catcounts1, num=numobs)
-        locsegs2 = tf.split(e['locs2'], catcounts2, num=numobs)
+        catdiffs = tf.unstack(catindices2 - catindices1, num=N)
+        locsegs1 = tf.split(e['locs1'], catcounts1, num=N)
+        locsegs2 = tf.split(e['locs2'], catcounts2, num=N)
 
         CC = [] # Observation noise submatrices.
-        for sublocs1, sublocs2, catdiff, i in zip(locsegs1, locsegs2, catdiffs, e['inputs']):
+        for sublocs1, sublocs2, catdiff, iput in zip(locsegs1, locsegs2, catdiffs, self.inputs):
             cache = dict(
-                offset = offset + catdiff,
+                offset = e['offset'] + catdiff,
                 locs1 = sublocs1,
                 locs2 = sublocs2)
             cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
             cache['euclidean'] = Euclidean().run(cache, p)
-            Csub = i.run(cache, p)
+            Csub = iput.run(cache, p)
             CC.append(Csub)
 
         return block_diag(CC)

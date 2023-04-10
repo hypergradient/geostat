@@ -14,8 +14,6 @@ with warnings.catch_warnings():
     import tensorflow as tf
     import tensorflow_probability as tfp
     tfd = tfp.distributions
-    from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
-    from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
 import tensorflow_probability as tfp
 
@@ -101,10 +99,6 @@ class Featurizer:
 
 def e(x, a=-1):
     return tf.expand_dims(x, a)
-
-def block_diag(blocks):
-    """Return a dense block-diagonal matrix."""
-    return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 @tf.function
 def gp_covariance(gp, locs, cats, p):

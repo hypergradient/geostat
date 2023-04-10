@@ -30,6 +30,7 @@ class Op:
         return []
 
     def gather_vars(self, cache=None):
+        """`cache` maps from Op ids to sets of variable names."""
         if cache is None: cache = {}
         if id(self) not in cache:
             vv = {v for op in tf.nest.flatten(self.autoinputs) if isinstance(op, Op) for v in op.gather_vars(cache)}

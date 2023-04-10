@@ -98,23 +98,33 @@ class Mix(Mean):
 
 class Mux(Mean):
     def __init__(self, inputs):
+        self.inputs = inputs
         super().__init__(
             dict(),
-            dict(inputs=inputs, locs1='locs1', cats1='cats1'))
+            dict(cats1='cats1'))
 
     def vars(self):
         return []
 
+    def gather_vars(self, cache=None):
+        """Make a special version of gather_vars because
+           we can want to gather variables from `inputs`,
+           even though it's not in autoinputs"""
+        vv = super().gather_vars(cache)
+        for iput in self.inputs:
+            cache[id(self)] |= iput.gather_vars(cache)
+        return cache[id(self)]
+
     def call(self, p, e):
-        N = len(e['inputs'])
+        N = len(self.inputs)
         catcounts1 = tf.math.bincount(e['cats1'], minlength=N, maxlength=N)
         catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
         locsegs1 = tf.split(e['locs1'], catcounts1, num=N)
 
         MM = [] # Observation noise submatrices.
-        for sublocs1, i in zip(locsegs1, e['inputs']):
+        for sublocs1, iput in zip(locsegs1, self.inputs):
             cache = dict(locs1 = sublocs1)
-            Msub = i.run(cache, p)
+            Msub = iput.run(cache, p)
             MM.append(Msub)
 
         return tf.concat(MM, axis=0)
