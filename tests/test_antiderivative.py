@@ -78,7 +78,7 @@ def test_int_exp():
     kernel2 = \
         krn.SquaredExponential(scale=[0., 1.], range='y_range') * \
         krn.IntExponential(axis=0, start=0., range='x_range') + \
-        krn.Noise(nugget=1e-3),
+        krn.Noise(nugget=1e-3)
 
     model = Model(
         GP(0, kernel2),

@@ -47,6 +47,9 @@ class GP:
     def gather_vars(self):
         return set(self.mean.gather_vars()) | set(self.kernel.gather_vars())
 
+    def reg(self, sp):
+        return self.kernel.reg(sp)
+
 def Mix(inputs, weights):
     return GP(
         mn.Mix([i.mean for i in inputs], weights), 
@@ -155,7 +158,7 @@ def gp_train_step(optimizer, data, parameters, parameter_space, gp, reg=None):
         ll = gp_log_likelihood(data, sp, gp)
 
         if reg:
-            reg_penalty = reg * tf.reduce_sum([c.reg(sp) for c in covariance])
+            reg_penalty = reg * gp.reg(sp)
         else:
             reg_penalty = 0.
 

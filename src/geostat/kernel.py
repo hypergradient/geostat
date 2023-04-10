@@ -258,6 +258,7 @@ class Delta(Kernel):
 
 class Mix(Kernel):
     def __init__(self, inputs, weights):
+        self.inputs = inputs
         super().__init__(
             dict(weights=weights),
             dict(inputs=inputs, cats1='cats1', cats2='cats2'))
@@ -280,6 +281,10 @@ class Mix(Kernel):
         outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, numinputs].
         C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
         return C
+
+    def reg(self, sp):
+        return tf.reduce_sum([iput.reg(sp) for iput in self.inputs])
+        
 
 class Mux(Kernel):
     def __init__(self, inputs):
@@ -323,6 +328,9 @@ class Mux(Kernel):
 
         return block_diag(CC)
 
+    def reg(self, sp):
+        return tf.reduce_sum([iput.reg(sp) for iput in self.inputs])
+
 class Stack(Kernel):
     def __init__(self, parts: List[Kernel]):
         self.parts = parts
@@ -357,7 +365,7 @@ class Product(Kernel):
             return Product(self.parts + [other])
     
     def call(self, p, e):
-        return tf.reduce_sum(e['parts'], axis=0)
+        return tf.reduce_prod(e['parts'], axis=0)
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)
