@@ -8,7 +8,7 @@ def test_gp_with_trend():
     tf.random.set_seed(2)
 
     # Create random locations in a square centered on the origin.
-    locs1 = np.random.normal(-1., 1., [1000, 2])
+    locs1 = np.random.normal(size=[1000, 2])
 
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return 1., x, y, x*y
@@ -51,7 +51,7 @@ def test_gp2d():
     tf.random.set_seed(2)
 
     # Create random locations in a square centered on the origin.
-    locs1 = np.random.normal(-1., 1., [1000, 2])
+    locs1 = np.random.normal(size=[1000, 2])
 
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
@@ -91,7 +91,7 @@ def test_gp3d():
     tf.random.set_seed(2)
 
     # Create random locations in a square centered on the origin.
-    locs1 = np.random.normal(-1., 1., [500, 3])
+    locs1 = np.random.normal(size=[500, 3])
     locs1 = np.concatenate([locs1, locs1 * [1., 1., 0.8], locs1 * [1., 1., 1.1]])
 
     # Initialize featurizer of location for trends.
