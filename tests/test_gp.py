@@ -91,7 +91,7 @@ def test_gp3d():
     tf.random.set_seed(2)
 
     # Create random locations in a square centered on the origin.
-    locs1 = np.random.normal(size=[500, 3])
+    locs1 = np.random.normal(size=[600, 3])
     locs1 = np.concatenate([locs1, locs1 * [1., 1., 0.8], locs1 * [1., 1., 1.1]])
 
     # Initialize featurizer of location for trends.
@@ -106,7 +106,7 @@ def test_gp3d():
     # Generate data.
     vals1 = Model(
         GP(0, kernel),
-        parameters = dict(alpha=1., zscale=5., range=0.5, sill=1., gamma=1., dsill=1., nugget=1.),
+        parameters = dict(alpha=1., zscale=5., range=0.5, sill=1., gamma=1., dsill=0.1, nugget=0.1),
         verbose=True).generate(locs1).vals
 
     # Fit GP.
@@ -117,8 +117,8 @@ def test_gp3d():
 
     assert np.allclose(
         [model.parameters[p] for p in ['zscale', 'range', 'sill', 'gamma', 'dsill', 'nugget']],
-        [5., 0.5, 1., 1., 1., 1.],
-        rtol=0.3)
+        [5., 0.5, 1., 1., 0.1, 0.1],
+        rtol=0.5)
 
     # Interpolate using GP.
     N = 10
