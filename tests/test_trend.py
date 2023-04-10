@@ -1,5 +1,6 @@
 import numpy as np
 from geostat import gp, Model, Featurizer, NormalizingFeaturizer
+import geostat.kernel as krn
 
 def test_coefs1():
     # Create 100 random locations in a square centered on the origin.
@@ -8,11 +9,12 @@ def test_coefs1():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return 1, y
     featurizer = Featurizer(trend_terms)
-    covariance = gp.Trend(featurizer, beta='b') + gp.SquaredExponential(range=0.5, sill=0.01) + gp.Noise()
+    gp = GP(Trend(featurizer, beta='b'),
+            krn.SquaredExponential(range=0.5, sill=0.01) + krn.Noise())
 
     # Generating GP.
     model1 = Model(
-        latent = covariance,
+        gp,
         parameters = dict(b=[1.0, 0.5], nugget=0.1),
         verbose = True)
 
@@ -21,7 +23,7 @@ def test_coefs1():
 
     # Fit GP.
     model2 = Model(
-        latent = covariance,
+        gp,
         parameters = dict(b=[1.0, 0.5], nugget=0.1),
         verbose = True).fit(locs1, vals1, iters=200)
     print()
@@ -44,12 +46,12 @@ def test_coefs2():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
-    covariance = gp.Trend(featurizer, beta=[1., 'b1', 'b2', 'b3']) \
-        + gp.SquaredExponential(sill=1.) + gp.Noise()
+    gp = GP(Trend(featurizer, beta=[1., 'b1', 'b2', 'b3']),
+            krn.SquaredExponential(sill=1.) + krn.Noise())
 
     # Generating GP.
     model1 = Model(
-        latent = covariance,
+        gp,
         parameters = dict(b1=0.5, b2=0.5, b3=0.25, range=0.5, nugget=1.),
         verbose = True)
 
@@ -58,14 +60,14 @@ def test_coefs2():
 
     # Fit GP.
     model2 = Model(
-        latent = covariance,
+        gp,
         parameters = dict(b1=0., b2=0., b3=0., range=1., nugget=0.5),
         verbose = True).fit(locs1, vals1, iters=200)
     print()
 
     # MCMC.
     model3 = Model(
-        latent = covariance,
+        gp,
         parameters = dict(b1=0., b2=0., b3=0., range=1., nugget=0.5),
         verbose = True).mcmc(locs1, vals1, burnin=500, samples=500)
 
@@ -87,12 +89,12 @@ def test_explicit_trend():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
-    covariance = gp.Trend(featurizer, beta='beta') \
-        + gp.SquaredExponential(sill=1.) + gp.Noise()
+    gp = GP(Trend(featurizer, beta='beta'),
+            krn.SquaredExponential(sill=1.) + krn.Noise())
 
     # Generating GP.
     model1 = Model(
-        latent = covariance,
+        gp,
         parameters = dict(beta=[1., 0.5, 0.5, 0.25], range=0.5, nugget=1.),
         verbose = True)
 
@@ -101,14 +103,14 @@ def test_explicit_trend():
 
     # Fit GP.
     model2 = Model(
-        latent = covariance,
+        gp,
         parameters = dict(beta=[0., 0., 0., 0.], range=1., nugget=0.5),
         verbose = True).fit(locs1, vals1, iters=200)
     print()
 
     # MCMC.
     model3 = Model(
-        latent = covariance,
+        gp,
         parameters = dict(beta=[0., 0., 0., 0.], range=1., nugget=0.5),
         verbose = True).mcmc(locs1, vals1, burnin=500, samples=500)
 

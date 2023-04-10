@@ -1,5 +1,6 @@
 import numpy as np
-from geostat import gp, Model, Featurizer, NormalizingFeaturizer
+from geostat import GP, Model, Featurizer, NormalizingFeaturizer, Mix, Mux, Trend
+import geostat.kernel as krn
 from types import SimpleNamespace
 
 def test_mcmc():
@@ -10,11 +11,11 @@ def test_mcmc():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
-    covariance = gp.TrendPrior(featurizer) + gp.SquaredExponential(sill=1.) + gp.Noise()
+    kernel = krn.TrendPrior(featurizer) + krn.SquaredExponential(sill=1.) + krn.Noise()
 
     # Generating GP.
     model1 = Model(
-        latent = covariance,
+        GP(0, kernel),
         parameters = dict(alpha=1., range=0.5, nugget=1.),
         verbose=True)
 
@@ -23,7 +24,7 @@ def test_mcmc():
 
     # Fit GP.
     model2 = Model(
-        latent = covariance,
+        GP(0, kernel),
         parameters = dict(alpha=2., range=1., nugget=0.5),
         verbose=True).mcmc(locs1, vals1,
             step_size=0.05, samples=100, burnin=100, report_interval=50)
@@ -47,18 +48,19 @@ def test_mcmc_multigp():
     # Initialize featurizer of location for trends.
     def trend_terms(x, y): return x, y, x*y
     featurizer = NormalizingFeaturizer(trend_terms, locs1)
-    cov1 = gp.TrendPrior(featurizer, alpha='a1') + gp.SquaredExponential(sill='s1', range='r1')
-    cov2 = gp.TrendPrior(featurizer, alpha='a2') + gp.SquaredExponential(sill='s2', range='r2')
+    in1 = GP(0, krn.TrendPrior(featurizer, alpha='a1') + krn.SquaredExponential(sill='s1', range='r1'))
+    in2 = GP(0, krn.TrendPrior(featurizer, alpha='a2') + krn.SquaredExponential(sill='s2', range='r2'))
 
     f2 = Featurizer(lambda x, y: (1, x + y*y))
-    obs1 = gp.Observation([1., 0.], gp.Trend(f2, beta=[0., 0.]) + gp.Noise(nugget='n1'))
-    obs2 = gp.Observation([0., 1.], gp.Trend(f2, beta=[1., 0.]) + gp.Noise(nugget='n2'))
-    obs3 = gp.Observation(['k1', 'k2'], gp.Trend(f2, beta=[0., 1.]) + gp.Noise(nugget='n3') + gp.Delta(dsill='d', axes=[1]))
+    out1 = GP(Trend(f2, beta=[0., 0.]), krn.Noise(nugget='n1'))
+    out2 = GP(Trend(f2, beta=[1., 0.]), krn.Noise(nugget='n2'))
+    out3 = GP(Trend(f2, beta=[0., 1.]), krn.Noise(nugget='n3') + krn.Delta(dsill='d', axes=[1]))
+
+    gp = Mix([in1, in2], [[1., 0.], [0., 1.], ['k1', 'k2']]) + Mux([out1, out2, out3])
 
     # Generating GP.
     model1 = Model(
-        latent = [cov1, cov2],
-        observed = [obs1, obs2, obs3],
+        gp,
         parameters = dict(
             a1=1., s1=1., r1=0.5, k1=2.,
             a2=1., s2=1., r2=0.5, k2=3.,
@@ -79,8 +81,7 @@ def test_mcmc_multigp():
 
     # Fit GP.
     model2 = Model(
-        latent = [cov1, cov2],
-        observed = [obs1, obs2, obs3],
+        gp,
         parameters = dict(
             a1=1., s1=1., r1=1., k1=0.,
             a2=1., s2=1., r2=1., k2=0.,
