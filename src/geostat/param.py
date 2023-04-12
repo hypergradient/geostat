@@ -107,3 +107,11 @@ def bpp(name, lo, hi):
         return [PaperParameter(name, lo, hi)]
     else:
         return []
+
+def ppp_list(beta):
+    if isinstance(beta, (list, tuple)):
+        return [p for s in beta for p in ppp(s)]
+    elif isinstance(beta, str):
+        return ppp(beta)
+    else:
+        return []

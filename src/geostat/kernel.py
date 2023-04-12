@@ -12,7 +12,7 @@ with warnings.catch_warnings():
 
 from .op import Op
 from .metric import Euclidean, PerAxisDist2, ed
-from .param import get_parameter_values, ppp, upp, bpp
+from .param import get_parameter_values, ppp, upp, bpp, ppp_list
 from .mean import get_trend_coefs
 
 __all__ = ['Kernel']
@@ -119,6 +119,92 @@ class GammaExponential(Kernel):
     def call(self, p, e):
         v = get_parameter_values(self.fa, p)
         return v['sill'] * gamma_exp(e['d2'] / tf.square(v['range']), v['gamma'])
+
+    def reg(self, p):
+        v = get_parameter_values(self.fa, p)
+        return v['range']
+
+@tf.custom_gradient
+def ramp(x):
+    ax = tf.abs(x)
+    def grad(upstream):
+        return upstream * tf.where(ax < 1., -tf.sign(x), 0.)
+    return tf.maximum(0., 1. - ax), grad
+
+class Ramp(Kernel):
+    def __init__(self, range='range', sill='sill', scale=None, metric=None):
+        fa = dict(sill=sill, range=range, scale=scale)
+        autoinputs = scale_to_metric(scale, metric)
+        super().__init__(fa, dict(d2=autoinputs))
+
+    def vars(self):
+        return ppp(self.fa['sill']) + ppp(self.fa['range'])
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        # return v['sill'] * tf.clip_by_value(1. - tf.sqrt(e['d2']) / v['range'], 0., 1.)
+        return v['sill'] * ramp(tf.sqrt(e['d2']) / v['range'])
+
+    def reg(self, p):
+        v = get_parameter_values(self.fa, p)
+        return v['range']
+
+# @tf.custom_gradient
+# def rampstack(x, sills, ranges):
+#     """
+#     `x` has arbitrary shape [...].
+#     `sills` and `ranges` both have shape [K].
+#     """
+#     ax = ed(tf.abs(x)) # [..., 1]
+#     y = sills * tf.maximum(0., 1. - ax / ranges) # [..., K]
+#     def grad(upstream):
+#         ax = ed(tf.abs(x)) # [..., 1]
+#         y = sills * tf.maximum(0., 1. - ax / ranges) # [..., K]
+#         K = tf.shape(sills)[0]
+#         grad_x = upstream * tf.reduce_sum(tf.where(ax < ranges, -tf.sign(ed(x)), 0.), -1) # [...]
+#         grad_sills = tf.reduce_sum(tf.reshape(ed(upstream) * y, [-1, K]), 0) # [K}
+#         grad_ranges = tf.where(ax < ranges, sills * ax / tf.square(ranges), 0.) # [..., K}
+#         grad_ranges = tf.reduce_sum(tf.reshape(ed(upstream) * grad_ranges, [-1, K]), 0) # [K]
+#         return grad_x, grad_sills, grad_ranges
+#     return tf.reduce_sum(y, -1), grad
+
+@tf.custom_gradient
+def rampstack(x, sills, ranges):
+    """
+    `x` has arbitrary shape [...], but must be non-negative.
+    `sills` and `ranges` both have shape [K].
+    """
+    ax = ed(tf.abs(x)) # [..., 1]
+    y = sills * tf.maximum(0., 1. - ax / ranges) # [..., K]
+    def grad(upstream):
+        ax = ed(tf.abs(x)) # [..., 1]
+        y = sills * tf.maximum(0., 1. - ax / ranges) # [..., K]
+        K = tf.shape(sills)[0]
+        small = ax < ranges
+        grad_x = upstream * tf.reduce_sum(tf.where(small, -tf.sign(ed(x)) * (sills / ranges), 0.), -1) # [...]
+        grad_sills = tf.einsum('ak,a->k', tf.reshape(y, [-1, K]), tf.reshape(upstream, [-1]))
+        grad_ranges = tf.where(small, ax * (sills / tf.square(ranges)), 0.) # [..., K}
+        grad_ranges = tf.einsum('ak,a->k', tf.reshape(grad_ranges, [-1, K]), tf.reshape(upstream, [-1]))
+        return grad_x, grad_sills, grad_ranges
+    return tf.reduce_sum(y, -1), grad
+
+class RampStack(Kernel):
+    def __init__(self, range='range', sill='sill', scale=None, metric=None):
+        fa = dict(sill=sill, range=range, scale=scale)
+        autoinputs = scale_to_metric(scale, metric)
+        super().__init__(fa, dict(d2=autoinputs))
+
+    def vars(self):
+        return ppp_list(self.fa['sill']) + ppp_list(self.fa['range'])
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        if isinstance(v['sill'], (tuple, list)):
+            v['sill'] = tf.stack(v['sill'])
+        if isinstance(v['range'], (tuple, list)):
+            v['range'] = tf.stack(v['range'])
+
+        return rampstack(tf.sqrt(e['d2']), v['sill'], v['range'])
 
     def reg(self, p):
         v = get_parameter_values(self.fa, p)
