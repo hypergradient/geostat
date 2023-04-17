@@ -229,7 +229,7 @@ class Wiener(Kernel):
         v = get_parameter_values(self.fa, p)
         x1 = e['locs1'][..., self.axis]
         x2 = e['locs2'][..., self.axis]
-        k = tf.minimum(ed(x1, 1), ed(x2, 0)) - self.start
+        k = tf.maximum(0., tf.minimum(ed(x1, 1), ed(x2, 0)) - self.start)
         return k
 
     def reg(self, p):
@@ -261,6 +261,7 @@ class IntSquaredExponential(Kernel):
         k -= k[0:1, :]
         k -= k[:, 0:1]
         k = k[1:, 1:]
+        k = tf.maximum(0., k)
 
         return k
 
@@ -293,6 +294,7 @@ class IntExponential(Kernel):
         k -= k[0:1, :]
         k -= k[:, 0:1]
         k = k[1:, 1:]
+        k = tf.maximum(0., k)
 
         return k
 
@@ -469,7 +471,9 @@ def safepow(x, a):
     return y, grad
 
 def unbroadcast(x, shape):
-    excess_rank = tf.maximum(0, len(x.shape) - len(shape))
+    xrank = len(x.shape)
+    rank = len(shape)
+    excess_rank = tf.maximum(0, xrank - rank)
     x = tf.reduce_sum(x, axis=tf.range(excess_rank))
     axes_that_are_one = tf.where(tf.equal(shape, 1))[:, 0]
     x = tf.reduce_sum(x, axis=axes_that_are_one, keepdims=True)
