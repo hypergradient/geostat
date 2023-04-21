@@ -210,6 +210,50 @@ class RampStack(Kernel):
         v = get_parameter_values(self.fa, p)
         return v['range']
 
+@tf.custom_gradient
+def quadstack(x, sills, ranges):
+    """
+    `x` has arbitrary shape [...], but must be non-negative.
+    `sills` and `ranges` both have shape [K].
+    """
+    ex = ed(x)
+    ax = tf.maximum(0., 1. - tf.abs(ex) / ranges) # [..., 1]
+    y = sills * tf.square(ax) # [..., K]
+    def grad(upstream):
+        ex = ed(x)
+        ax = tf.maximum(0., 1. - tf.abs(ex) / ranges) # [..., 1]
+        y = sills * tf.square(ax) # [..., K]
+        sx = tf.sign(ex)
+        gx = sx * ax * (-2. * sills / ranges) 
+        K = tf.shape(sills)[0]
+        grad_x = upstream * tf.reduce_sum(gx, -1) # [...]
+        grad_sills = tf.einsum('ak,a->k', tf.reshape(y, [-1, K]), tf.reshape(upstream, [-1]))
+        grad_ranges = tf.einsum('ak,a->k', tf.reshape(-gx / ranges, [-1, K]), tf.reshape(upstream, [-1]))
+        return grad_x, grad_sills, grad_ranges
+    return tf.reduce_sum(y, -1), grad
+
+class QuadStack(Kernel):
+    def __init__(self, range='range', sill='sill', scale=None, metric=None):
+        fa = dict(sill=sill, range=range, scale=scale)
+        autoinputs = scale_to_metric(scale, metric)
+        super().__init__(fa, dict(d2=autoinputs))
+
+    def vars(self):
+        return ppp_list(self.fa['sill']) + ppp_list(self.fa['range'])
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        if isinstance(v['sill'], (tuple, list)):
+            v['sill'] = tf.stack(v['sill'])
+        if isinstance(v['range'], (tuple, list)):
+            v['range'] = tf.stack(v['range'])
+
+        return quadstack(tf.sqrt(e['d2']), v['sill'], v['range'])
+
+    def reg(self, p):
+        v = get_parameter_values(self.fa, p)
+        return v['range']
+
 class Wiener(Kernel):
     def __init__(self, axis, start):
 
