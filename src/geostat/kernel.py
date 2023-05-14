@@ -216,21 +216,53 @@ def quadstack(x, sills, ranges):
     `x` has arbitrary shape [...], but must be non-negative.
     `sills` and `ranges` both have shape [K].
     """
+    r2 = ranges
+    r1 = tf.pad(ranges[:-1], [[1, 0]])
     ex = ed(x)
-    ax = tf.maximum(0., 1. - tf.abs(ex) / ranges) # [..., 1]
-    y = sills * tf.square(ax) # [..., K]
+    ax = tf.abs(ex)
+    i1 = tf.cast(ax <= r1, tf.float32) # Indicates x <= r1.
+    i2 = tf.cast(ax <= r2, tf.float32) * (1. - i1) # Indicates r1 < x <= r2.
+
+    c1 = 2. / (r1 + r2)
+    c2 = 1. / (1. - tf.square(r1/r2))
+
+    v = i1 * (1. - c1 * ax) + i2 * c2 * tf.square(ax / r2 - 1)
+    y = tf.einsum('...k,k->...', v, sills)
+
     def grad(upstream):
+        r2 = ranges
+        r1 = tf.pad(ranges[:-1], [[1, 0]])
         ex = ed(x)
-        ax = tf.maximum(0., 1. - tf.abs(ex) / ranges) # [..., 1]
-        y = sills * tf.square(ax) # [..., K]
+        ax = tf.abs(ex)
+        i1 = tf.cast(ax <= r1, tf.float32) # Indicates x <= r1.
+        i2 = tf.cast(ax <= r2, tf.float32) * (1. - i1) # Indicates r1 < x <= r2.
+
+        c1 = 2. / (r1 + r2)
+        c2 = 1. / (1. - tf.square(r1/r2))
+
+        v = i1 * (1. - c1 * ax) + i2 * c2 * tf.square(ax / r2 - 1)
+
         sx = tf.sign(ex)
-        gx = sx * ax * (-2. * sills / ranges) 
+
         K = tf.shape(sills)[0]
+        gx = sx * sills * (i1 * -c1 + i2 * 2 * (ax / r2 - 1.) / (r2 - tf.square(r1) / r2))
         grad_x = upstream * tf.reduce_sum(gx, -1) # [...]
-        grad_sills = tf.einsum('ak,a->k', tf.reshape(y, [-1, K]), tf.reshape(upstream, [-1]))
-        grad_ranges = tf.einsum('ak,a->k', tf.reshape(-gx / ranges, [-1, K]), tf.reshape(upstream, [-1]))
+
+        grad_sills = tf.einsum('ak,a->k', tf.reshape(v, [-1, K]), tf.reshape(upstream, [-1]))
+
+        u = 2 / tf.square(r1 + r2) * ax * i1
+        yr1 = u + i2 * tf.square((ax / r2 - 1.) / (r2 - tf.square(r1)/r2)) * 2 * r1
+        yr2 = u - 2 * i2 * (
+            (ax / r2 - 1.) / (r2 - tf.square(r1) / r2)
+            + tf.square(ax / r2 - 1) / r2 / tf.square(1. - tf.square(r1 / r2)))
+        yr1 = sills * tf.reshape(yr1, [-1, K])
+        yr2 = sills * tf.reshape(yr2, [-1, K])
+        yr = tf.pad(yr1[:, 1:], [[0, 0], [0, 1]]) + yr2
+        grad_ranges = tf.einsum('ak,a->k', yr, tf.reshape(upstream, [-1]))
+
         return grad_x, grad_sills, grad_ranges
-    return tf.reduce_sum(y, -1), grad
+
+    return y, grad
 
 class QuadStack(Kernel):
     def __init__(self, range='range', sill='sill', scale=None, metric=None):
@@ -249,6 +281,50 @@ class QuadStack(Kernel):
             v['range'] = tf.stack(v['range'])
 
         return quadstack(tf.sqrt(e['d2']), v['sill'], v['range'])
+
+    def reg(self, p):
+        v = get_parameter_values(self.fa, p)
+        return v['range']
+
+@tf.custom_gradient
+def quadstack1(x, sills, ranges):
+    """
+    `x` has arbitrary shape [...], but must be non-negative.
+    `sills` and `ranges` both have shape [K].
+    """
+    ex = ed(x)
+    ax = tf.maximum(0., 1. - tf.abs(ex) / ranges) # [..., 1]
+    y = sills * tf.square(ax) # [..., K]
+    def grad(upstream):
+        ex = ed(x)
+        ax = tf.maximum(0., 1. - tf.abs(ex) / ranges) # [..., 1]
+        y = sills * tf.square(ax) # [..., K]
+        sx = tf.sign(ex)
+        gx = sx * ax * (-2. * sills / ranges) 
+        K = tf.shape(sills)[0]
+        grad_x = upstream * tf.reduce_sum(gx, -1) # [...]
+        grad_sills = tf.einsum('ak,a->k', tf.reshape(y, [-1, K]), tf.reshape(upstream, [-1]))
+        grad_ranges = tf.einsum('ak,a->k', tf.reshape(-gx / ranges, [-1, K]), tf.reshape(upstream, [-1]))
+        return grad_x, grad_sills, grad_ranges
+    return tf.reduce_sum(y, -1), grad
+
+class QuadStack1(Kernel):
+    def __init__(self, range='range', sill='sill', scale=None, metric=None):
+        fa = dict(sill=sill, range=range, scale=scale)
+        autoinputs = scale_to_metric(scale, metric)
+        super().__init__(fa, dict(d2=autoinputs))
+
+    def vars(self):
+        return ppp_list(self.fa['sill']) + ppp_list(self.fa['range'])
+
+    def call(self, p, e):
+        v = get_parameter_values(self.fa, p)
+        if isinstance(v['sill'], (tuple, list)):
+            v['sill'] = tf.stack(v['sill'])
+        if isinstance(v['range'], (tuple, list)):
+            v['range'] = tf.stack(v['range'])
+
+        return quadstack1(tf.sqrt(e['d2']), v['sill'], v['range'])
 
     def reg(self, p):
         v = get_parameter_values(self.fa, p)
