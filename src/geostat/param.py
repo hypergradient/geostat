@@ -58,7 +58,7 @@ class ParameterSpace:
         return sp
 
     def __tf_tracing_type__(self, context):
-            return SingletonTraceType(type(self))
+        return SingletonTraceType(type(self))
 
 @dataclass(frozen=True)
 class PaperParameter:
