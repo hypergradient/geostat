@@ -443,7 +443,7 @@ class Model():
 
         return replace(self, locs=locs, vals=vals, cats=cats)
 
-    def predict(self, locs2, cats2=None, subsample=None, reduce=None, tracker=None):
+    def predict(self, locs2, cats2=None, *, subsample=None, reduce=None, tracker=None, pair=False):
         '''
         Performs GP predictions of the mean and variance.
         Has support for batch predictions for large data sets.
@@ -465,6 +465,18 @@ class Model():
             assert cats2.shape == locs2.shape[:-1], 'Mismatched shapes in cats and locs'
 
         def interpolate_batch(A11i, locs1, vals1diff, cats1, locs2, cats2, parameters):
+            """
+            Inputs:
+              locs1.shape = [N1, K]
+              vals1diff.shape = [N1]
+              cats1.shape = [N1]
+              locs2.shape = [N2, K]
+              cats2.shape = [N2]
+
+            Outputs:
+              u2_mean.shape = [N2]
+              u2_var.shape = [N2]
+            """
 
             N1 = len(locs1) # Number of measurements.
 
@@ -500,7 +512,91 @@ class Model():
 
             return u2_mean, u2_var
 
-        def interpolate(locs1, vals1, cats1, locs2, cats2, parameters):
+        def interpolate_pair_batch(A11i, locs1, vals1diff, cats1, locs2, cats2, parameters):
+            """
+            Inputs:
+              locs1.shape = [N1, K]
+              vals1diff.shape = [N1]
+              cats1.shape = [N1]
+              locs2.shape = [N2, 2, K]
+              cats2.shape = [N2, 2]
+
+            Outputs:
+              u2_mean.shape = [N2, 2]
+              u2_var.shape = [N2, 2, 2]
+            """
+
+            N1 = len(locs1) # Number of measurements.
+            N2 = len(locs2) # Number of prediction pairs.
+
+            # Permute datapoints if cats is given.
+            if cats2 is not None:
+                perm = np.argsort(cats2)
+                locs2, cats2 = locs2[perm], cats2[perm]
+
+            _, A12 = gp_covariance2(
+                self.gp,
+                tf.constant(locs1, dtype=tf.float32),
+                None if cats1 is None else tf.constant(cats1, dtype=tf.int32),
+                tf.constant(locs2, dtype=tf.float32)[:, 0, :],
+                None if cats2 is None else tf.constant(cats2, dtype=tf.int32)[:, 0],
+                N1,
+                parameters)
+
+            _, A13 = gp_covariance2(
+                self.gp,
+                tf.constant(locs1, dtype=tf.float32),
+                None if cats1 is None else tf.constant(cats1, dtype=tf.int32),
+                tf.constant(locs2, dtype=tf.float32)[:, 1, :],
+                None if cats2 is None else tf.constant(cats2, dtype=tf.int32)[:, 1],
+                N1,
+                parameters)
+
+            m2, A22 = gp_covariance(
+                self.gp,
+                tf.constant(locs2, dtype=tf.float32)[:, 0, :],
+                None if cats2 is None else tf.constant(cats2, dtype=tf.int32)[:, 0],
+                parameters)
+
+            m3, A33 = gp_covariance(
+                self.gp,
+                tf.constant(locs2, dtype=tf.float32)[:, 1, :],
+                None if cats2 is None else tf.constant(cats2, dtype=tf.int32)[:, 1],
+                parameters)
+
+            _, A23 = gp_covariance2(
+                self.gp,
+                tf.constant(locs2, dtype=tf.float32)[:, 0, :],
+                None if cats2 is None else tf.constant(cats2, dtype=tf.int32)[:, 0],
+                tf.constant(locs2, dtype=tf.float32)[:, 1, :],
+                None if cats2 is None else tf.constant(cats2, dtype=tf.int32)[:, 1],
+                N2,
+                parameters)
+
+            # Reassemble into more useful shapes.
+
+            A12 = tf.stack([A12, A13], axis=-1) # [N1, N2, 2]
+
+            m2 = tf.stack([m2, m3], axis=-1) # [N2, 2]
+
+            A22 = tf.linalg.diag_part(A22)
+            A33 = tf.linalg.diag_part(A33)
+            A23 = tf.linalg.diag_part(A23)
+            A22 = tf.stack([tf.stack([A22, A23], axis=-1), tf.stack([A23, A33], axis=-1)], axis=-2) # [N2, 2, 2]
+
+            # Restore order if things were permuted.
+            if cats2 is not None:
+                revperm = np.argsort(perm)
+                m2 = tf.gather(m2, revperm)
+                A12 = tf.gather(A12, revperm, axis=1)
+                A22 = tf.gather(A22, revperm)
+
+            u2_mean = m2 + tf.einsum('abc,a->bc', A12, tf.einsum('ab,b->a', A11i, vals1diff))
+            u2_var = A22 - tf.einsum('abc,abd->acd', A12, tf.einsum('ae,ebd->abd', A11i, A12))
+
+            return u2_mean, u2_var
+
+        def interpolate(locs1, vals1, cats1, locs2, cats2, parameters, pair=False):
             # Interpolate in batches.
             batch_size = self.locs.shape[0] // 2
 
@@ -531,9 +627,10 @@ class Model():
 
             u2_mean_s = []
             u2_var_s = []
+            f = interpolate_pair_batch if pair else interpolate_batch
 
             for locs_subset, cats_subset in for_gp:
-                u2_mean, u2_var = interpolate_batch(A11i, locs1, vals1 - m1, cats1, locs_subset, cats_subset, parameters)
+                u2_mean, u2_var = f(A11i, locs1, vals1 - m1, cats1, locs_subset, cats_subset, parameters)
                 u2_mean = u2_mean.numpy()
                 u2_var = u2_var.numpy()
                 u2_mean_s.append(u2_mean)
@@ -545,13 +642,13 @@ class Model():
             return u2_mean, u2_var
 
         if self.parameter_sample_size is None:
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, self.parameters)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, self.parameters, pair)
         elif reduce == 'median':
             p = tf.nest.map_structure(lambda x: np.quantile(x, 0.5, axis=0).astype(np.float32), self.parameters)
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair)
         elif reduce == 'mean':
             p = tf.nest.map_structure(lambda x: x.mean(axis=0).astype(np.float32), self.parameters)
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair)
         else:
             samples = self.parameter_sample_size
 
@@ -569,7 +666,7 @@ class Model():
             results = []
             for i in tracker(range(subsample)):
                 p = tf.nest.map_structure(lambda x: x[i], parameters)
-                results.append(interpolate(self.locs, self.vals, self.cats, locs2, cats2, p))
+                results.append(interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair))
 
             mm, vv = [np.stack(x) for x in zip(*results)]
             m = mm.mean(axis=0)
