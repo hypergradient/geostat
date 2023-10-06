@@ -98,11 +98,11 @@ class Featurizer:
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-#@tf.function
+@tf.function
 def gp_covariance(gp, locs, cats, p):
     return gp_covariance2(gp, locs, cats, locs, cats, 0, p)
 
-#@tf.function
+@tf.function
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset, p):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
@@ -132,7 +132,7 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset, p):
     C = tf.cast(C, tf.float64)
     return M, C
 
-#@tf.function
+@tf.function
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m
@@ -140,7 +140,7 @@ def mvn_log_pdf(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-#@tf.function
+@tf.function
 def gp_log_likelihood(data, surf_params, gp):
     m, S = gp_covariance(gp, data['locs'], data['cats'], surf_params)
     u = tf.cast(data['vals'], tf.float64)
@@ -323,7 +323,7 @@ class Model():
             return ll # + log_prior
 
         # Run the chain for a burst.
-        #@tf.function
+        @tf.function
         def run_chain(current_state, final_results, kernel, iters):
             samples, results, final_results = tfp.mcmc.sample_chain(
                 num_results=iters,
@@ -462,7 +462,7 @@ class Model():
 
         assert self.locs.shape[-1] == locs2.shape[-1], 'Mismatch in location dimentions'
         if cats2 is not None:
-            assert cats2.shape == locs2.shape[0], 'Mismatched shapes in cats and locs'
+            assert cats2.shape == locs2.shape[:1], 'Mismatched shapes in cats and locs'
 
         def interpolate_batch(A11i, locs1, vals1diff, cats1, locs2, cats2, parameters):
             """
