@@ -7,14 +7,14 @@ def test_euclidean():
     locs = np.random.uniform(-1., 1., [1000, 3])
 
     metric = gm.Euclidean(scale=[1., 1., 'zscale'])
-    covariance = \
-        gp.GammaExponential(metric=metric) + \
-        gp.SquaredExponential(range=2., sill='alpha') + \
-        gp.Noise()
+    kernel = GP(0,
+        krn.GammaExponential(metric=metric) +
+        krn.SquaredExponential(range=2., sill='alpha') +
+        krn.Noise())
 
     # Generating GP.
     model1 = Model(
-        latent = covariance,
+        latent = kernel,
         parameters = dict(alpha=1., zscale=5., range=0.5, sill=1., gamma=1., nugget=1.),
         verbose=True)
 
@@ -23,7 +23,7 @@ def test_euclidean():
 
     # Fit GP.
     model2 = Model(
-        latent = covariance,
+        latent = kernel,
         parameters = dict(alpha=2., zscale=1., range=1.0, sill=0.5, gamma=0.5, nugget=0.5),
         verbose=True).fit(locs, vals, iters=500)
 
@@ -50,14 +50,14 @@ def test_poincare():
     def xform(x, y, z): return zmax-z, x, y
 
     metric = gm.Poincare(xform=xform, scale=['zscale', 1., 1.], zoff='zoff')
-    covariance = \
-        gp.GammaExponential(metric=metric) + \
-        gp.SquaredExponential(metric=metric, range=2., sill='alpha') + \
-        gp.Noise()
+    kernel = GP(0,
+        krn.GammaExponential(metric=metric) +
+        krn.SquaredExponential(metric=metric, range=2., sill='alpha') +
+        krn.Noise())
 
     # Generating GP.
     model1 = Model(
-        latent = covariance,
+        latent = kernel,
         parameters = dict(zoff=2.0, alpha=1., zscale=5., range=0.5, sill=1., gamma=1., nugget=1.),
         verbose=True)
 
@@ -66,7 +66,7 @@ def test_poincare():
 
     # Fit GP.
     model2 = Model(
-        latent = covariance,
+        latent = kernel,
         parameters = dict(zoff=2.0, alpha=2., zscale=1., range=1.0, sill=0.5, gamma=0.5, nugget=0.5),
         verbose=True).fit(locs, vals, iters=500)
 

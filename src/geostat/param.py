@@ -58,7 +58,7 @@ class ParameterSpace:
         return sp
 
     def __tf_tracing_type__(self, context):
-            return SingletonTraceType(type(self))
+        return SingletonTraceType(type(self))
 
 @dataclass(frozen=True)
 class PaperParameter:
@@ -105,5 +105,13 @@ def bpp(name, lo, hi):
     """Bounded paper parameter (maybe)."""
     if isinstance(name, str):
         return [PaperParameter(name, lo, hi)]
+    else:
+        return []
+
+def ppp_list(beta):
+    if isinstance(beta, (list, tuple)):
+        return [p for s in beta for p in ppp(s)]
+    elif isinstance(beta, str):
+        return ppp(beta)
     else:
         return []

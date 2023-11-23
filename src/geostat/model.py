@@ -14,20 +14,46 @@ with warnings.catch_warnings():
     import tensorflow as tf
     import tensorflow_probability as tfp
     tfd = tfp.distributions
-    from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
-    from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
 import tensorflow_probability as tfp
 
-from . import gp
-from .op import Op
+from . import mean as mn
+from . import kernel as krn
+from .op import Op, SingletonTraceType
 from .param import PaperParameter, ParameterSpace, Bound
 from .metric import Euclidean, PerAxisDist2
 from .param import get_parameter_values, ppp, upp, bpp
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['Model', 'Featurizer', 'NormalizingFeaturizer']
+__all__ = ['Featurizer', 'GP', 'Mix', 'Model', 'NormalizingFeaturizer']
+
+@dataclass
+class GP:
+    mean: mn.Trend = None
+    kernel: krn.Kernel = None
+
+    def __post_init__(self):
+        if self.mean is None or self.mean == 0:
+            self.mean = mn.ZeroTrend()
+        assert self.kernel is not None
+
+    def __add__(self, other):
+        return GP(self.mean + other.mean, self.kernel + other.kernel)
+
+    def __tf_tracing_type__(self, context):
+        return SingletonTraceType(self)
+
+    def gather_vars(self):
+        return set(self.mean.gather_vars()) | set(self.kernel.gather_vars())
+
+    def reg(self, sp):
+        return self.kernel.reg(sp)
+
+def Mix(inputs, weights=None):
+    return GP(
+        mn.Mix([i.mean for i in inputs], weights), 
+        krn.Mix([i.kernel for i in inputs], weights))
 
 class NormalizingFeaturizer:
     """
@@ -72,16 +98,12 @@ class Featurizer:
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-def block_diag(blocks):
-    """Return a dense block-diagonal matrix."""
-    return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
+@tf.function
+def gp_covariance(gp, locs, cats, p):
+    return gp_covariance2(gp, locs, cats, locs, cats, 0, p)
 
 @tf.function
-def gp_covariance(covariance, observation, locs, cats, p):
-    return gp_covariance2(covariance, observation, locs, cats, locs, cats, 0, p)
-
-@tf.function
-def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, offset, p):
+def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset, p):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
     and locs2.  It is used to create the diagonal non-zero elements
@@ -99,55 +121,15 @@ def gp_covariance2(covariance, observation, locs1, cats1, locs2, cats2, offset, 
     cache['offset'] = offset
     cache['locs1'] = locs1
     cache['locs2'] = locs2
+    cache['cats1'] = cats1
+    cache['cats2'] = cats2
     cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
     cache['euclidean'] = Euclidean().run(cache, p)
 
-    MM, CC = zip(*[c.run(cache, p) for c in covariance])
-    M = tf.stack(MM, axis=-1) # [locs, hidden].
-    C = tf.stack(CC, axis=-1) # [locs, locs, hidden].
-
-    numobs = len(observation)
-
-    if numobs == 0:
-        assert len(covariance) == 1, 'With no observation model, I only want one covariance model'
-        C = tf.cast(C[..., 0], tf.float64)
-        M = tf.cast(M[..., 0], tf.float64)
-        return M, C
-
-    A = tf.convert_to_tensor(gp.get_parameter_values([o.coefs for o in observation], p)) # [surface, hidden].
-    M = tf.gather(tf.einsum('lh,sh->ls', M, A), cats1, batch_dims=1) # [locs]
-
-    Aaug1 = tf.gather(A, cats1) # [locs, hidden].
-    Aaug2 = tf.gather(A, cats2) # [locs, hidden].
-    outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, hidden].
-    C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
-
-    catcounts1 = tf.math.bincount(cats1, minlength=numobs, maxlength=numobs)
-    catcounts2 = tf.math.bincount(cats2, minlength=numobs, maxlength=numobs)
-    catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
-    catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
-    catdiffs = tf.unstack(catindices2 - catindices1, num=numobs)
-    locsegs1 = tf.split(locs1, catcounts1, num=numobs)
-    locsegs2 = tf.split(locs2, catcounts2, num=numobs)
-
-    CC = [] # Observation noise submatrices.
-    MM = [] # Mean subvectors.
-    for sublocs1, sublocs2, catdiff, o in zip(locsegs1, locsegs2, catdiffs, observation):
-        cache['offset'] = offset + catdiff
-        cache['locs1'] = sublocs1
-        cache['locs2'] = sublocs2
-        cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
-        cache['euclidean'] = Euclidean().run(cache, p)
-        Msub, Csub = o.noise.run(cache, p)
-        CC.append(Csub)
-        MM.append(Msub)
-
-    C += block_diag(CC)
-    C = tf.cast(C, tf.float64)
-
-    M += tf.concat(MM, axis=0)
+    M = gp.mean.run(cache, p)
+    C = gp.kernel.run(cache, p)
     M = tf.cast(M, tf.float64)
-
+    C = tf.cast(C, tf.float64)
     return M, C
 
 @tf.function
@@ -159,19 +141,19 @@ def mvn_log_pdf(u, m, cov):
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
 @tf.function
-def gp_log_likelihood(data, surf_params, covariance, observation):
-    m, S = gp_covariance(covariance, observation, data['locs'], data['cats'], surf_params)
+def gp_log_likelihood(data, surf_params, gp):
+    m, S = gp_covariance(gp, data['locs'], data['cats'], surf_params)
     u = tf.cast(data['vals'], tf.float64)
     return mvn_log_pdf(u, m, S)
 
-def gp_train_step(optimizer, data, parameters, parameter_space, covariance, observation, reg=None):
+def gp_train_step(optimizer, data, parameters, parameter_space, gp, reg=None):
     with tf.GradientTape() as tape:
         sp = parameter_space.get_surface(parameters)
 
-        ll = gp_log_likelihood(data, sp, covariance, observation)
+        ll = gp_log_likelihood(data, sp, gp)
 
         if reg:
-            reg_penalty = reg * tf.reduce_sum([c.reg(sp) for c in covariance])
+            reg_penalty = reg * gp.reg(sp)
         else:
             reg_penalty = 0.
 
@@ -197,8 +179,7 @@ def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dic
 
 @dataclass
 class Model():
-    latent: List[gp.GP] = None
-    observed: List[gp.Observation] = None
+    gp: GP
     parameters: Dict[str, np.ndarray] = None
     parameter_sample_size: Optional[int] = None
     locs: np.ndarray = None
@@ -222,7 +203,7 @@ class Model():
                                 return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
                     Default is None.
 
-                latent : List[gp.GP]
+                latent : List[GP]
                      Name of the covariance function to use in the GP.
                      Should be 'squared-exp' or 'gamma-exp'.
                      Default is 'squared-exp'.
@@ -238,14 +219,6 @@ class Model():
 
         Performs Gaussian process training and prediction.
         '''
-
-        super().__init__()
-
-        assert self.latent is not None, 'I need at least one latent variable'
-        if isinstance(self.latent, gp.GP):
-            self.latent = [self.latent]
-
-        if self.observed is None: self.observed = []
 
         # Default reporting function.
         def default_report(p, prefix=None):
@@ -273,10 +246,8 @@ class Model():
 
         # Collect paraameters.
         if self.parameters is None: self.parameters = {}
-        vv = {v for c in self.latent for v in c.gather_vars()}
-        vv |= {v for o in self.observed for v in o.gather_vars()}
 
-        self.parameter_space = ParameterSpace(check_parameters(vv, self.parameters))
+        self.parameter_space = ParameterSpace(check_parameters(self.gp.gather_vars(), self.parameters))
 
     def fit(self, locs, vals, cats=None,
         step_size=0.01, iters=100, reg=None):
@@ -302,7 +273,7 @@ class Model():
             t0 = time.time()
             while j < (i + 1) * iters / 10:
                 p, ll, reg_penalty = gp_train_step(optimizer, self.data, up, self.parameter_space,
-                    self.latent, self.observed, reg)
+                    self.gp, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
@@ -343,7 +314,7 @@ class Model():
         # Unnormalized log posterior distribution.
         def g(up):
             sp = self.parameter_space.get_surface(up)
-            return gp_log_likelihood(self.data, sp, self.latent, self.observed)
+            return gp_log_likelihood(self.data, sp, self.gp)
 
         def f(*up_flat):
             up = tf.nest.pack_sequence_as(initial_up, up_flat)
@@ -458,8 +429,7 @@ class Model():
         p = self.parameter_space.get_surface(up)
 
         m, S = gp_covariance(
-            self.latent,
-            self.observed,
+            self.gp,
             tf.constant(locs, dtype=tf.float32),
             None if cats is None else tf.constant(cats, dtype=tf.int32),
             p)
@@ -473,7 +443,7 @@ class Model():
 
         return replace(self, locs=locs, vals=vals, cats=cats)
 
-    def predict(self, locs2, cats2=None, subsample=None, reduce=None, tracker=None):
+    def predict(self, locs2, cats2=None, *, subsample=None, reduce=None, tracker=None, pair=False):
         '''
         Performs GP predictions of the mean and variance.
         Has support for batch predictions for large data sets.
@@ -492,9 +462,21 @@ class Model():
 
         assert self.locs.shape[-1] == locs2.shape[-1], 'Mismatch in location dimentions'
         if cats2 is not None:
-            assert cats2.shape == locs2.shape[:-1], 'Mismatched shapes in cats and locs'
+            assert cats2.shape == locs2.shape[:1], 'Mismatched shapes in cats and locs'
 
         def interpolate_batch(A11i, locs1, vals1diff, cats1, locs2, cats2, parameters):
+            """
+            Inputs:
+              locs1.shape = [N1, K]
+              vals1diff.shape = [N1]
+              cats1.shape = [N1]
+              locs2.shape = [N2, K]
+              cats2.shape = [N2]
+
+            Outputs:
+              u2_mean.shape = [N2]
+              u2_var.shape = [N2]
+            """
 
             N1 = len(locs1) # Number of measurements.
 
@@ -504,20 +486,18 @@ class Model():
                 locs2, cats2 = locs2[perm], cats2[perm]
 
             _, A12 = gp_covariance2(
-                self.latent,
-                self.observed,
+                self.gp,
                 tf.constant(locs1, dtype=tf.float32),
-                None if cats1 is None else tf.constant(cats1, dtype=tf.int32),
+                tf.constant(cats1, dtype=tf.int32),
                 tf.constant(locs2, dtype=tf.float32),
-                None if cats2 is None else tf.constant(cats2, dtype=tf.int32),
+                tf.constant(cats2, dtype=tf.int32),
                 N1,
                 parameters)
 
             m2, A22 = gp_covariance(
-                self.latent,
-                self.observed,
+                self.gp,
                 tf.constant(locs2, dtype=tf.float32),
-                None if cats2 is None else tf.constant(cats2, dtype=tf.int32),
+                tf.constant(cats2, dtype=tf.int32),
                 parameters)
 
             # Restore order if things were permuted.
@@ -532,32 +512,114 @@ class Model():
 
             return u2_mean, u2_var
 
-        def interpolate(locs1, vals1, cats1, locs2, cats2, parameters):
+        def interpolate_pair_batch(A11i, locs1, vals1diff, cats1, locs2, cats2, parameters):
+            """
+            Inputs:
+              locs1.shape = [N1, K]
+              vals1diff.shape = [N1]
+              cats1.shape = [N1]
+              locs2.shape = [N2, 2, K]
+              cats2.shape = [N2]
+
+            Outputs:
+              u2_mean.shape = [N2, 2]
+              u2_var.shape = [N2, 2, 2]
+            """
+
+            N1 = len(locs1) # Number of measurements.
+            N2 = len(locs2) # Number of prediction pairs.
+
+            # Permute datapoints if cats is given.
+            perm = np.argsort(cats2)
+            locs2, cats2 = locs2[perm], cats2[perm]
+
+            _, A12 = gp_covariance2(
+                self.gp,
+                tf.constant(locs1, dtype=tf.float32),
+                tf.constant(cats1, dtype=tf.int32),
+                tf.constant(locs2[:, 0, :], dtype=tf.float32),
+                tf.constant(cats2, dtype=tf.int32),
+                N1,
+                parameters)
+
+            _, A13 = gp_covariance2(
+                self.gp,
+                tf.constant(locs1, dtype=tf.float32),
+                tf.constant(cats1, dtype=tf.int32),
+                tf.constant(locs2[:, 1, :], dtype=tf.float32),
+                tf.constant(cats2, dtype=tf.int32),
+                N1,
+                parameters)
+
+            m2, A22 = gp_covariance(
+                self.gp,
+                tf.constant(locs2[:, 0, :], dtype=tf.float32),
+                tf.constant(cats2, dtype=tf.int32),
+                parameters)
+
+            m3, A33 = gp_covariance(
+                self.gp,
+                tf.constant(locs2[:, 1, :], dtype=tf.float32),
+                tf.constant(cats2, dtype=tf.int32),
+                parameters)
+
+            _, A23 = gp_covariance2(
+                self.gp,
+                tf.constant(locs2[:, 0, :], dtype=tf.float32),
+                tf.constant(cats2, dtype=tf.int32),
+                tf.constant(locs2[:, 1, :], dtype=tf.float32),
+                tf.constant(cats2, dtype=tf.int32),
+                N2,
+                parameters)
+
+            # Reassemble into more useful shapes.
+
+            A12 = tf.stack([A12, A13], axis=-1) # [N1, N2, 2]
+
+            m2 = tf.stack([m2, m3], axis=-1) # [N2, 2]
+
+            A22 = tf.linalg.diag_part(A22)
+            A33 = tf.linalg.diag_part(A33)
+            A23 = tf.linalg.diag_part(A23)
+            A22 = tf.stack([tf.stack([A22, A23], axis=-1), tf.stack([A23, A33], axis=-1)], axis=-2) # [N2, 2, 2]
+
+            # Restore order if things were permuted.
+            revperm = np.argsort(perm)
+            m2 = tf.gather(m2, revperm)
+            A12 = tf.gather(A12, revperm, axis=1)
+            A22 = tf.gather(A22, revperm)
+
+            u2_mean = m2 + tf.einsum('abc,a->bc', A12, tf.einsum('ab,b->a', A11i, vals1diff))
+            u2_var = A22 - tf.einsum('abc,abd->bcd', A12, tf.einsum('ae,ebd->abd', A11i, A12))
+
+            return u2_mean, u2_var
+
+        def interpolate(locs1, vals1, cats1, locs2, cats2, parameters, pair=False):
             # Interpolate in batches.
             batch_size = self.locs.shape[0] // 2
 
             for_gp = []
-            locs2r = locs2.reshape([-1, locs2.shape[-1]])
-            if cats2 is not None:
-                cats2r = cats2.ravel()
-            else:
-                cats2r = np.zeros_like(locs2r[..., 0], np.int32)
 
-            for start in np.arange(0, len(locs2r), batch_size):
+            if cats2 is None:
+                cats2 = np.zeros(locs2.shape[:1], np.int32)
+
+            for start in np.arange(0, len(locs2), batch_size):
                 stop = start + batch_size
-                subset = locs2r[start:stop], cats2r[start:stop]
+                subset = locs2[start:stop], cats2[start:stop]
                 for_gp.append(subset)
 
             # Permute datapoints if cats is given.
             if cats1 is not None:
                 perm = np.argsort(cats1)
                 locs1, vals1, cats1 = locs1[perm], vals1[perm], cats1[perm]
+            else:
+                perm = None
+                cats1 = np.zeros_like(locs1[..., 0], np.int32)
 
             m1, A11 = gp_covariance(
-                self.latent,
-                self.observed,
+                self.gp,
                 tf.constant(locs1, dtype=tf.float32),
-                None if cats1 is None else tf.constant(cats1, dtype=tf.int32),
+                tf.constant(cats1, dtype=tf.int32),
                 parameters)
 
             A11i = tf.linalg.inv(A11)
@@ -565,26 +627,28 @@ class Model():
             u2_mean_s = []
             u2_var_s = []
 
+            f = interpolate_pair_batch if pair else interpolate_batch
+
             for locs_subset, cats_subset in for_gp:
-                u2_mean, u2_var = interpolate_batch(A11i, locs1, vals1 - m1, cats1, locs_subset, cats_subset, parameters)
+                u2_mean, u2_var = f(A11i, locs1, vals1 - m1, cats1, locs_subset, cats_subset, parameters)
                 u2_mean = u2_mean.numpy()
                 u2_var = u2_var.numpy()
                 u2_mean_s.append(u2_mean)
                 u2_var_s.append(u2_var)
 
-            u2_mean = np.concatenate(u2_mean_s).reshape(locs2.shape[:-1])
-            u2_var = np.concatenate(u2_var_s).reshape(locs2.shape[:-1])
+            u2_mean = np.concatenate(u2_mean_s)
+            u2_var = np.concatenate(u2_var_s)
 
             return u2_mean, u2_var
 
         if self.parameter_sample_size is None:
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, self.parameters)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, self.parameters, pair)
         elif reduce == 'median':
             p = tf.nest.map_structure(lambda x: np.quantile(x, 0.5, axis=0).astype(np.float32), self.parameters)
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair)
         elif reduce == 'mean':
             p = tf.nest.map_structure(lambda x: x.mean(axis=0).astype(np.float32), self.parameters)
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair)
         else:
             samples = self.parameter_sample_size
 
@@ -602,7 +666,7 @@ class Model():
             results = []
             for i in tracker(range(subsample)):
                 p = tf.nest.map_structure(lambda x: x[i], parameters)
-                results.append(interpolate(self.locs, self.vals, self.cats, locs2, cats2, p))
+                results.append(interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair))
 
             mm, vv = [np.stack(x) for x in zip(*results)]
             m = mm.mean(axis=0)

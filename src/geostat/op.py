@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict
+from tensorflow.core.function.trace_type import default_types
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
@@ -30,9 +31,11 @@ class Op:
         return []
 
     def gather_vars(self, cache=None):
+        """`cache` maps from Op ids to sets of variable names."""
         if cache is None: cache = {}
         if id(self) not in cache:
             vv = {v for op in tf.nest.flatten(self.autoinputs) if isinstance(op, Op) for v in op.gather_vars(cache)}
+            # print(self, '<-', [x.name for x in vv], '|', [x.name for x in set(self.vars())], '\n')
             cache[id(self)] = vv | set(self.vars())
         return cache[id(self)]
 
@@ -77,25 +80,11 @@ class Op:
     def __tf_tracing_type__(self, context):
         return SingletonTraceType(self)
 
-class SingletonTraceType(tf.types.experimental.TraceType):
+class SingletonTraceType(default_types.Literal):
     """
     A trace type to override TF's default behavior, which is
     to treat dataclass-based onjects as dicts.
     """
-
     def __init__(self, thing):
-       self.thing = thing
-       pass
-
-    def is_subtype_of(self, other):
-       return type(other) is SingletonTraceType \
-           and self.thing is other.thing
-
-    def most_specific_common_supertype(self, others):
-       return self if all(self == other for other in others) else None
-
-    def __eq__(self, other):
-       return isinstance(other, SingletonTraceType) and self.thing == other.thing
-
-    def __hash__(self):
-       return hash(id(self.thing))
+        self.value = thing
+        self._value_hash = hash(id(thing))
