@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from typing import Dict
 from tensorflow.core.function.trace_type import default_types
+from typing import Dict
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
@@ -31,25 +31,29 @@ class Op:
         return []
 
     def gather_vars(self, cache=None):
-        """`cache` maps from Op ids to sets of variable names."""
+        """
+        `cache` maps from Op ids to sets of variable names.
+
+        Returns a dict of parameters, keyed by name.
+        """
         if cache is None: cache = {}
         if id(self) not in cache:
-            vv = {v for op in tf.nest.flatten(self.autoinputs) if isinstance(op, Op) for v in op.gather_vars(cache)}
+            vv = {k: v for op in tf.nest.flatten(self.autoinputs)
+                       if isinstance(op, Op)
+                       for k, v in op.gather_vars(cache).items()}
             # print(self, '<-', [x.name for x in vv], '|', [x.name for x in set(self.vars())], '\n')
-            cache[id(self)] = vv | set(self.vars())
+            cache[id(self)] = vv | self.vars()
         return cache[id(self)]
 
-    def __call__(self, p, e):
+    def __call__(self, e):
         """
-        `p` is a dict of model parameters.
-
         `e` is a blob of evaluated inputs from upstream ops and other
         things inserted by the caller.  Other values in `e` are supplied
         by the caller.
         """
         pass
 
-    def run(self, cache, p):
+    def run(self, cache):
         """
         If op has already been run, return result. Else:
             - Assemble inputs by recursively calling upstream ops.
@@ -65,11 +69,11 @@ class Op:
             if isinstance(op, str):
                 return cache[op]
             else:
-                return op.run(cache, p)
+                return op.run(cache)
        
         if id(self) not in cache:
             e = tf.nest.map_structure(lambda op: eval(op), self.autoinputs)
-            cache[id(self)] = self(p, e)
+            cache[id(self)] = self(e)
 
             # Save the Op so that its ID remains unique.
             if '__save__' not in cache: cache['__save__'] = []
