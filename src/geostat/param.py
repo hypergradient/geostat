@@ -1,4 +1,4 @@
-from argparse import Namespace
+from types import SimpleNamespace
 from dataclasses import dataclass, replace
 from typing import Dict
 import tensorflow as tf
@@ -7,10 +7,10 @@ from scipy.special import logit
 from .op import SingletonTraceType
 
 
-__all__ = ['make_parameters', 'Parameter']
+__all__ = ['Parameter', 'Parameters']
 
-def make_parameters(**kw):
-    return Namespace(**{k:Parameter(k, v) for k, v in kw.items()})
+def Parameters(**kw):
+    return SimpleNamespace(**{k:Parameter(k, v) for k, v in kw.items()})
 
 @dataclass
 class Parameter:
@@ -35,8 +35,8 @@ class Parameter:
             ('u' if self.lo == float('-inf') else 'b') + \
             ('u' if self.hi == float('inf') else 'b')
 
-    def create_tf_variables(self):
-        """Create TF variable for underlying parameter"""
+    def create_tf_variable(self):
+        """Create TF variable for underlying parameter or update it"""
         # Create underlying parameter.
         b = self.bounding()
         if b == 'bb':
@@ -47,7 +47,11 @@ class Parameter:
             init = -np.log(self.hi - self.value)
         else:
             init = self.value
-        self.underlying = tf.Variable(init, name=self.name, dtype=tf.float32)
+
+        if self.underlying is None:
+            self.underlying = tf.Variable(init, name=self.name, dtype=tf.float32)
+        else:
+            self.underlying.assign(init)
 
     def surface(self):
         """ Create tensor for surface parameter"""
@@ -84,8 +88,6 @@ def get_parameter_values(blob: object):
         return [get_parameter_values(a) for a in blob]
     elif isinstance(blob, Parameter):
         return blob.surface()
-    elif blob is None:
-        return None
     else:
         return blob
 

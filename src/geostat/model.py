@@ -234,15 +234,25 @@ class Model():
         if self.vals is not None: self.vals = np.array(self.vals)
         if self.cats is not None: self.cats = np.array(self.cats)
 
-        # Collect parameters.
-        self.parameters = self.gp.gather_vars()
+        # Collect parameters and create TF parameters.
+        parameters = self.gp.gather_vars()
+        for p in parameters.values():
+            p.create_tf_variable()
 
-        # Create TF variables for underlying parameters.
-        for p in self.parameters.values():
-            p.create_tf_variables()
+    def set(self, **values):
+        parameters = self.gp.gather_vars()
+        for name, v in values.items():
+            if name in parameters:
+                parameters[name].value = v
+                parameters[name].create_tf_variable()
+            else:
+                raise ValueError(f"{k} is not a parameter")
+        return self
 
-    def fit(self, locs, vals, cats=None,
-        step_size=0.01, iters=100, reg=None):
+    def fit(self, locs, vals, cats=None, step_size=0.01, iters=100, reg=None):
+
+        # Collect parameters and create TF parameters.
+        parameters = self.gp.gather_vars()
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -266,17 +276,17 @@ class Model():
             t0 = time.time()
             while j < (i + 1) * iters / 10:
                 ll, reg_penalty = gp_train_step(
-                    optimizer, self.data, self.parameters, self.gp, reg)
+                    optimizer, self.data, parameters, self.gp, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
             if self.verbose == True:
                 self.report(
                   dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
-                  {p.name: p.surface() for p in self.parameters.values()})
+                  {p.name: p.surface() for p in parameters.values()})
 
-        # TODO: don't save self.parameters?
-        for p in self.parameters.values():
+        # Save parameter values.
+        for p in parameters.values():
             p.update_value()
 
         # Restore order if things were permuted.
