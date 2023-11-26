@@ -65,9 +65,10 @@ class Parameter:
         return v
 
     def update_value(self):
-        self.value = self.surface()
+        self.value = self.surface().numpy()
 
     def __tf_tracing_type__(self, context):
+        print('------ param trace type -----', id(self))
         return SingletonTraceType(self)
 
 # TODO: cache surface somehow

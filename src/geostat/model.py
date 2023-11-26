@@ -15,6 +15,7 @@ with warnings.catch_warnings():
     import tensorflow_probability as tfp
     tfd = tfp.distributions
 
+from tensorflow.core.function.trace_type import default_types
 import tensorflow_probability as tfp
 
 from . import mean as mn
@@ -44,6 +45,7 @@ class GP:
 
     def __tf_tracing_type__(self, context):
         return SingletonTraceType(self)
+        # return default_types.Literal(hash(id(self)))
 
     def gather_vars(self):
         return self.mean.gather_vars() | self.kernel.gather_vars()
@@ -100,11 +102,11 @@ class Featurizer:
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-# @tf.function
+@tf.function
 def gp_covariance(gp, locs, cats):
     return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
-# @tf.function
+@tf.function
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
@@ -134,7 +136,7 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     C = tf.cast(C, tf.float64)
     return M, C
 
-# @tf.function
+@tf.function
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m
@@ -142,7 +144,7 @@ def mvn_log_pdf(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-# @tf.function
+@tf.function
 def gp_log_likelihood(data, gp):
     m, S = gp_covariance(gp, data['locs'], data['cats'])
     u = tf.cast(data['vals'], tf.float64)
@@ -247,12 +249,15 @@ class Model():
             cats = np.array(cats)
             perm = np.argsort(cats)
             locs, vals, cats = locs[perm], vals[perm], cats[perm]
+        else:
+            cats = np.zeros(locs.shape[:1], np.int32)
+            perm = None
 
         # Data dict.
         self.data = {
             'locs': tf.constant(locs, dtype=tf.float32),
             'vals': tf.constant(vals, dtype=tf.float32),
-            'cats': None if cats is None else tf.constant(cats, dtype=tf.int32)}
+            'cats': tf.constant(cats, dtype=tf.int32)}
 
         optimizer = tf.keras.optimizers.Adam(learning_rate=step_size)
 
@@ -275,11 +280,15 @@ class Model():
             p.update_value()
 
         # Restore order if things were permuted.
-        if cats is not None:
+        if perm is not None:
             revperm = np.argsort(perm)
             locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
-        return replace(self, locs=locs, vals=vals, cats=cats)
+        self.locs = locs
+        self.vals = vals
+        self.cats = cats
+
+        return self
 
     def mcmc(self, locs, vals, cats=None,
             chains=4, step_size=0.1, move_prob=0.5,
@@ -315,7 +324,7 @@ class Model():
             return ll # + log_prior
 
         # Run the chain for a burst.
-        # @tf.function
+        @tf.function
         def run_chain(current_state, final_results, kernel, iters):
             samples, results, final_results = tfp.mcmc.sample_chain(
                 num_results=iters,
@@ -415,6 +424,9 @@ class Model():
             cats = np.array(cats)
             perm = np.argsort(cats)
             locs, cats = locs[perm], cats[perm]
+        else:
+            cats = np.zeros(locs.shape[:1], np.int32)
+            perm = None
 
         m, S = gp_covariance(
             self.gp,
@@ -424,11 +436,15 @@ class Model():
         vals = MVN(m, tf.linalg.cholesky(S)).sample().numpy()
 
         # Restore order if things were permuted.
-        if cats is not None:
+        if perm is not None:
             revperm = np.argsort(perm)
             locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
-        return replace(self, locs=locs, vals=vals, cats=cats)
+        self.locs = locs
+        self.vals = vals
+        self.cats = cats
+
+        return self
 
     def predict(self, locs2, cats2=None, *, subsample=None, reduce=None, tracker=None, pair=False):
         '''
@@ -450,6 +466,8 @@ class Model():
         assert self.locs.shape[-1] == locs2.shape[-1], 'Mismatch in location dimentions'
         if cats2 is not None:
             assert cats2.shape == locs2.shape[:1], 'Mismatched shapes in cats and locs'
+        else:
+            cats2 = np.zeros(locs2.shape[:1], np.int32)
 
         def interpolate_batch(A11i, locs1, vals1diff, cats1, locs2, cats2):
             """
@@ -585,9 +603,6 @@ class Model():
 
             for_gp = []
 
-            if cats2 is None:
-                cats2 = np.zeros(locs2.shape[:1], np.int32)
-
             for start in np.arange(0, len(locs2), batch_size):
                 stop = start + batch_size
                 subset = locs2[start:stop], cats2[start:stop]
@@ -597,9 +612,6 @@ class Model():
             if cats1 is not None:
                 perm = np.argsort(cats1)
                 locs1, vals1, cats1 = locs1[perm], vals1[perm], cats1[perm]
-            else:
-                perm = None
-                cats1 = np.zeros_like(locs1[..., 0], np.int32)
 
             m1, A11 = gp_covariance(
                 self.gp,

@@ -29,9 +29,9 @@ class Metric(Op):
 
 def get_scale_vars(scale):
     if scale is not None:
-        return [p for s in scale for p in ppp(s)]
+        return {k: p for s in scale for k, p in ppp(s).items()}
     else:
-        return []
+        return {}
 
 class Euclidean(Metric):
     def __init__(self, scale=None):
