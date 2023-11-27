@@ -82,8 +82,8 @@ class Op:
         return cache[id(self)]
 
     def __tf_tracing_type__(self, context):
-        print('------ op trace type -----', id(self))
         return SingletonTraceType(self)
+
 
 class SingletonTraceType(TraceType):
     """

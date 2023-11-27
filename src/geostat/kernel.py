@@ -60,9 +60,6 @@ class Kernel(Op):
         string = ', '.join('%s %4.2f' % (v.name, p[v.name]) for v in self.vars())
         return '[' + string + ']'
 
-    def reg(self):
-        pass
-
 class TrendPrior(Kernel):
     def __init__(self, featurizer, alpha):
         fa = dict(alpha=alpha)
@@ -77,9 +74,6 @@ class TrendPrior(Kernel):
         F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
         F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
         return v['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
-
-    def reg(self):
-        return 0.
 
 def scale_to_metric(scale, metric):
     assert scale is None or metric is None
@@ -103,10 +97,6 @@ class SquaredExponential(Kernel):
         v = get_parameter_values(self.fa)
         return v['sill'] * tf.exp(-0.5 * e['d2'] / tf.square(v['range']))
 
-    def reg(self):
-        v = get_parameter_values(self.fa)
-        return v['range']
-
 class GammaExponential(Kernel):
     def __init__(self, range, sill, gamma, scale=None, metric=None):
         fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
@@ -119,10 +109,6 @@ class GammaExponential(Kernel):
     def call(self, e):
         v = get_parameter_values(self.fa)
         return v['sill'] * gamma_exp(e['d2'] / tf.square(v['range']), v['gamma'])
-
-    def reg(self):
-        v = get_parameter_values(self.fa)
-        return v['range']
 
 @tf.custom_gradient
 def ramp(x):
@@ -144,10 +130,6 @@ class Ramp(Kernel):
         v = get_parameter_values(self.fa)
         # return v['sill'] * tf.clip_by_value(1. - tf.sqrt(e['d2']) / v['range'], 0., 1.)
         return v['sill'] * ramp(tf.sqrt(e['d2']) / v['range'])
-
-    def reg(self):
-        v = get_parameter_values(self.fa)
-        return v['range']
 
 # @tf.custom_gradient
 # def rampstack(x, sills, ranges):
@@ -205,10 +187,6 @@ class RampStack(Kernel):
             v['range'] = tf.stack(v['range'])
 
         return rampstack(tf.sqrt(e['d2']), v['sill'], v['range'])
-
-    def reg(self):
-        v = get_parameter_values(self.fa)
-        return v['range']
 
 @tf.recompute_grad
 def smooth_convex(x, sills, ranges):
@@ -308,10 +286,6 @@ class SmoothConvex(Kernel):
 
         return smooth_convex(tf.sqrt(e['d2']), v['sill'], v['range'])
 
-    def reg(self):
-        v = get_parameter_values(self.fa)
-        return v['range']
-
 @tf.recompute_grad
 def quadstack(x, sills, ranges):
     """
@@ -341,10 +315,6 @@ class QuadStack(Kernel):
 
         return quadstack(tf.sqrt(e['d2']), v['sill'], v['range'])
 
-    def reg(self):
-        v = get_parameter_values(self.fa)
-        return v['range']
-
 class Wiener(Kernel):
     def __init__(self, axis, start):
 
@@ -366,9 +336,6 @@ class Wiener(Kernel):
         x2 = e['locs2'][..., self.axis]
         k = tf.maximum(0., tf.minimum(ed(x1, 1), ed(x2, 0)) - self.start)
         return k
-
-    def reg(self):
-        return 0.
 
 class IntSquaredExponential(Kernel):
     def __init__(self, axis, start, range):
@@ -400,9 +367,6 @@ class IntSquaredExponential(Kernel):
 
         return k
 
-    def reg(self):
-        return 0.
-
 class IntExponential(Kernel):
     def __init__(self, axis, start, range):
 
@@ -433,9 +397,6 @@ class IntExponential(Kernel):
 
         return k
 
-    def reg(self):
-        return 0.
-
 class Noise(Kernel):
     def __init__(self, nugget):
         fa = dict(nugget=nugget)
@@ -451,9 +412,6 @@ class Noise(Kernel):
         indices2 = tf.range(tf.shape(e['locs2'])[0]) + e['offset']
         C = tf.where(tf.equal(tf.expand_dims(indices1, -1), indices2), v['nugget'], 0.)
         return C
-
-    def reg(self):
-        return 0.
 
 class Delta(Kernel):
     def __init__(self, dsill, axes=None):
@@ -475,9 +433,6 @@ class Delta(Kernel):
             d2 = tf.reduce_sum(e['pa_d2'], axis=-1)
 
         return v['dsill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
-
-    def reg(self):
-        return 0.
 
 class Mix(Kernel):
     def __init__(self, inputs, weights=None):
@@ -549,9 +504,6 @@ class Mix(Kernel):
 
             return block_diag(CC)
 
-    def reg(self):
-        return tf.reduce_sum([iput.reg() for iput in self.inputs])
-
 class Stack(Kernel):
     def __init__(self, parts: List[Kernel]):
         self.parts = parts
@@ -570,9 +522,6 @@ class Stack(Kernel):
     def report(self):
         return ' '.join(part.report(p) for part in self.parts)
 
-    def reg(self):
-        return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)
-
 class Product(Kernel):
     def __init__(self, parts: List[Kernel]):
         self.parts = parts
@@ -590,9 +539,6 @@ class Product(Kernel):
 
     def report(self):
         return ' '.join(part.report(p) for part in self.parts)
-
-    def reg(self):
-        return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)
 
 # Gamma exponential covariance function.
 @tf.custom_gradient

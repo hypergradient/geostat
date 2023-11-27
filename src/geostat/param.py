@@ -72,7 +72,6 @@ class Parameter:
         self.value = self.surface().numpy()
 
     def __tf_tracing_type__(self, context):
-        print('------ param trace type -----', id(self))
         return SingletonTraceType(self)
 
 # TODO: cache surface somehow
@@ -116,7 +115,6 @@ def bpp(param, lo, hi):
         return {}
 
 def ppp_list(beta):
-    print('---- ppp_list')
     if isinstance(beta, (list, tuple)):
         return {k: p for s in beta for k, p in ppp(s).items()}
     elif isinstance(beta, Parameter):

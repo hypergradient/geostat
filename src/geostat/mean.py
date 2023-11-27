@@ -120,6 +120,3 @@ class Stack(Mean):
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)
-
-    def reg(self, p):
-        return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)

@@ -45,14 +45,9 @@ class GP:
 
     def __tf_tracing_type__(self, context):
         return SingletonTraceType(self)
-        # return default_types.Literal(hash(id(self)))
 
     def gather_vars(self):
         return self.mean.gather_vars() | self.kernel.gather_vars()
-
-    # TODO: zap
-    def reg(self, sp):
-        return self.kernel.reg(sp)
 
 def Mix(inputs, weights=None):
     return GP(
@@ -161,8 +156,8 @@ def gp_train_step(
         ll = gp_log_likelihood(data, gp)
 
         if reg:
-            # TODO: zap
-            reg_penalty = reg * gp.reg(sp)
+            # TODO: Put in cache later.
+            reg_penalty = reg.run({})
         else:
             reg_penalty = 0.
 
