@@ -1,7 +1,8 @@
 from argparse import Namespace
 import numpy as np
 import tensorflow as tf
-from geostat import Featurizer, GP, Model, NormalizingFeaturizer, Mix, Parameters, Trend
+from geostat import GP, Model, Mix, Parameters, Trend
+import geostat
 import geostat.kernel as krn
 
 def test_multigp():
@@ -20,12 +21,17 @@ def test_multigp():
         n1=0.1, n2=0.2, n3=0.3)
 
     # Initialize featurizer of location for trends.
-    def trend_terms(x, y): return x, y, x*y
-    featurizer = NormalizingFeaturizer(trend_terms, locs1)
-    in1 = GP(0, krn.TrendPrior(featurizer, alpha=p.a1) + krn.SquaredExponential(sill=p.s1, range=p.r1))
-    in2 = GP(0, krn.TrendPrior(featurizer, alpha=p.a2) + krn.SquaredExponential(sill=p.s2, range=p.r2))
+    @geostat.featurizer(normalize=locs1)
+    def trend_featurizer(x, y): return x, y, x*y
 
-    f2 = Featurizer(lambda x, y: (1, x + y*y))
+    in1 = GP(0, krn.TrendPrior(trend_featurizer, alpha=p.a1)
+                + krn.SquaredExponential(sill=p.s1, range=p.r1))
+    in2 = GP(0, krn.TrendPrior(trend_featurizer, alpha=p.a2)
+                + krn.SquaredExponential(sill=p.s2, range=p.r2))
+
+    @geostat.featurizer()
+    def f2(x, y): return 1, x + y*y
+
     out1 = GP(Trend(f2, beta=[0., 0.]), krn.Noise(nugget=p.n1))
     out2 = GP(Trend(f2, beta=[p.c2, 0.]), krn.Noise(nugget=p.n2))
     out3 = GP(Trend(f2, beta=[0., 1.]), krn.Noise(nugget=p.n3))
@@ -53,7 +59,7 @@ def test_multigp():
         a2=1., s2=1., r2=1., k2=0., c2=0.,
         n1=0.1, n2=0.1, n3=0.1)
 
-    model.fit(locs1, vals1, cats1, iters=50)
+    model.fit(locs1, vals1, cats1, iters=5000)
 
     assert np.allclose(
         [vars(p)[name].value for name in 's1 r1 k1 s2 r2 k2 c2 n1 n2 n3'.split()],

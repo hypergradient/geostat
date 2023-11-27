@@ -28,7 +28,7 @@ from .param import Parameter
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['Featurizer', 'GP', 'Mix', 'Model', 'NormalizingFeaturizer']
+__all__ = ['featurizer', 'GP', 'Mix', 'Model']
 
 @dataclass
 class GP:
@@ -93,6 +93,14 @@ class Featurizer:
                 return tf.stack(feats, axis=1)
         else: # One feature.
             return e(feats)
+
+def featurizer(normalize=None):
+    def helper(f):
+        if normalize is None:
+            return Featurizer(f)
+        else:
+            return NormalizingFeaturizer(f, normalize)
+    return helper
 
 def e(x, a=-1):
     return tf.expand_dims(x, a)

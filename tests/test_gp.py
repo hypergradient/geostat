@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
-from geostat import Parameters, Featurizer, GP, Model, NormalizingFeaturizer, Trend
+import geostat
 import geostat.kernel as krn
+from geostat import Parameters, GP, Model, Trend
 
 def test_noise():
     np.random.seed(2)
@@ -12,10 +13,6 @@ def test_noise():
 
     # Create parameters.
     p = Parameters(nugget=1.)
-
-    # Initialize featurizer of location for trends.
-    def trend_terms(x, y): return x, y, x*y
-    featurizer = NormalizingFeaturizer(trend_terms, locs1)
 
     # Create model and generate data.
     kernel = krn.Noise(p.nugget)
@@ -52,12 +49,12 @@ def test_gp_with_trend():
     # Create parameters.
     p = Parameters(range=0.33, nugget=1., beta=[4., 3., 2., 1.])
 
-    # Initialize featurizer of location for trends.
-    def trend_terms(x, y): return 1., x, y, x*y
-    featurizer = Featurizer(trend_terms)
+    # Featurizer of location for trends.
+    @geostat.featurizer()
+    def trend_featurizer(x, y): return 1., x, y, x*y
 
     # Define model.
-    trend = Trend(featurizer, beta=p.beta)
+    trend = Trend(trend_featurizer, beta=p.beta)
     kernel = krn.SquaredExponential(sill=1., range=p.range) + krn.Noise(nugget=p.nugget)
     model = Model(GP(trend, kernel))
 
@@ -96,12 +93,12 @@ def test_gp2d():
     # Create parameters.
     p = Parameters(alpha=1., range=0.33, nugget=1.)
 
-    # Initialize featurizer of location for trends.
-    def trend_terms(x, y): return x, y, x*y
-    featurizer = NormalizingFeaturizer(trend_terms, locs1)
+    # Featurizer of location for trends.
+    @geostat.featurizer(normalize=locs1)
+    def trend_featurizer(x, y): return x, y, x*y
 
     # Make model.
-    kernel = krn.TrendPrior(featurizer, alpha=p.alpha) \
+    kernel = krn.TrendPrior(trend_featurizer, alpha=p.alpha) \
            + krn.SquaredExponential(sill=1., range=p.range) \
            + krn.Noise(p.nugget)
     model = Model(GP(0, kernel))
@@ -140,13 +137,13 @@ def test_gp3d():
     # Create parameters.
     p = Parameters(alpha=1., zscale=5., range=0.5, sill=1., gamma=1., dsill=0.1, nugget=0.1)
 
-    # Initialize featurizer of location for trends.
-    def trend_terms(x, y, z): return z, z*z
-    featurizer = NormalizingFeaturizer(trend_terms, locs1)
+    # Featurizer of location for trends.
+    @geostat.featurizer(normalize=locs1)
+    def trend_featurizer(x, y, z): return z, z*z
 
     # Create model.
     kernel = \
-        krn.TrendPrior(featurizer, alpha=p.alpha) + \
+        krn.TrendPrior(trend_featurizer, alpha=p.alpha) + \
         krn.GammaExponential(range=p.range, sill=p.sill, gamma=p.gamma, scale=[1., 1., p.zscale]) + \
         krn.Delta(axes=[0, 1], dsill=p.dsill) + \
         krn.Noise(nugget=p.nugget)
@@ -185,13 +182,13 @@ def test_gp3d_stacked():
     # Create parameters.
     p = Parameters(alpha=1., zscale=5., r1=0.25, s1=1., r2=1.0, s2=0.25, nugget=1.)
 
-    # Initialize featurizer of location for trends.
-    def trend_terms(x, y, z): return z, z*z
-    featurizer = NormalizingFeaturizer(trend_terms, locs1)
+    # Featurizer of location for trends.
+    @geostat.featurizer(normalize=locs1)
+    def trend_featurizer(x, y, z): return z, z*z
 
     # Covariance structure
     kernel = \
-        krn.TrendPrior(featurizer, alpha=p.alpha) + \
+        krn.TrendPrior(trend_featurizer, alpha=p.alpha) + \
         krn.SquaredExponential(range=p.r1, sill=p.s1, scale=[1., 1., p.zscale]) + \
         krn.SquaredExponential(range=p.r2, sill=p.s2, scale=[1., 1., 0.]) + \
         krn.Noise(nugget=p.nugget)

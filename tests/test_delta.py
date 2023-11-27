@@ -1,5 +1,5 @@
 import numpy as np
-from geostat import GP, Model, Featurizer, NormalizingFeaturizer, Mix, Parameters, Trend
+from geostat import GP, Model, Mix, Parameters, Trend
 import geostat
 import geostat.kernel as krn
 import numpy as np
@@ -48,19 +48,21 @@ def test_delta():
 
     p = Parameters(**p_init)
 
-    # Initialize featurizer of location for trends.
-    def trend_terms(x, y, z, t): return z, z*z, z*z*z
-    featurizer = NormalizingFeaturizer(trend_terms, locs1)
+    # Featurizer of location for trends.
+    @geostat.featurizer(normalize=locs1)
+    def trend_featurizer(x, y, z, t): return z, z*z, z*z*z
 
-    i_u = GP(0, krn.TrendPrior(featurizer, alpha=p.au)
+    i_u = GP(0, krn.TrendPrior(trend_featurizer, alpha=p.au)
                  + krn.SquaredExponential(sill=p.su1, range=p.ru1, scale=[1., 1., p.zu, p.tu]))
-    i_p = GP(0, krn.TrendPrior(featurizer, alpha=p.ap)
+    i_p = GP(0, krn.TrendPrior(trend_featurizer, alpha=p.ap)
                  + krn.SquaredExponential(sill=p.sp1, range=p.rp1, scale=[1., 1., p.zp, 0.  ]))
-    i_t = GP(0, krn.TrendPrior(featurizer, alpha=p.at)
+    i_t = GP(0, krn.TrendPrior(trend_featurizer, alpha=p.at)
                  + krn.SquaredExponential(sill=p.st1, range=p.rt1, scale=[1., 1., p.zt, p.tt]))
 
-    feat_r = NormalizingFeaturizer(lambda x, y, z, t: (), locs1)
+    @geostat.featurizer()
+    def unit_featurizer(x, y, z, t): return (1,)
 
+    @geostat.featurizer()
     def neg_transformed_natural_gradient(x, y, z, t):
         degF = 62.2 + 57.1 * (0.15 - z)
         return -(tf.math.log(degF + 6.77) - tf.math.log(75 + 6.77))
@@ -68,9 +70,9 @@ def test_delta():
     o_u = GP(0, krn.Noise(nugget=p.nu) + krn.Delta(dsill=p.wu, axes=[0, 1]))
     o_p = GP(0, krn.Noise(nugget=p.np) + krn.Delta(dsill=p.wp, axes=[0, 1]))
     o_t = GP(0, krn.Noise(nugget=p.nt) + krn.Delta(dsill=p.wt, axes=[0, 1]))
-    o_r = GP(Trend(Featurizer(neg_transformed_natural_gradient), beta=[1.]),
+    o_r = GP(Trend(neg_transformed_natural_gradient, beta=[1.]),
              krn.Noise(nugget=p.nr) + krn.Delta(dsill=p.wr, axes=[0, 1])
-             + krn.TrendPrior(feat_r, alpha=p.ar))
+             + krn.TrendPrior(unit_featurizer, alpha=p.ar))
 
     gp = Mix([i_u, i_p, i_t], [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [p.cu, p.cp, 0.]]) \
        + Mix([o_u, o_p, o_t, o_r])
