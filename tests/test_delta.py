@@ -94,8 +94,6 @@ def test_delta():
     def reg(ru, rp, rt):
         return ru + rp + rt
 
-    # Perturb model parameters.
+    # Perturb model parameters and fit.
     model.set(**{k: 2*v if 'g' not in k else v for k, v in p_init.items()})
     model.fit(locs1, vals1, cats1, reg=reg(p.ru1, p.rp1, p.rt1), iters=500)
-
-test_delta()

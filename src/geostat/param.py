@@ -87,6 +87,8 @@ def get_parameter_values(blob: object):
         return [get_parameter_values(a) for a in blob]
     elif isinstance(blob, Parameter):
         return blob.surface()
+    elif isinstance(blob, str):
+        raise ValueError(f'Bad parameter {blob} is a string')
     else:
         return blob
 
