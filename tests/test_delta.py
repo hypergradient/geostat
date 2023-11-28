@@ -1,5 +1,6 @@
 import numpy as np
-from geostat import GP, Model, Featurizer, NormalizingFeaturizer, Mix, Trend
+from geostat import GP, Model, Mix, Parameters, Trend
+import geostat
 import geostat.kernel as krn
 import numpy as np
 import tensorflow as tf
@@ -18,59 +19,64 @@ def test_delta():
 
     cats1 = [x for i, count in enumerate(counts) for x in [i] * count]
 
-    # Initialize featurizer of location for trends.
-    def trend_terms(x, y, z, t): return z, z*z, z*z*z
-    featurizer = NormalizingFeaturizer(trend_terms, locs1)
+    p_init = {
+      'au': 1.,
+      'su1': 0.01,
+      'ru1': 0.5,
+      'cu': -0.5,
+      'wu': 0.01,
+      'nu': 0.02,
+      'ap': 1.,
+      'sp1': 0.04,
+      'rp1': 0.4,
+      'cp': -0.3,
+      'wp': 0.002,
+      'np': 0.001,
+      'at': 0.1,
+      'st1': 0.02,
+      'rt1': 1.,
+      'wt': 0.01,
+      'nt': 0.01,
+      'ar': 1.,
+      'wr': 0.03,
+      'nr': 0.001,
+      'zu': 10.,
+      'zp': 15.,
+      'zt': 20.,
+      'tu': 10.,
+      'tt': 10.}
 
-    i_u = GP(0, krn.TrendPrior(featurizer, alpha='au')
-                 + krn.SquaredExponential(sill='su1', range='ru1', scale=[1., 1., 'zu', 'tu']))
-    i_p = GP(0, krn.TrendPrior(featurizer, alpha='ap')
-                 + krn.SquaredExponential(sill='sp1', range='rp1', scale=[1., 1., 'zp', 0.  ]))
-    i_t = GP(0, krn.TrendPrior(featurizer, alpha='at')
-                 + krn.SquaredExponential(sill='st1', range='rt1', scale=[1., 1., 'zt', 'tt']))
+    p = Parameters(**p_init)
 
-    feat_r = NormalizingFeaturizer(lambda x, y, z, t: (), locs1)
+    # Featurizer of location for trends.
+    @geostat.featurizer(normalize=locs1)
+    def trend_featurizer(x, y, z, t): return z, z*z, z*z*z
 
+    i_u = GP(0, krn.TrendPrior(trend_featurizer, alpha=p.au)
+                 + krn.SquaredExponential(sill=p.su1, range=p.ru1, scale=[1., 1., p.zu, p.tu]))
+    i_p = GP(0, krn.TrendPrior(trend_featurizer, alpha=p.ap)
+                 + krn.SquaredExponential(sill=p.sp1, range=p.rp1, scale=[1., 1., p.zp, 0.  ]))
+    i_t = GP(0, krn.TrendPrior(trend_featurizer, alpha=p.at)
+                 + krn.SquaredExponential(sill=p.st1, range=p.rt1, scale=[1., 1., p.zt, p.tt]))
+
+    @geostat.featurizer()
+    def unit_featurizer(x, y, z, t): return (1,)
+
+    @geostat.featurizer()
     def neg_transformed_natural_gradient(x, y, z, t):
         degF = 62.2 + 57.1 * (0.15 - z)
         return -(tf.math.log(degF + 6.77) - tf.math.log(75 + 6.77))
 
-    o_u = GP(0, krn.Noise(nugget='nu') + krn.Delta(dsill='wu', axes=[0, 1]))
-    o_p = GP(0, krn.Noise(nugget='np') + krn.Delta(dsill='wp', axes=[0, 1]))
-    o_t = GP(0, krn.Noise(nugget='nt') + krn.Delta(dsill='wt', axes=[0, 1]))
-    o_r = GP(Trend(Featurizer(neg_transformed_natural_gradient), beta=[1.]),
-             krn.Noise(nugget='nr') + krn.Delta(dsill='wr', axes=[0, 1])
-             + krn.TrendPrior(feat_r, alpha='ar'))
+    o_u = GP(0, krn.Noise(nugget=p.nu) + krn.Delta(dsill=p.wu, axes=[0, 1]))
+    o_p = GP(0, krn.Noise(nugget=p.np) + krn.Delta(dsill=p.wp, axes=[0, 1]))
+    o_t = GP(0, krn.Noise(nugget=p.nt) + krn.Delta(dsill=p.wt, axes=[0, 1]))
+    o_r = GP(Trend(neg_transformed_natural_gradient, beta=[1.]),
+             krn.Noise(nugget=p.nr) + krn.Delta(dsill=p.wr, axes=[0, 1])
+             + krn.TrendPrior(unit_featurizer, alpha=p.ar))
 
-    gp = Mix([i_u, i_p, i_t], [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], ['cu', 'cp', 0.]]) \
+    gp = Mix([i_u, i_p, i_t], [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [p.cu, p.cp, 0.]]) \
        + Mix([o_u, o_p, o_t, o_r])
         
-    p_init = {'au': 1.,
-     'su1': 0.01,
-     'ru1': 0.5,
-     'cu': -0.5,
-     'wu': 0.01,
-     'nu': 0.02,
-     'ap': 1.,
-     'sp1': 0.04,
-     'rp1': 0.4,
-     'cp': -0.3,
-     'wp': 0.002,
-     'np': 0.001,
-     'at': 0.1,
-     'st1': 0.02,
-     'rt1': 1.,
-     'wt': 0.01,
-     'nt': 0.01,
-     'ar': 1.,
-     'wr': 0.03,
-     'nr': 0.001,
-     'zu': 10.,
-     'zp': 15.,
-     'zt': 20.,
-     'tu': 10.,
-     'tt': 10.}
-
     def report(p):
         p = {k: (v.numpy() if hasattr(v, 'numpy') else v) for k, v in p.items()}
         p = Namespace(**p)
@@ -81,17 +87,15 @@ def test_delta():
         print(f't: {p.at:6.3f} {p.zt:6.3f} {p.tt:6.3f} {p.st1:6.3f} {p.rt1:6.3f} {-1. :6.3f} {p.wt:6.3f} {p.nt:6.3f}')
         print(f'r: {p.ar:6.3f} {"    ":6s} {"    ":6s} {"     ":6s} {"     ":6s} {"    ":6s} {p.wr:6.3f} {p.nr:6.3f}')
 
-    model1 = Model(
-        gp,
-        parameters = p_init,
-        report = report,
-        verbose = True)
+    model = Model(gp, report = report)
 
     # Generate data.
-    vals1 = model1.generate(locs1, cats1).vals
+    vals1 = model.generate(locs1, cats1).vals
 
-    model2 = Model(
-        gp,
-        parameters = {k: 2*v if 'g' not in k else v for k, v in p_init.items()},
-        report = report,
-        verbose=True).fit(locs1, vals1, cats1, reg=1., iters=500)
+    @geostat.function
+    def reg(ru, rp, rt):
+        return ru + rp + rt
+
+    # Perturb model parameters and fit.
+    model.set(**{k: 2*v if 'g' not in k else v for k, v in p_init.items()})
+    model.fit(locs1, vals1, cats1, reg=reg(p.ru1, p.rp1, p.rt1), iters=500)

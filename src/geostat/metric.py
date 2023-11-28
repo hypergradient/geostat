@@ -19,7 +19,7 @@ class PerAxisDist2(Op):
     def __init__(self):
         super().__init__({}, dict(locs1='locs1', locs2='locs2'))
 
-    def __call__(self, p, e):
+    def __call__(self, e):
         x1 = e['locs1']
         x2 = e['locs2']
         return tf.square(ed(x1, 1) - ed(x2, 0))
@@ -29,9 +29,9 @@ class Metric(Op):
 
 def get_scale_vars(scale):
     if scale is not None:
-        return [p for s in scale for p in ppp(s)]
+        return {k: p for s in scale for k, p in ppp(s).items()}
     else:
-        return []
+        return {}
 
 class Euclidean(Metric):
     def __init__(self, scale=None):
@@ -41,8 +41,8 @@ class Euclidean(Metric):
     def vars(self):
         return get_scale_vars(self.fa['scale'])
 
-    def __call__(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def __call__(self, e):
+        v = get_parameter_values(self.fa)
         if v['scale'] is not None:
             return tf.einsum('abc,c->ab', e['pa_d2'], tf.square(v['scale']))
         else:
@@ -57,8 +57,8 @@ class Poincare(Metric):
     def vars(self):
         return ppp(self.fa['zoff']) + get_scale_vars(self.fa['scale'])
 
-    def __call__(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def __call__(self, e):
+        v = get_parameter_values(self.fa)
 
         xlocs1 = tf.stack(self.xform(*tf.unstack(e['locs1'], axis=1)), axis=1)
         xlocs2 = tf.stack(self.xform(*tf.unstack(e['locs2'], axis=1)), axis=1)

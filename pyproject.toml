@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "geostat"
-version = "0.9.1"
+version = "0.10.0"
 requires-python = ">=3.8"
 description = "Model spatial data with Gaussian processes"
 readme = "README.md"
@@ -25,8 +25,8 @@ dependencies = [
     "pandas >= 1.2",
     "scipy >= 1.5",
     "shapely >= 1.8",
-    "tensorflow >= 2.5",
-    "tensorflow_probability >= 0.12.0"]
+    "tensorflow >= 2.14",
+    "tensorflow_probability >= 0.22.1"]
 
 [project.urls]
 Homepage = "https://github.com/whdc/geostat"

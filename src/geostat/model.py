@@ -15,18 +15,20 @@ with warnings.catch_warnings():
     import tensorflow_probability as tfp
     tfd = tfp.distributions
 
+from tensorflow.core.function.trace_type import default_types
 import tensorflow_probability as tfp
 
 from . import mean as mn
 from . import kernel as krn
-from .op import Op, SingletonTraceType
-from .param import PaperParameter, ParameterSpace, Bound
 from .metric import Euclidean, PerAxisDist2
+from .op import Op
+from .op import SingletonTraceType
 from .param import get_parameter_values, ppp, upp, bpp
+from .param import Parameter
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['Featurizer', 'GP', 'Mix', 'Model', 'NormalizingFeaturizer']
+__all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturizer']
 
 @dataclass
 class GP:
@@ -45,10 +47,7 @@ class GP:
         return SingletonTraceType(self)
 
     def gather_vars(self):
-        return set(self.mean.gather_vars()) | set(self.kernel.gather_vars())
-
-    def reg(self, sp):
-        return self.kernel.reg(sp)
+        return self.mean.gather_vars() | self.kernel.gather_vars()
 
 def Mix(inputs, weights=None):
     return GP(
@@ -95,15 +94,23 @@ class Featurizer:
         else: # One feature.
             return e(feats)
 
+def featurizer(normalize=None):
+    def helper(f):
+        if normalize is None:
+            return Featurizer(f)
+        else:
+            return NormalizingFeaturizer(f, normalize)
+    return helper
+
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
 @tf.function
-def gp_covariance(gp, locs, cats, p):
-    return gp_covariance2(gp, locs, cats, locs, cats, 0, p)
+def gp_covariance(gp, locs, cats):
+    return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
 @tf.function
-def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset, p):
+def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
     and locs2.  It is used to create the diagonal non-zero elements
@@ -123,11 +130,11 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset, p):
     cache['locs2'] = locs2
     cache['cats1'] = cats1
     cache['cats2'] = cats2
-    cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
-    cache['euclidean'] = Euclidean().run(cache, p)
+    cache['per_axis_dist2'] = PerAxisDist2().run(cache)
+    cache['euclidean'] = Euclidean().run(cache)
 
-    M = gp.mean.run(cache, p)
-    C = gp.kernel.run(cache, p)
+    M = gp.mean.run(cache)
+    C = gp.kernel.run(cache)
     M = tf.cast(M, tf.float64)
     C = tf.cast(C, tf.float64)
     return M, C
@@ -141,46 +148,37 @@ def mvn_log_pdf(u, m, cov):
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
 @tf.function
-def gp_log_likelihood(data, surf_params, gp):
-    m, S = gp_covariance(gp, data['locs'], data['cats'], surf_params)
+def gp_log_likelihood(data, gp):
+    m, S = gp_covariance(gp, data['locs'], data['cats'])
     u = tf.cast(data['vals'], tf.float64)
     return mvn_log_pdf(u, m, S)
 
-def gp_train_step(optimizer, data, parameters, parameter_space, gp, reg=None):
+def gp_train_step(
+    optimizer,
+    data,
+    parameters: Dict[str, Parameter],
+    gp,
+    reg=None
+):
     with tf.GradientTape() as tape:
-        sp = parameter_space.get_surface(parameters)
-
-        ll = gp_log_likelihood(data, sp, gp)
+        ll = gp_log_likelihood(data, gp)
 
         if reg:
-            reg_penalty = reg * gp.reg(sp)
+            # TODO: Put in cache later.
+            reg_penalty = reg.run({})
         else:
             reg_penalty = 0.
 
         loss = -ll + reg_penalty
 
-    gradients = tape.gradient(loss, parameters.values())
-    optimizer.apply_gradients(zip(gradients, parameters.values()))
-    return sp, ll, reg_penalty
-
-def check_parameters(pps: List[PaperParameter], values: Dict[str, float]) -> Dict[str, Bound]:
-    d = defaultdict(list)
-    for pp in pps:
-        d[pp.name].append(pp)
-    out = {}
-    for name, pps in d.items():
-        lo = np.max([pp.lo for pp in pps])
-        hi = np.min([pp.hi for pp in pps])
-        assert lo < hi, 'Conflicting bounds for parameter `%s`' % name
-        assert name in values, 'Parameter `%s` is missing' % name
-        assert np.all(lo <= values[name]) and np.all(values[name] <= hi), 'Parameter `%s` is out of bounds' % name
-        out[name] = Bound(lo, hi)
-    return out
+    up = [p.underlying for p in parameters.values()]
+    gradients = tape.gradient(loss, up)
+    optimizer.apply_gradients(zip(gradients, up))
+    return ll, reg_penalty
 
 @dataclass
 class Model():
     gp: GP
-    parameters: Dict[str, np.ndarray] = None
     parameter_sample_size: Optional[int] = None
     locs: np.ndarray = None
     vals: np.ndarray = None
@@ -207,11 +205,6 @@ class Model():
                      Name of the covariance function to use in the GP.
                      Should be 'squared-exp' or 'gamma-exp'.
                      Default is 'squared-exp'.
-
-                parameters : dict, optional
-                    The starting point for the parameters.
-                    Example: parameters=dict(range=2.0, sill=5.0, nugget=1.0).
-                    Default is None.
 
                 verbose : boolean, optional
                     Whether or not to print parameters.
@@ -244,27 +237,40 @@ class Model():
         if self.vals is not None: self.vals = np.array(self.vals)
         if self.cats is not None: self.cats = np.array(self.cats)
 
-        # Collect paraameters.
-        if self.parameters is None: self.parameters = {}
+        # Collect parameters and create TF parameters.
+        parameters = self.gp.gather_vars()
+        for p in parameters.values():
+            p.create_tf_variable()
 
-        self.parameter_space = ParameterSpace(check_parameters(self.gp.gather_vars(), self.parameters))
+    def set(self, **values):
+        parameters = self.gp.gather_vars()
+        for name, v in values.items():
+            if name in parameters:
+                parameters[name].value = v
+                parameters[name].create_tf_variable()
+            else:
+                raise ValueError(f"{k} is not a parameter")
+        return self
 
-    def fit(self, locs, vals, cats=None,
-        step_size=0.01, iters=100, reg=None):
+    def fit(self, locs, vals, cats=None, step_size=0.01, iters=100, reg=None):
+
+        # Collect parameters and create TF parameters.
+        parameters = self.gp.gather_vars()
 
         # Permute datapoints if cats is given.
         if cats is not None:
             cats = np.array(cats)
             perm = np.argsort(cats)
             locs, vals, cats = locs[perm], vals[perm], cats[perm]
+        else:
+            cats = np.zeros(locs.shape[:1], np.int32)
+            perm = None
 
         # Data dict.
         self.data = {
             'locs': tf.constant(locs, dtype=tf.float32),
             'vals': tf.constant(vals, dtype=tf.float32),
-            'cats': None if cats is None else tf.constant(cats, dtype=tf.int32)}
-
-        up = self.parameter_space.get_underlying(self.parameters)
+            'cats': tf.constant(cats, dtype=tf.int32)}
 
         optimizer = tf.keras.optimizers.Adam(learning_rate=step_size)
 
@@ -272,22 +278,30 @@ class Model():
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                p, ll, reg_penalty = gp_train_step(optimizer, self.data, up, self.parameter_space,
-                    self.gp, reg)
+                ll, reg_penalty = gp_train_step(
+                    optimizer, self.data, parameters, self.gp, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
             if self.verbose == True:
-                self.report(dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty, **p))
+                self.report(
+                  dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
+                  {p.name: p.surface() for p in parameters.values()})
 
-        new_parameters = self.parameter_space.get_surface(up, numpy=True)
+        # Save parameter values.
+        for p in parameters.values():
+            p.update_value()
 
         # Restore order if things were permuted.
-        if cats is not None:
+        if perm is not None:
             revperm = np.argsort(perm)
             locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
-        return replace(self, parameters = new_parameters, locs=locs, vals=vals, cats=cats)
+        self.locs = locs
+        self.vals = vals
+        self.cats = cats
+
+        return self
 
     def mcmc(self, locs, vals, cats=None,
             chains=4, step_size=0.1, move_prob=0.5,
@@ -423,25 +437,27 @@ class Model():
             cats = np.array(cats)
             perm = np.argsort(cats)
             locs, cats = locs[perm], cats[perm]
-
-        up = self.parameter_space.get_underlying(self.parameters)
-
-        p = self.parameter_space.get_surface(up)
+        else:
+            cats = np.zeros(locs.shape[:1], np.int32)
+            perm = None
 
         m, S = gp_covariance(
             self.gp,
             tf.constant(locs, dtype=tf.float32),
-            None if cats is None else tf.constant(cats, dtype=tf.int32),
-            p)
+            None if cats is None else tf.constant(cats, dtype=tf.int32))
 
         vals = MVN(m, tf.linalg.cholesky(S)).sample().numpy()
 
         # Restore order if things were permuted.
-        if cats is not None:
+        if perm is not None:
             revperm = np.argsort(perm)
             locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
-        return replace(self, locs=locs, vals=vals, cats=cats)
+        self.locs = locs
+        self.vals = vals
+        self.cats = cats
+
+        return self
 
     def predict(self, locs2, cats2=None, *, subsample=None, reduce=None, tracker=None, pair=False):
         '''
@@ -463,8 +479,10 @@ class Model():
         assert self.locs.shape[-1] == locs2.shape[-1], 'Mismatch in location dimentions'
         if cats2 is not None:
             assert cats2.shape == locs2.shape[:1], 'Mismatched shapes in cats and locs'
+        else:
+            cats2 = np.zeros(locs2.shape[:1], np.int32)
 
-        def interpolate_batch(A11i, locs1, vals1diff, cats1, locs2, cats2, parameters):
+        def interpolate_batch(A11i, locs1, vals1diff, cats1, locs2, cats2):
             """
             Inputs:
               locs1.shape = [N1, K]
@@ -491,14 +509,12 @@ class Model():
                 tf.constant(cats1, dtype=tf.int32),
                 tf.constant(locs2, dtype=tf.float32),
                 tf.constant(cats2, dtype=tf.int32),
-                N1,
-                parameters)
+                N1)
 
             m2, A22 = gp_covariance(
                 self.gp,
                 tf.constant(locs2, dtype=tf.float32),
-                tf.constant(cats2, dtype=tf.int32),
-                parameters)
+                tf.constant(cats2, dtype=tf.int32))
 
             # Restore order if things were permuted.
             if cats2 is not None:
@@ -512,7 +528,7 @@ class Model():
 
             return u2_mean, u2_var
 
-        def interpolate_pair_batch(A11i, locs1, vals1diff, cats1, locs2, cats2, parameters):
+        def interpolate_pair_batch(A11i, locs1, vals1diff, cats1, locs2, cats2):
             """
             Inputs:
               locs1.shape = [N1, K]
@@ -539,8 +555,7 @@ class Model():
                 tf.constant(cats1, dtype=tf.int32),
                 tf.constant(locs2[:, 0, :], dtype=tf.float32),
                 tf.constant(cats2, dtype=tf.int32),
-                N1,
-                parameters)
+                N1)
 
             _, A13 = gp_covariance2(
                 self.gp,
@@ -548,20 +563,17 @@ class Model():
                 tf.constant(cats1, dtype=tf.int32),
                 tf.constant(locs2[:, 1, :], dtype=tf.float32),
                 tf.constant(cats2, dtype=tf.int32),
-                N1,
-                parameters)
+                N1)
 
             m2, A22 = gp_covariance(
                 self.gp,
                 tf.constant(locs2[:, 0, :], dtype=tf.float32),
-                tf.constant(cats2, dtype=tf.int32),
-                parameters)
+                tf.constant(cats2, dtype=tf.int32))
 
             m3, A33 = gp_covariance(
                 self.gp,
                 tf.constant(locs2[:, 1, :], dtype=tf.float32),
-                tf.constant(cats2, dtype=tf.int32),
-                parameters)
+                tf.constant(cats2, dtype=tf.int32))
 
             _, A23 = gp_covariance2(
                 self.gp,
@@ -569,8 +581,7 @@ class Model():
                 tf.constant(cats2, dtype=tf.int32),
                 tf.constant(locs2[:, 1, :], dtype=tf.float32),
                 tf.constant(cats2, dtype=tf.int32),
-                N2,
-                parameters)
+                N2)
 
             # Reassemble into more useful shapes.
 
@@ -594,14 +605,11 @@ class Model():
 
             return u2_mean, u2_var
 
-        def interpolate(locs1, vals1, cats1, locs2, cats2, parameters, pair=False):
+        def interpolate(locs1, vals1, cats1, locs2, cats2, pair=False):
             # Interpolate in batches.
             batch_size = self.locs.shape[0] // 2
 
             for_gp = []
-
-            if cats2 is None:
-                cats2 = np.zeros(locs2.shape[:1], np.int32)
 
             for start in np.arange(0, len(locs2), batch_size):
                 stop = start + batch_size
@@ -612,15 +620,11 @@ class Model():
             if cats1 is not None:
                 perm = np.argsort(cats1)
                 locs1, vals1, cats1 = locs1[perm], vals1[perm], cats1[perm]
-            else:
-                perm = None
-                cats1 = np.zeros_like(locs1[..., 0], np.int32)
 
             m1, A11 = gp_covariance(
                 self.gp,
                 tf.constant(locs1, dtype=tf.float32),
-                tf.constant(cats1, dtype=tf.int32),
-                parameters)
+                tf.constant(cats1, dtype=tf.int32))
 
             A11i = tf.linalg.inv(A11)
 
@@ -630,7 +634,7 @@ class Model():
             f = interpolate_pair_batch if pair else interpolate_batch
 
             for locs_subset, cats_subset in for_gp:
-                u2_mean, u2_var = f(A11i, locs1, vals1 - m1, cats1, locs_subset, cats_subset, parameters)
+                u2_mean, u2_var = f(A11i, locs1, vals1 - m1, cats1, locs_subset, cats_subset)
                 u2_mean = u2_mean.numpy()
                 u2_var = u2_var.numpy()
                 u2_mean_s.append(u2_mean)
@@ -642,14 +646,17 @@ class Model():
             return u2_mean, u2_var
 
         if self.parameter_sample_size is None:
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, self.parameters, pair)
+            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, pair)
         elif reduce == 'median':
+            raise NotImplementedError
             p = tf.nest.map_structure(lambda x: np.quantile(x, 0.5, axis=0).astype(np.float32), self.parameters)
             m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair)
         elif reduce == 'mean':
+            raise NotImplementedError
             p = tf.nest.map_structure(lambda x: x.mean(axis=0).astype(np.float32), self.parameters)
             m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair)
         else:
+            raise NotImplementedError
             samples = self.parameter_sample_size
 
             if subsample is not None:

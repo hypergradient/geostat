@@ -37,34 +37,31 @@ class Kernel(Op):
     def __mul__(self, other):
         return Product([self]) * other
 
-    def call(self, p, e):
+    def call(self, e):
         """
         Returns tuple `(mean, covariance)` for locations.
         Return values may be unbroadcasted.
         """
         pass
 
-    def __call__(self, p, e):
+    def __call__(self, e):
         """
         Returns tuple `(mean, covariance)` for locations.
         Return values have correct shapes.
         """
-        C = self.call(p, e)
+        C = self.call(e)
         if C is None: C = 0.
         n1 = tf.shape(e['locs1'])[0]
         n2 = tf.shape(e['locs2'])[0]
         C = tf.broadcast_to(C, [n1, n2])
         return C
 
-    def report(self, p):
+    def report(self):
         string = ', '.join('%s %4.2f' % (v.name, p[v.name]) for v in self.vars())
         return '[' + string + ']'
 
-    def reg(self, p):
-        pass
-
 class TrendPrior(Kernel):
-    def __init__(self, featurizer, alpha='alpha'):
+    def __init__(self, featurizer, alpha):
         fa = dict(alpha=alpha)
         self.featurizer = featurizer
         super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
@@ -72,14 +69,11 @@ class TrendPrior(Kernel):
     def vars(self):
         return ppp(self.fa['alpha'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
         F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
         return v['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
-
-    def reg(self, p):
-        return 0.
 
 def scale_to_metric(scale, metric):
     assert scale is None or metric is None
@@ -90,39 +84,43 @@ def scale_to_metric(scale, metric):
             metric = Euclidean(scale)
     return metric
 
+class Constant(Kernel):
+    def __init__(self, sill):
+        fa = dict(sill=sill)
+        super().__init__(fa, dict())
+
+    def vars(self):
+        return ppp(self.fa['sill'])
+
+    def call(self, e):
+        v = get_parameter_values(self.fa)
+        return v['sill']
+
 class SquaredExponential(Kernel):
-    def __init__(self, sill='sill', range='range', scale=None, metric=None):
+    def __init__(self, sill, range, scale=None, metric=None):
         fa = dict(sill=sill, range=range)
         autoinputs = scale_to_metric(scale, metric)
         super().__init__(fa, dict(d2=autoinputs))
 
     def vars(self):
-        return ppp(self.fa['sill']) + ppp(self.fa['range'])
+        return ppp(self.fa['sill']) | ppp(self.fa['range'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         return v['sill'] * tf.exp(-0.5 * e['d2'] / tf.square(v['range']))
 
-    def reg(self, p):
-        v = get_parameter_values(self.fa, p)
-        return v['range']
-
 class GammaExponential(Kernel):
-    def __init__(self, range='range', sill='sill', gamma='gamma', scale=None, metric=None):
+    def __init__(self, range, sill, gamma, scale=None, metric=None):
         fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
         super().__init__(fa, dict(d2=autoinputs))
 
     def vars(self):
-        return ppp(self.fa['sill']) + ppp(self.fa['range']) + bpp(self.fa['gamma'], 0., 2.)
+        return ppp(self.fa['sill']) | ppp(self.fa['range']) | bpp(self.fa['gamma'], 0., 2.)
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         return v['sill'] * gamma_exp(e['d2'] / tf.square(v['range']), v['gamma'])
-
-    def reg(self, p):
-        v = get_parameter_values(self.fa, p)
-        return v['range']
 
 @tf.custom_gradient
 def ramp(x):
@@ -132,22 +130,18 @@ def ramp(x):
     return tf.maximum(0., 1. - ax), grad
 
 class Ramp(Kernel):
-    def __init__(self, range='range', sill='sill', scale=None, metric=None):
+    def __init__(self, range, sill, scale=None, metric=None):
         fa = dict(sill=sill, range=range, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
         super().__init__(fa, dict(d2=autoinputs))
 
     def vars(self):
-        return ppp(self.fa['sill']) + ppp(self.fa['range'])
+        return ppp(self.fa['sill']) | ppp(self.fa['range'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         # return v['sill'] * tf.clip_by_value(1. - tf.sqrt(e['d2']) / v['range'], 0., 1.)
         return v['sill'] * ramp(tf.sqrt(e['d2']) / v['range'])
-
-    def reg(self, p):
-        v = get_parameter_values(self.fa, p)
-        return v['range']
 
 # @tf.custom_gradient
 # def rampstack(x, sills, ranges):
@@ -189,26 +183,22 @@ def rampstack(x, sills, ranges):
     return tf.reduce_sum(y, -1), grad
 
 class RampStack(Kernel):
-    def __init__(self, range='range', sill='sill', scale=None, metric=None):
+    def __init__(self, range, sill, scale=None, metric=None):
         fa = dict(sill=sill, range=range, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
         super().__init__(fa, dict(d2=autoinputs))
 
     def vars(self):
-        return ppp_list(self.fa['sill']) + ppp_list(self.fa['range'])
+        return ppp_list(self.fa['sill']) | ppp_list(self.fa['range'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         if isinstance(v['sill'], (tuple, list)):
             v['sill'] = tf.stack(v['sill'])
         if isinstance(v['range'], (tuple, list)):
             v['range'] = tf.stack(v['range'])
 
         return rampstack(tf.sqrt(e['d2']), v['sill'], v['range'])
-
-    def reg(self, p):
-        v = get_parameter_values(self.fa, p)
-        return v['range']
 
 @tf.recompute_grad
 def smooth_convex(x, sills, ranges):
@@ -291,26 +281,22 @@ def smooth_convex_grad(x, sills, ranges):
     return y, grad
 
 class SmoothConvex(Kernel):
-    def __init__(self, range='range', sill='sill', scale=None, metric=None):
+    def __init__(self, range, sill, scale=None, metric=None):
         fa = dict(sill=sill, range=range, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
         super().__init__(fa, dict(d2=autoinputs))
 
     def vars(self):
-        return ppp_list(self.fa['sill']) + ppp_list(self.fa['range'])
+        return ppp_list(self.fa['sill']) | ppp_list(self.fa['range'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         if isinstance(v['sill'], (tuple, list)):
             v['sill'] = tf.stack(v['sill'])
         if isinstance(v['range'], (tuple, list)):
             v['range'] = tf.stack(v['range'])
 
         return smooth_convex(tf.sqrt(e['d2']), v['sill'], v['range'])
-
-    def reg(self, p):
-        v = get_parameter_values(self.fa, p)
-        return v['range']
 
 @tf.recompute_grad
 def quadstack(x, sills, ranges):
@@ -324,26 +310,22 @@ def quadstack(x, sills, ranges):
     return tf.reduce_sum(y, -1)
 
 class QuadStack(Kernel):
-    def __init__(self, range='range', sill='sill', scale=None, metric=None):
+    def __init__(self, range, sill, scale=None, metric=None):
         fa = dict(sill=sill, range=range, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
         super().__init__(fa, dict(d2=autoinputs))
 
     def vars(self):
-        return ppp_list(self.fa['sill']) + ppp_list(self.fa['range'])
+        return ppp_list(self.fa['sill']) | ppp_list(self.fa['range'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         if isinstance(v['sill'], (tuple, list)):
             v['sill'] = tf.stack(v['sill'])
         if isinstance(v['range'], (tuple, list)):
             v['range'] = tf.stack(v['range'])
 
         return quadstack(tf.sqrt(e['d2']), v['sill'], v['range'])
-
-    def reg(self, p):
-        v = get_parameter_values(self.fa, p)
-        return v['range']
 
 class Wiener(Kernel):
     def __init__(self, axis, start):
@@ -358,20 +340,17 @@ class Wiener(Kernel):
         super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
 
     def vars(self):
-        return []
+        return {}
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         x1 = e['locs1'][..., self.axis]
         x2 = e['locs2'][..., self.axis]
         k = tf.maximum(0., tf.minimum(ed(x1, 1), ed(x2, 0)) - self.start)
         return k
 
-    def reg(self, p):
-        return 0.
-
 class IntSquaredExponential(Kernel):
-    def __init__(self, axis, start, range='range'):
+    def __init__(self, axis, start, range):
 
         self.axis = axis
         self.start = start
@@ -385,8 +364,8 @@ class IntSquaredExponential(Kernel):
     def vars(self):
         return ppp(self.fa['range'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         x1 = tf.pad(e['locs1'][..., self.axis] - self.start, [[1, 0]])
         x2 = tf.pad(e['locs2'][..., self.axis] - self.start, [[1, 0]])
 
@@ -400,11 +379,8 @@ class IntSquaredExponential(Kernel):
 
         return k
 
-    def reg(self, p):
-        return 0.
-
 class IntExponential(Kernel):
-    def __init__(self, axis, start, range='range'):
+    def __init__(self, axis, start, range):
 
         self.axis = axis
         self.start = start
@@ -418,8 +394,8 @@ class IntExponential(Kernel):
     def vars(self):
         return ppp(self.fa['range'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         x1 = tf.pad(e['locs1'][..., self.axis] - self.start, [[1, 0]])
         x2 = tf.pad(e['locs2'][..., self.axis] - self.start, [[1, 0]])
 
@@ -433,39 +409,33 @@ class IntExponential(Kernel):
 
         return k
 
-    def reg(self, p):
-        return 0.
-
 class Noise(Kernel):
-    def __init__(self, nugget='nugget'):
+    def __init__(self, nugget):
         fa = dict(nugget=nugget)
         super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
 
     def vars(self):
         return ppp(self.fa['nugget'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
 
         indices1 = tf.range(tf.shape(e['locs1'])[0])
         indices2 = tf.range(tf.shape(e['locs2'])[0]) + e['offset']
         C = tf.where(tf.equal(tf.expand_dims(indices1, -1), indices2), v['nugget'], 0.)
         return C
 
-    def reg(self, p):
-        return 0.
-
 class Delta(Kernel):
-    def __init__(self, dsill='dsill', axes=None):
-        fa = dict(dsill=dsill)
+    def __init__(self, sill, axes=None):
+        fa = dict(sill=sill)
         self.axes = axes
         super().__init__(fa, dict(pa_d2='per_axis_dist2'))
 
     def vars(self):
-        return ppp(self.fa['dsill'])
+        return ppp(self.fa['sill'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
 
         if self.axes is not None:
             n = tf.shape(e['pa_d2'])[-1]
@@ -474,10 +444,7 @@ class Delta(Kernel):
         else:
             d2 = tf.reduce_sum(e['pa_d2'], axis=-1)
 
-        return v['dsill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
-
-    def reg(self, p):
-        return 0.
+        return v['sill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
 
 class Mix(Kernel):
     def __init__(self, inputs, weights=None):
@@ -503,13 +470,13 @@ class Mix(Kernel):
 
     def vars(self):
         if 'weights' in self.fa:
-            return [p for row in self.fa['weights']
-                      for p in get_trend_coefs(row)]
+            return {k: p for row in self.fa['weights']
+                      for k, p in get_trend_coefs(row).items()}
         else:
-            return []
+            return {}
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         if 'weights' in v:
             weights = []
             for row in v['weights']:
@@ -535,21 +502,19 @@ class Mix(Kernel):
             locsegs1 = tf.split(e['locs1'], catcounts1, num=N)
             locsegs2 = tf.split(e['locs2'], catcounts2, num=N)
 
+            # TODO: Check that the below is still correct.
             CC = [] # Observation noise submatrices.
             for sublocs1, sublocs2, catdiff, iput in zip(locsegs1, locsegs2, catdiffs, self.inputs):
                 cache = dict(
                     offset = e['offset'] + catdiff,
                     locs1 = sublocs1,
                     locs2 = sublocs2)
-                cache['per_axis_dist2'] = PerAxisDist2().run(cache, p)
-                cache['euclidean'] = Euclidean().run(cache, p)
-                Csub = iput.run(cache, p)
+                cache['per_axis_dist2'] = PerAxisDist2().run(cache)
+                cache['euclidean'] = Euclidean().run(cache)
+                Csub = iput.run(cache)
                 CC.append(Csub)
 
             return block_diag(CC)
-
-    def reg(self, sp):
-        return tf.reduce_sum([iput.reg(sp) for iput in self.inputs])
 
 class Stack(Kernel):
     def __init__(self, parts: List[Kernel]):
@@ -557,20 +522,17 @@ class Stack(Kernel):
         super().__init__({}, dict(locs1='locs1', locs2='locs2', parts=parts))
 
     def vars(self):
-        return [p for part in self.parts for p in part.vars()]
+        return {k: p for part in self.parts for k, p in part.vars().items()}
 
     def __add__(self, other):
         if isinstance(other, Kernel):
             return Stack(self.parts + [other])
     
-    def call(self, p, e):
+    def call(self, e):
         return tf.reduce_sum(e['parts'], axis=0)
 
-    def report(self, p):
+    def report(self):
         return ' '.join(part.report(p) for part in self.parts)
-
-    def reg(self, p):
-        return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)
 
 class Product(Kernel):
     def __init__(self, parts: List[Kernel]):
@@ -578,20 +540,17 @@ class Product(Kernel):
         super().__init__({}, dict(locs1='locs1', locs2='locs2', parts=parts))
 
     def vars(self):
-        return [p for part in self.parts for p in part.vars()]
+        return {k: p for part in self.parts for k, p in part.vars().items()}
 
     def __mul__(self, other):
         if isinstance(other, Kernel):
             return Product(self.parts + [other])
     
-    def call(self, p, e):
+    def call(self, e):
         return tf.reduce_prod(e['parts'], axis=0)
 
-    def report(self, p):
+    def report(self):
         return ' '.join(part.report(p) for part in self.parts)
-
-    def reg(self, p):
-        return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)
 
 # Gamma exponential covariance function.
 @tf.custom_gradient
@@ -628,11 +587,11 @@ class Observation(Op):
         super().__init__({}, self.noise)
 
     def vars(self):
-        vv = [p for c in self.coefs for p in upp(c)]
-        vv += self.noise.vars()
+        vv = {k: p for c in self.coefs for k, p in upp(c)}
+        vv |= self.noise.vars()
         return vv
 
-    def __call__(self, p, e):
+    def __call__(self, e):
         """
         Dummy.
         """

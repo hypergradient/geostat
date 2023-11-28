@@ -8,7 +8,7 @@ with warnings.catch_warnings():
     import tensorflow as tf
 
 from .op import Op
-from .param import get_parameter_values, ppp, upp, bpp
+from .param import Parameter, get_parameter_values, ppp, upp, bpp
 
 __all__ = ['Mean', 'Trend']
 
@@ -16,11 +16,11 @@ __all__ = ['Mean', 'Trend']
 
 def get_trend_coefs(beta):
     if isinstance(beta, (list, tuple)):
-        return [p for s in beta for p in upp(s)]
-    elif isinstance(beta, str):
+        return {k: p for s in beta for k, p in upp(s).items()}
+    elif isinstance(beta, Parameter):
         return upp(beta)
     else:
-        return []
+        return {}
 
 class Mean(Op):
     def __init__(self, fa, autoinputs):
@@ -35,15 +35,15 @@ class Mean(Op):
         else:
             return Stack([self]) + other
 
-    def call(self, p, e):
+    def call(self, e):
         pass
 
-    def __call__(self, p, e):
+    def __call__(self, e):
         """
         Returns tuple `(mean, covariance)` for locations.
         Return values have correct shapes.
         """
-        M = self.call(p, e)
+        M = self.call(e)
         if M is None: M = 0.
         n1 = tf.shape(e['locs1'])[0]
         M = tf.broadcast_to(M, [n1])
@@ -57,8 +57,8 @@ class Trend(Mean):
     def vars(self):
         return get_trend_coefs(self.fa['beta'])
 
-    def call(self, p, e):
-        v = get_parameter_values(self.fa, p)
+    def call(self, e):
+        v = get_parameter_values(self.fa)
         x = tf.cast(self.featurizer(e['locs1']), tf.float32)
         if isinstance(v['beta'], (tuple, list)):
             v['beta'] = tf.stack(v['beta'])
@@ -69,9 +69,9 @@ class ZeroTrend(Op):
         super().__init__({}, dict(locs1='locs1'))
 
     def vars(self):
-        return []
+        return {}
 
-    def __call__(self, p, e):
+    def __call__(self, e):
         return tf.zeros_like(e['locs1'][:, 0])
 
 class Mix(Mean):
@@ -82,16 +82,16 @@ class Mix(Mean):
 
     def vars(self):
         if 'weights' in self.fa:
-            return [p for row in self.fa['weights']
-                      for p in get_trend_coefs(row)]
+            return {k: p for row in self.fa['weights']
+                      for k, p in get_trend_coefs(row).items()}
         else:
-            return []
+            return {}
 
-    def call(self, p, e):
+    def call(self, e):
         M = tf.stack(e['inputs'], axis=-1) # [locs, numinputs].
 
         # Transform M with weights, if given.
-        v = get_parameter_values(self.fa, p)
+        v = get_parameter_values(self.fa)
         if 'weights' in v:
             weights = []
             for row in v['weights']:
@@ -109,17 +109,14 @@ class Stack(Mean):
         super().__init__({}, dict(locs1='locs1', locs2='locs2', parts=parts))
 
     def vars(self):
-        return [p for part in self.parts for p in part.vars()]
+        return {k: p for part in self.parts for k, p in part.vars().items()}
 
     def __add__(self, other):
         if isinstance(other, Mean):
             return Stack(self.parts + [other])
 
-    def call(self, p, e):
+    def call(self, e):
         return tf.reduce_sum(e['parts'], axis=0)
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)
-
-    def reg(self, p):
-        return tf.reduce_sum([part.reg(p) for part in self.parts], axis=0)

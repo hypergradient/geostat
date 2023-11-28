@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from dataclasses import dataclass, replace
 from typing import Dict
 import tensorflow as tf
@@ -5,30 +6,58 @@ import numpy as np
 from scipy.special import logit
 from .op import SingletonTraceType
 
+
+__all__ = ['Parameter', 'Parameters']
+
+def Parameters(**kw):
+    return SimpleNamespace(**{k:Parameter(k, v) for k, v in kw.items()})
+
 @dataclass
-class Bound:
-    lo: float
-    hi: float
+class Parameter:
+    name: str
+    value: float
+    lo: float = np.nan
+    hi: float = np.nan
+    underlying: tf.Variable = None
+
+    def update_bounds(self, lo: float, hi: float):
+        if np.isnan(self.lo):
+            self.lo = lo
+        else:
+            assert self.lo == lo, f'Conflicting bounds for parameter {self.name}'
+        if np.isnan(self.hi):
+            self.hi = hi
+        else:
+            assert self.hi == hi, f'Conflicting bounds for parameter {self.name}'
 
     def bounding(self):
         return \
             ('u' if self.lo == float('-inf') else 'b') + \
             ('u' if self.hi == float('inf') else 'b')
 
-    def get_underlying_parameter(self, v, name=None):
+    def create_tf_variable(self):
+        """Create TF variable for underlying parameter or update it"""
+        # Create underlying parameter.
         b = self.bounding()
         if b == 'bb':
-            init = logit((v - self.lo) / (self.hi - self.lo))
+            init = logit((self.value - self.lo) / (self.hi - self.lo))
         elif b == 'bu':
-            init = np.log(v - self.lo)
+            init = np.log(self.value - self.lo)
         elif b == 'ub':
-            init = -np.log(self.hi - v)
+            init = -np.log(self.hi - self.value)
         else:
-            init = v
-        return tf.Variable(init, name=name, dtype=tf.float32)
+            init = self.value
 
-    def get_surface_parameter(self, v):
+        if self.underlying is None:
+            self.underlying = tf.Variable(init, name=self.name, dtype=tf.float32)
+        else:
+            self.underlying.assign(init)
+
+    def surface(self):
+        """ Create tensor for surface parameter"""
+        # Create surface parameter.
         b = self.bounding()
+        v = self.underlying
         if b == 'bb':
             v = tf.math.sigmoid(v) * (self.hi - self.lo) + self.lo
         elif b == 'bu':
@@ -39,79 +68,58 @@ class Bound:
             v = v + tf.constant(0.)
         return v
 
-@dataclass
-class ParameterSpace:
-    bounds: Dict[str, Bound]
-    
-    def get_underlying(self, parameters):
-        up = {}
-        for name, v in parameters.items():
-            up[name] = self.bounds[name].get_underlying_parameter(v, name)
-        return up
-
-    def get_surface(self, parameters, numpy=False):
-        sp = {}
-        for name, v in parameters.items():
-            v = self.bounds[name].get_surface_parameter(v)
-            if numpy: v = v.numpy()
-            sp[name] = v
-        return sp
+    def update_value(self):
+        self.value = self.surface().numpy()
 
     def __tf_tracing_type__(self, context):
-        return SingletonTraceType(type(self))
+        return SingletonTraceType(self)
 
-@dataclass(frozen=True)
-class PaperParameter:
-    name: str
-    lo: float
-    hi: float
-
-def get_parameter_values(
-    blob: object,
-    p: Dict[str, object]
-):
+# TODO: cache surface somehow
+# TODO: replace with map nested?
+def get_parameter_values(blob: object):
     """
-    For each string encountered in the nested blob,
-    look it up in `p` and replace it with the lookup result.
+    For each Parameter encountered in the nested blob,
+    replace it with its surface tensor.
     """
     if isinstance(blob, dict):
-        return {k: get_parameter_values(a, p) for k, a in blob.items()}
+        return {k: get_parameter_values(a) for k, a in blob.items()}
     elif isinstance(blob, (list, tuple)):
-        return [get_parameter_values(a, p) for a in blob]
+        return [get_parameter_values(a) for a in blob]
+    elif isinstance(blob, Parameter):
+        return blob.surface()
     elif isinstance(blob, str):
-        if blob not in p:
-            raise ValueError('Parameter `%s` not found' % blob)
-        return p[blob]
-    elif blob is None:
-        return None
+        raise ValueError(f'Bad parameter {blob} is a string')
     else:
         return blob
 
-def ppp(name):
+def ppp(param):
     """Positive paper parameter (maybe)."""
-    if isinstance(name, str):
-        return [PaperParameter(name, 0., float('inf'))]
+    if isinstance(param, Parameter):
+        param.update_bounds(0., np.inf)
+        return {param.name: param}
     else:
-        return []
+        return {}
 
-def upp(name):
+def upp(param):
     """Unbounded paper parameter (maybe)."""
-    if isinstance(name, str):
-        return [PaperParameter(name, float('-inf'), float('inf'))]
+    if isinstance(param, Parameter):
+        param.update_bounds(-np.inf, np.inf)
+        return {param.name: param}
     else:
-        return []
+        return {}
 
-def bpp(name, lo, hi):
+def bpp(param, lo, hi):
     """Bounded paper parameter (maybe)."""
-    if isinstance(name, str):
-        return [PaperParameter(name, lo, hi)]
+    if isinstance(param, Parameter):
+        param.update_bounds(lo, hi)
+        return {param.name: param}
     else:
-        return []
+        return {}
 
 def ppp_list(beta):
     if isinstance(beta, (list, tuple)):
-        return [p for s in beta for p in ppp(s)]
-    elif isinstance(beta, str):
+        return {k: p for s in beta for k, p in ppp(s).items()}
+    elif isinstance(beta, Parameter):
         return ppp(beta)
     else:
-        return []
+        return {}
