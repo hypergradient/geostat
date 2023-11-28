@@ -84,6 +84,18 @@ def scale_to_metric(scale, metric):
             metric = Euclidean(scale)
     return metric
 
+class Constant(Kernel):
+    def __init__(self, sill):
+        fa = dict(sill=sill)
+        super().__init__(fa, dict())
+
+    def vars(self):
+        return ppp(self.fa['sill'])
+
+    def call(self, e):
+        v = get_parameter_values(self.fa)
+        return v['sill']
+
 class SquaredExponential(Kernel):
     def __init__(self, sill, range, scale=None, metric=None):
         fa = dict(sill=sill, range=range)
@@ -414,13 +426,13 @@ class Noise(Kernel):
         return C
 
 class Delta(Kernel):
-    def __init__(self, dsill, axes=None):
-        fa = dict(dsill=dsill)
+    def __init__(self, sill, axes=None):
+        fa = dict(sill=sill)
         self.axes = axes
         super().__init__(fa, dict(pa_d2='per_axis_dist2'))
 
     def vars(self):
-        return ppp(self.fa['dsill'])
+        return ppp(self.fa['sill'])
 
     def call(self, e):
         v = get_parameter_values(self.fa)
@@ -432,7 +444,7 @@ class Delta(Kernel):
         else:
             d2 = tf.reduce_sum(e['pa_d2'], axis=-1)
 
-        return v['dsill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
+        return v['sill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
 
 class Mix(Kernel):
     def __init__(self, inputs, weights=None):

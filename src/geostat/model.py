@@ -28,7 +28,7 @@ from .param import Parameter
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['featurizer', 'GP', 'Mix', 'Model']
+__all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturizer']
 
 @dataclass
 class GP:
@@ -555,8 +555,7 @@ class Model():
                 tf.constant(cats1, dtype=tf.int32),
                 tf.constant(locs2[:, 0, :], dtype=tf.float32),
                 tf.constant(cats2, dtype=tf.int32),
-                N1,
-                parameters)
+                N1)
 
             _, A13 = gp_covariance2(
                 self.gp,
@@ -564,20 +563,17 @@ class Model():
                 tf.constant(cats1, dtype=tf.int32),
                 tf.constant(locs2[:, 1, :], dtype=tf.float32),
                 tf.constant(cats2, dtype=tf.int32),
-                N1,
-                parameters)
+                N1)
 
             m2, A22 = gp_covariance(
                 self.gp,
                 tf.constant(locs2[:, 0, :], dtype=tf.float32),
-                tf.constant(cats2, dtype=tf.int32),
-                parameters)
+                tf.constant(cats2, dtype=tf.int32))
 
             m3, A33 = gp_covariance(
                 self.gp,
                 tf.constant(locs2[:, 1, :], dtype=tf.float32),
-                tf.constant(cats2, dtype=tf.int32),
-                parameters)
+                tf.constant(cats2, dtype=tf.int32))
 
             _, A23 = gp_covariance2(
                 self.gp,
@@ -585,8 +581,7 @@ class Model():
                 tf.constant(cats2, dtype=tf.int32),
                 tf.constant(locs2[:, 1, :], dtype=tf.float32),
                 tf.constant(cats2, dtype=tf.int32),
-                N2,
-                parameters)
+                N2)
 
             # Reassemble into more useful shapes.
 
