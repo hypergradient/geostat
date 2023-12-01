@@ -105,11 +105,11 @@ def featurizer(normalize=None):
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-# @tf.function
+@tf.function
 def gp_covariance(gp, locs, cats):
     return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
-# @tf.function
+@tf.function
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
@@ -146,7 +146,7 @@ def mvn_log_pdf(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-# @tf.function
+@tf.function
 def gp_log_likelihood(data, gp):
     m, S = gp_covariance(gp, data['locs'], data['cats'])
     u = tf.cast(data['vals'], tf.float64)

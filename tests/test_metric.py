@@ -69,8 +69,6 @@ def test_poincare():
     N = 10
     xx, yy, zz = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N), np.linspace(-1, 1, N))
     locs2 = np.stack([xx, yy, zz], axis=-1).reshape([-1, 3])
-    print('-------------------------')
-    print(locs2.shape)
 
     mean, var = model.predict(locs2)
     mean2, var2 = model.predict(locs2)
