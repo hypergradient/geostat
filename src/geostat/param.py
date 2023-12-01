@@ -4,7 +4,6 @@ from typing import Dict
 import tensorflow as tf
 import numpy as np
 from scipy.special import logit
-from .op import SingletonTraceType
 
 
 __all__ = ['Parameter', 'Parameters']
@@ -70,9 +69,6 @@ class Parameter:
 
     def update_value(self):
         self.value = self.surface().numpy()
-
-    def __tf_tracing_type__(self, context):
-        return SingletonTraceType(self)
 
 # TODO: cache surface somehow
 # TODO: replace with map nested?

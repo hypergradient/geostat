@@ -10,7 +10,7 @@ with warnings.catch_warnings():
     import tensorflow as tf
 
 from .op import Op
-from .param import get_parameter_values, ppp, upp, bpp
+from .param import ppp, upp, bpp
 
 def ed(x, a=-1):
     return tf.expand_dims(x, a)
@@ -42,9 +42,8 @@ class Euclidean(Metric):
         return get_scale_vars(self.fa['scale'])
 
     def __call__(self, e):
-        v = get_parameter_values(self.fa)
-        if v['scale'] is not None:
-            return tf.einsum('abc,c->ab', e['pa_d2'], tf.square(v['scale']))
+        if e['scale'] is not None:
+            return tf.einsum('abc,c->ab', e['pa_d2'], tf.square(e['scale']))
         else:
             return tf.reduce_sum(e['pa_d2'], axis=-1)
 
@@ -52,27 +51,27 @@ class Poincare(Metric):
     def __init__(self, xform: Callable, zoff='zoff', scale=None):
         fa = dict(zoff=zoff, scale=scale)
         self.xform = xform
-        super().__init__({}, dict(locs1='locs1', locs2='locs2'))
+        super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
 
     def vars(self):
-        return ppp(self.fa['zoff']) + get_scale_vars(self.fa['scale'])
+        return ppp(self.fa['zoff']) | get_scale_vars(self.fa['scale'])
 
     def __call__(self, e):
-        v = get_parameter_values(self.fa)
-
         xlocs1 = tf.stack(self.xform(*tf.unstack(e['locs1'], axis=1)), axis=1)
         xlocs2 = tf.stack(self.xform(*tf.unstack(e['locs2'], axis=1)), axis=1)
-        zoff = v['zoff']
+        zoff = e['zoff']
 
         # Maybe scale locations and zoff.
-        if v['scale'] is not None:
-            xlocs *= v['scale']
-            zoff *= v['scale'][0]
+        if e['scale'] is not None:
+            xlocs1 *= e['scale']
+            xlocs2 *= e['scale']
+            zoff *= e['scale'][0]
 
-        z = xlocs[:, 0] + zoff
-        zz = z * ed(z, -1)
+        z1 = xlocs1[:, 0] + zoff
+        z2 = xlocs2[:, 0] + zoff
+        zz = ed(z1, -1) * z2
 
-        d2 = tf.reduce_sum(tf.square(ed(xlocs1, 0) - ed(xlocs2, 1)), axis=-1)
+        d2 = tf.reduce_sum(tf.square(ed(xlocs1, 1) - ed(xlocs2, 0)), axis=-1)
         d2 = tf.asinh(0.5 * tf.sqrt(d2 / zz))
         d2 = tf.square(2.0 * zoff * d2)
 
