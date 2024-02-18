@@ -18,6 +18,7 @@ with warnings.catch_warnings():
 from tensorflow.core.function.trace_type import default_types
 import tensorflow_probability as tfp
 
+from . import lo
 from . import mean as mn
 from . import kernel as krn
 from .metric import Euclidean, PerAxisDist2
@@ -105,11 +106,11 @@ def featurizer(normalize=None):
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-@tf.function
+# @tf.function
 def gp_covariance(gp, locs, cats):
     return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
-@tf.function
+# @tf.function
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
@@ -136,7 +137,7 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     M = gp.mean.run(cache)
     C = gp.kernel.run(cache)
     M = tf.cast(M, tf.float64)
-    C = tf.cast(C, tf.float64)
+    C = tf.cast(C.to_dense(), tf.float64)
     return M, C
 
 def mvn_log_pdf(u, m, cov):
@@ -146,7 +147,7 @@ def mvn_log_pdf(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-@tf.function
+# @tf.function
 def gp_log_likelihood(data, gp):
     m, S = gp_covariance(gp, data['locs'], data['cats'])
     u = tf.cast(data['vals'], tf.float64)

@@ -10,6 +10,7 @@ with warnings.catch_warnings():
     from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
     from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
+from . import lo
 from .op import Op
 from .metric import Euclidean, PerAxisDist2, ed
 from .param import ppp, upp, bpp, ppp_list
@@ -50,6 +51,7 @@ class Kernel(Op):
         Return values have correct shapes.
         """
         C = self.call(e)
+        return C
         if C is None: C = 0.
         n1 = tf.shape(e['locs1'])[0]
         n2 = tf.shape(e['locs2'])[0]
@@ -72,7 +74,7 @@ class TrendPrior(Kernel):
     def call(self, e):
         F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
         F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
-        return e['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
+        return lo.cov(e['alpha'] * tf.einsum('ba,ca->bc', F1, F2))
 
 def scale_to_metric(scale, metric):
     assert scale is None or metric is None
@@ -104,7 +106,7 @@ class SquaredExponential(Kernel):
         return ppp(self.fa['sill']) | ppp(self.fa['range'])
 
     def call(self, e):
-        return e['sill'] * tf.exp(-0.5 * e['d2'] / tf.square(e['range']))
+        return lo.cov(e['sill'] * tf.exp(-0.5 * e['d2'] / tf.square(e['range'])))
 
 class GammaExponential(Kernel):
     def __init__(self, range, sill, gamma, scale=None, metric=None):
@@ -410,7 +412,7 @@ class Noise(Kernel):
         indices1 = tf.range(tf.shape(e['locs1'])[0])
         indices2 = tf.range(tf.shape(e['locs2'])[0]) + e['offset']
         C = tf.where(tf.equal(tf.expand_dims(indices1, -1), indices2), e['nugget'], 0.)
-        return C
+        return lo.cov(C)
 
 class Delta(Kernel):
     def __init__(self, sill, axes=None):
@@ -514,7 +516,7 @@ class Stack(Kernel):
             return Stack(self.parts + [other])
     
     def call(self, e):
-        return tf.reduce_sum(e['parts'], axis=0)
+        return lo.cov(tf.reduce_sum([c.to_dense() for c in e['parts']], axis=0))
 
     def report(self):
         return ' '.join(part.report(p) for part in self.parts)
