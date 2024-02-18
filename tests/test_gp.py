@@ -145,7 +145,7 @@ def test_gp3d():
     kernel = \
         krn.TrendPrior(trend_featurizer, alpha=p.alpha) + \
         krn.GammaExponential(range=p.range, sill=p.sill, gamma=p.gamma, scale=[1., 1., p.zscale]) + \
-        krn.Delta(axes=[0, 1], dsill=p.dsill) + \
+        krn.Delta(axes=[0, 1], sill=p.dsill) + \
         krn.Noise(nugget=p.nugget)
     model = Model(GP(0, kernel))
 

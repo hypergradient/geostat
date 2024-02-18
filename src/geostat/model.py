@@ -139,7 +139,6 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     C = tf.cast(C, tf.float64)
     return M, C
 
-@tf.function
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m

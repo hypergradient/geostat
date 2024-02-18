@@ -8,6 +8,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow as tf
 
+from .param import get_parameter_values
+
 @dataclass
 class Op:
     """
@@ -47,9 +49,8 @@ class Op:
 
     def __call__(self, e):
         """
-        `e` is a blob of evaluated inputs from upstream ops and other
-        things inserted by the caller.  Other values in `e` are supplied
-        by the caller.
+        `e` is a dict of params and evaluated inputs from upstream ops.
+        Other values in `e` are supplied by the caller.
         """
         pass
 
@@ -73,6 +74,7 @@ class Op:
        
         if id(self) not in cache:
             e = tf.nest.map_structure(lambda op: eval(op), self.autoinputs)
+            e |= get_parameter_values(self.fa)
             cache[id(self)] = self(e)
 
             # Save the Op so that its ID remains unique.

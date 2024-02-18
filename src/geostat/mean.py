@@ -8,11 +8,9 @@ with warnings.catch_warnings():
     import tensorflow as tf
 
 from .op import Op
-from .param import Parameter, get_parameter_values, ppp, upp, bpp
+from .param import Parameter, ppp, upp, bpp
 
 __all__ = ['Mean', 'Trend']
-
-# TODO: in `call` methods, call get_parameter_values beforehand?
 
 def get_trend_coefs(beta):
     if isinstance(beta, (list, tuple)):
@@ -58,11 +56,10 @@ class Trend(Mean):
         return get_trend_coefs(self.fa['beta'])
 
     def call(self, e):
-        v = get_parameter_values(self.fa)
         x = tf.cast(self.featurizer(e['locs1']), tf.float32)
-        if isinstance(v['beta'], (tuple, list)):
-            v['beta'] = tf.stack(v['beta'])
-        return tf.einsum('ab,b->a', x, v['beta']) # [locs1]
+        if isinstance(e['beta'], (tuple, list)):
+            e['beta'] = tf.stack(e['beta'])
+        return tf.einsum('ab,b->a', x, e['beta']) # [locs1]
 
 class ZeroTrend(Op):
     def __init__(self):
@@ -91,10 +88,9 @@ class Mix(Mean):
         M = tf.stack(e['inputs'], axis=-1) # [locs, numinputs].
 
         # Transform M with weights, if given.
-        v = get_parameter_values(self.fa)
-        if 'weights' in v:
+        if 'weights' in e:
             weights = []
-            for row in v['weights']:
+            for row in e['weights']:
                 if isinstance(row, (tuple, list)):
                     row = tf.stack(row)
                     weights.append(row)

@@ -10,8 +10,7 @@ class CustomOp(Op):
         self.f = f
         super().__init__(fa, {})
     def __call__(self, e):
-        v = get_parameter_values(self.fa)
-        return self.f(*v.values())
+        return self.f(*e.values())
     def vars(self):
         # Assume for now that all arguments are Parameters
         return {p.name: p for p in fa.values()}

@@ -67,11 +67,11 @@ def test_delta():
         degF = 62.2 + 57.1 * (0.15 - z)
         return -(tf.math.log(degF + 6.77) - tf.math.log(75 + 6.77))
 
-    o_u = GP(0, krn.Noise(nugget=p.nu) + krn.Delta(dsill=p.wu, axes=[0, 1]))
-    o_p = GP(0, krn.Noise(nugget=p.np) + krn.Delta(dsill=p.wp, axes=[0, 1]))
-    o_t = GP(0, krn.Noise(nugget=p.nt) + krn.Delta(dsill=p.wt, axes=[0, 1]))
+    o_u = GP(0, krn.Noise(nugget=p.nu) + krn.Delta(sill=p.wu, axes=[0, 1]))
+    o_p = GP(0, krn.Noise(nugget=p.np) + krn.Delta(sill=p.wp, axes=[0, 1]))
+    o_t = GP(0, krn.Noise(nugget=p.nt) + krn.Delta(sill=p.wt, axes=[0, 1]))
     o_r = GP(Trend(neg_transformed_natural_gradient, beta=[1.]),
-             krn.Noise(nugget=p.nr) + krn.Delta(dsill=p.wr, axes=[0, 1])
+             krn.Noise(nugget=p.nr) + krn.Delta(sill=p.wr, axes=[0, 1])
              + krn.TrendPrior(unit_featurizer, alpha=p.ar))
 
     gp = Mix([i_u, i_p, i_t], [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [p.cu, p.cp, 0.]]) \
