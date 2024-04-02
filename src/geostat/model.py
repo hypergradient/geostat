@@ -28,7 +28,7 @@ from .param import Parameter
 
 MVN = tfp.distributions.MultivariateNormalTriL
 
-__all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturizer']
+__all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturizer', 'StratigraphicWarp']
 
 @dataclass
 class GP:
@@ -53,6 +53,147 @@ def Mix(inputs, weights=None):
     return GP(
         mn.Mix([i.mean for i in inputs], weights), 
         krn.Mix([i.kernel for i in inputs], weights))
+
+class Warp:
+    def __call__(self, locs, prep):
+        """
+        `locs` is numpy.
+
+        Returns a WarpLocations.
+        """
+        pass
+
+    def gather_vars(self):
+        pass
+
+class WarpLocations(Op):
+    def __init__(self, warped_locs):
+        self.warped_locs = warped_locs
+        super().__init__({}, {})
+
+    def __call__(self, e):
+        return tf.cast(self.warped_locs, dtype=tf.float32)
+
+    def __tf_tracing_type__(self, context):
+        return SingletonTraceType(self)
+
+    def gather_vars(self):
+        return {}
+
+class NoWarp:
+    def __call__(self, locs):
+        return WarpLocations(locs)
+
+    def gather_vars(self):
+        return {}
+
+class CrazyWarp(Warp):
+    def __call__(self, locs):
+        if locs.shape[-1] == 4:
+            locs += e(np.sin(locs[:, 1])) * np.array([0., 0., 1., 0.])
+        return WarpLocations(locs)
+
+    def gather_vars(self):
+        return {}
+
+def interpolate_1d_tf(src, tgt, x):
+    """
+    `src`: (batch, breaks)
+    `tgt`: (breaks)
+    `x`  : (batch)
+    """
+    x_shape = tf.shape(x)
+    x = tf.reshape(x, [-1, 1]) # (batch, 1)
+    bucket = tf.searchsorted(src, x)
+    bucket = tf.clip_by_value(bucket - 1, 0, tf.shape(tgt) - 2)
+    src0 = tf.gather(src, bucket, batch_dims=1)
+    src1 = tf.gather(src, bucket + 1, batch_dims=1)
+    tgt0 = tf.gather(tgt, bucket)
+    tgt1 = tf.gather(tgt, bucket + 1)
+    xout = ((x - src0) * tgt1 + (src1 - x) * tgt0) / (src1 - src0)
+    return tf.reshape(xout, x_shape)
+
+class TweeningStratigraphicWarp(Warp):
+    def __init__(self, surface_functions, surface_targets, tween):
+        self.surface_functions = surface_functions
+        self.surface_targets = surface_targets
+        self.tween = tween
+
+    def __call__(self, locs):
+        sources = [f(locs[..., :2]) for f in self.surface_functions]
+        sources = tf.sort(tf.cast(tf.stack(sources, axis=-1), tf.float32))
+        targets = tf.constant(self.surface_targets, dtype=tf.float32)
+
+        locs = tf.cast(locs, tf.float32)
+        zout = interpolate_1d_tf(sources, targets, locs[..., 2])
+        out = tf.stack([locs[..., 0], locs[..., 1], zout, locs[..., 3]], axis=-1)
+        return TweeningStratigraphicWarpLocations(locs, out.numpy(), self.tween)
+
+    def gather_vars(self):
+        return bpp(self.tween, 0., 1.)
+
+class TweeningStratigraphicWarpLocations(Op):
+    def __init__(self, locs, warped_locs, tween):
+        self.locs = locs
+        self.warped_locs = warped_locs
+
+        fa = dict(tween=tween)
+        super().__init__(fa, {})
+
+    def __call__(self, e):
+        tween = e['tween']
+        locs0 = tf.cast(self.locs, dtype=tf.float32)
+        locs1 = tf.cast(self.warped_locs, dtype=tf.float32)
+        return locs0 * (1. - tween) + locs1 * tween
+
+    def __tf_tracing_type__(self, context):
+        return SingletonTraceType(self)
+
+    def gather_vars(self):
+        return bpp(self.fa['tween'], 0., 1.)
+
+class StratigraphicWarp(Warp):
+    def __init__(self, surface_functions, surface_targets, tween):
+        self.surface_functions = surface_functions
+        self.surface_targets = surface_targets
+        self.tween = tween
+
+    def __call__(self, locs):
+        sources = [f(locs[..., :2]) for f in self.surface_functions]
+        sources = tf.sort(tf.cast(tf.stack(sources, axis=-1), tf.float32))
+        targets = tf.constant(self.surface_targets, dtype=tf.float32)
+        locs = tf.cast(locs, tf.float32)
+        return StratigraphicWarpLocations(locs, sources, targets, self.tween)
+
+    def gather_vars(self):
+        return bpp(self.tween, 0., 1.)
+
+class StratigraphicWarpLocations(Op):
+    def __init__(self, locs, sources, targets, tween):
+        self.locs = locs
+        self.sources = sources
+        self.targets = targets
+
+        fa = dict(tween=tween)
+        super().__init__(fa, {})
+
+    def __call__(self, e):
+        tween = e['tween']
+
+        locs0 = self.locs
+        s = self.sources
+        t = self.targets
+
+        y = interpolate_1d_tf(s, t, locs0[..., 2])
+        locs1 = tf.stack([locs0[..., 0], locs0[..., 1], y, locs0[..., 3]], axis=-1)
+
+        return locs0 * (1. - tween) + locs1 * tween
+
+    def __tf_tracing_type__(self, context):
+        return SingletonTraceType(self)
+
+    def gather_vars(self):
+        return bpp(self.fa['tween'], 0., 1.)
 
 class NormalizingFeaturizer:
     """
@@ -105,11 +246,11 @@ def featurizer(normalize=None):
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-@tf.function
+# @tf.function
 def gp_covariance(gp, locs, cats):
     return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
-@tf.function
+# @tf.function
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
@@ -120,9 +261,6 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
 
     # assert np.all(cats1 == np.sort(cats1)), '`cats1` must be in non-descending order'
     # assert np.all(cats2 == np.sort(cats2)), '`cats2` must be in non-descending order'
-
-    locs1 = tf.cast(locs1, tf.float32)
-    locs2 = tf.cast(locs2, tf.float32)
 
     cache = {}
     cache['offset'] = offset
@@ -146,9 +284,9 @@ def mvn_log_pdf(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-@tf.function
+# @tf.function
 def gp_log_likelihood(data, gp):
-    m, S = gp_covariance(gp, data['locs'], data['cats'])
+    m, S = gp_covariance(gp, data['warplocs'].run({}), data['cats'])
     u = tf.cast(data['vals'], tf.float64)
     return mvn_log_pdf(u, m, S)
 
@@ -178,6 +316,7 @@ def gp_train_step(
 @dataclass
 class Model():
     gp: GP
+    warp: Warp = None
     parameter_sample_size: Optional[int] = None
     locs: np.ndarray = None
     vals: np.ndarray = None
@@ -212,6 +351,8 @@ class Model():
         Performs Gaussian process training and prediction.
         '''
 
+        if self.warp is None: self.warp = NoWarp()
+
         # Default reporting function.
         def default_report(p, prefix=None):
             if prefix: print(prefix, end=' ')
@@ -237,12 +378,14 @@ class Model():
         if self.cats is not None: self.cats = np.array(self.cats)
 
         # Collect parameters and create TF parameters.
-        parameters = self.gp.gather_vars()
-        for p in parameters.values():
+        for p in self.gather_vars().values():
             p.create_tf_variable()
 
+    def gather_vars(self):
+        return self.gp.gather_vars() | self.warp.gather_vars()
+
     def set(self, **values):
-        parameters = self.gp.gather_vars()
+        parameters = self.gather_vars()
         for name, v in values.items():
             if name in parameters:
                 parameters[name].value = v
@@ -252,9 +395,8 @@ class Model():
         return self
 
     def fit(self, locs, vals, cats=None, step_size=0.01, iters=100, reg=None):
-
         # Collect parameters and create TF parameters.
-        parameters = self.gp.gather_vars()
+        parameters = self.gather_vars()
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -267,7 +409,7 @@ class Model():
 
         # Data dict.
         self.data = {
-            'locs': tf.constant(locs, dtype=tf.float32),
+            'warplocs': self.warp(locs),
             'vals': tf.constant(vals, dtype=tf.float32),
             'cats': tf.constant(cats, dtype=tf.int32)}
 
@@ -442,7 +584,7 @@ class Model():
 
         m, S = gp_covariance(
             self.gp,
-            tf.constant(locs, dtype=tf.float32),
+            self.warp(locs).run({}),
             None if cats is None else tf.constant(cats, dtype=tf.int32))
 
         vals = MVN(m, tf.linalg.cholesky(S)).sample().numpy()
@@ -475,7 +617,7 @@ class Model():
 
         if tracker is None: tracker = lambda x: x
 
-        assert self.locs.shape[-1] == locs2.shape[-1], 'Mismatch in location dimentions'
+        assert self.locs.shape[-1] == locs2.shape[-1], 'Mismatch in location dimensions'
         if cats2 is not None:
             assert cats2.shape == locs2.shape[:1], 'Mismatched shapes in cats and locs'
         else:
@@ -501,6 +643,7 @@ class Model():
             if cats2 is not None:
                 perm = np.argsort(cats2)
                 locs2, cats2 = locs2[perm], cats2[perm]
+                locs2 = self.warp(locs2).run({})
 
             _, A12 = gp_covariance2(
                 self.gp,
@@ -547,6 +690,12 @@ class Model():
             # Permute datapoints if cats is given.
             perm = np.argsort(cats2)
             locs2, cats2 = locs2[perm], cats2[perm]
+
+            # Warp locs2.
+            locs2_shape = locs2.shape
+            locs2 = locs2.reshape([-1, locs2_shape[-1]])  # Shape into matrix.
+            locs2 = self.warp(locs2).run({})
+            locs2 = tf.reshape(locs2, locs2_shape)  # Revert shape.
 
             _, A12 = gp_covariance2(
                 self.gp,
@@ -606,7 +755,7 @@ class Model():
 
         def interpolate(locs1, vals1, cats1, locs2, cats2, pair=False):
             # Interpolate in batches.
-            batch_size = self.locs.shape[0] // 2
+            batch_size = locs1.shape[0] // 2
 
             for_gp = []
 
@@ -619,6 +768,8 @@ class Model():
             if cats1 is not None:
                 perm = np.argsort(cats1)
                 locs1, vals1, cats1 = locs1[perm], vals1[perm], cats1[perm]
+
+            locs1 = self.warp(locs1).run({})
 
             m1, A11 = gp_covariance(
                 self.gp,
