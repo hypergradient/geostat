@@ -96,22 +96,80 @@ class CrazyWarp(Warp):
     def gather_vars(self):
         return {}
 
+# @tf.function()
 def interpolate_1d_tf(src, tgt, x):
     """
     `src`: (batch, breaks)
-    `tgt`: (breaks)
+    `tgt`: (batch, breaks)
     `x`  : (batch)
     """
     x_shape = tf.shape(x)
     x = tf.reshape(x, [-1, 1]) # (batch, 1)
     bucket = tf.searchsorted(src, x)
-    bucket = tf.clip_by_value(bucket - 1, 0, tf.shape(tgt) - 2)
+    bucket = tf.clip_by_value(bucket - 1, 0, tf.shape(tgt)[0] - 2)
+    # print('====================== x bucket')
+    # print(tf.shape(x))
+    # print(tf.shape(bucket))
     src0 = tf.gather(src, bucket, batch_dims=1)
     src1 = tf.gather(src, bucket + 1, batch_dims=1)
-    tgt0 = tf.gather(tgt, bucket)
-    tgt1 = tf.gather(tgt, bucket + 1)
+    tgt0 = tf.gather(tgt, bucket, batch_dims=1)
+    tgt1 = tf.gather(tgt, bucket + 1, batch_dims=1)
+    # print('====================== src0 sr1 tgt0 tgt1')
+    # print(tf.shape(src0))
+    # print(tf.shape(src1))
+    # print(tf.shape(tgt0))
+    # print(tf.shape(tgt1))
     xout = ((x - src0) * tgt1 + (src1 - x) * tgt0) / (src1 - src0)
     return tf.reshape(xout, x_shape)
+
+@tf.function
+def relax(s, t, distort):
+    xi = distort / (1 - distort)
+    ds = s[:, 1:] - s[:, :-1]
+    x = s
+
+    # print('-------------------- t')
+    # print(t)
+    # print('-------------------- x')
+    # print(x[:6, :])
+    for i in range(5):
+        # Compute objective.
+        dx = x[:, 1:] - x[:, :-1]
+        dxds = dx / ds
+        a = tf.math.log(dxds)
+        # obj = tf.reduce_sum(tf.math.square(a), axis=-1) \
+        #     + tf.reduce_sum(xi * tf.math.square(x - t), axis=-1)
+
+        # print('-------------------- obj')
+        # print(obj[:6])
+
+        # Compute gradient.
+        # print('-------------------- g')
+        # print(g[:6, :])
+        g = a / dx
+        zg = tf.pad(g, [[0, 0], [1, 0]])
+        gz = tf.pad(g, [[0, 0], [0, 1]])
+        grad = 2 * (zg - gz + xi * (x - t))
+        # print('-------------------- -grad')
+        # print(-grad)
+
+        # Compute hessian as tridiagonal matrix.
+        h = (1 - tf.math.log(dxds)) / tf.square(dxds) / tf.square(ds)
+        zh = tf.pad(h, [[0, 0], [1, 0]])
+        hz = tf.pad(h, [[0, 0], [0, 1]])
+        diag = 2 * (hz + zh + xi)
+        offdiag = -2 * h
+        zo = tf.pad(offdiag, [[0, 0], [1, 0]])
+        oz = tf.pad(offdiag, [[0, 0], [0, 1]])
+        compact = tf.stack([oz, diag, zo], axis=-2)
+        
+        # Newton's method.
+        x -= tf.linalg.tridiagonal_solve(compact, grad)
+
+        # print('-------------------- x')
+        # print(x[:6, :])
+
+    return x
 
 class TweeningStratigraphicWarp(Warp):
     def __init__(self, surface_functions, surface_targets, tween):
@@ -153,41 +211,41 @@ class TweeningStratigraphicWarpLocations(Op):
         return bpp(self.fa['tween'], 0., 1.)
 
 class StratigraphicWarp(Warp):
-    def __init__(self, surface_functions, surface_targets, tween):
+    def __init__(self, surface_functions, surface_targets, distort):
         self.surface_functions = surface_functions
         self.surface_targets = surface_targets
-        self.tween = tween
+        self.distort = distort
 
     def __call__(self, locs):
         sources = [f(locs[..., :2]) for f in self.surface_functions]
         sources = tf.sort(tf.cast(tf.stack(sources, axis=-1), tf.float32))
         targets = tf.constant(self.surface_targets, dtype=tf.float32)
         locs = tf.cast(locs, tf.float32)
-        return StratigraphicWarpLocations(locs, sources, targets, self.tween)
+        return StratigraphicWarpLocations(locs, sources, targets, self.distort)
 
     def gather_vars(self):
-        return bpp(self.tween, 0., 1.)
+        return bpp(self.distort, 0., 1.)
 
 class StratigraphicWarpLocations(Op):
-    def __init__(self, locs, sources, targets, tween):
+    def __init__(self, locs, sources, targets, distort):
         self.locs = locs
         self.sources = sources
         self.targets = targets
 
-        fa = dict(tween=tween)
+        fa = dict(distort=distort)
         super().__init__(fa, {})
 
     def __call__(self, e):
-        tween = e['tween']
+        distort = e['distort']
 
         locs0 = self.locs
         s = self.sources
         t = self.targets
+        r = relax(s, t, distort)
+        z = interpolate_1d_tf(s, r, locs0[:, 2])
+        locs1 = tf.stack([locs0[:, 0], locs0[:, 1], z, locs0[:, 3]], axis=-1)
 
-        y = interpolate_1d_tf(s, t, locs0[..., 2])
-        locs1 = tf.stack([locs0[..., 0], locs0[..., 1], y, locs0[..., 3]], axis=-1)
-
-        return locs0 * (1. - tween) + locs1 * tween
+        return locs1
 
     def __tf_tracing_type__(self, context):
         return SingletonTraceType(self)
