@@ -5,7 +5,7 @@ from .mean import *
 from .param import *
 from .custom_op import *
 
-__version__ = '0.11.0'
+__version__ = '0.11.1'
 
 __all__ = []
 __all__.extend(mean.__all__)

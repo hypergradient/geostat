@@ -14,9 +14,7 @@ with warnings.catch_warnings():
     import tensorflow as tf
     import tensorflow_probability as tfp
     tfd = tfp.distributions
-
-from tensorflow.core.function.trace_type import default_types
-import tensorflow_probability as tfp
+    from tensorflow.core.function.trace_type import default_types
 
 from . import mean as mn
 from . import kernel as krn
@@ -96,7 +94,7 @@ class CrazyWarp(Warp):
     def gather_vars(self):
         return {}
 
-# @tf.function()
+@tf.function
 def interpolate_1d_tf(src, tgt, x):
     """
     `src`: (batch, breaks)
@@ -107,18 +105,10 @@ def interpolate_1d_tf(src, tgt, x):
     x = tf.reshape(x, [-1, 1]) # (batch, 1)
     bucket = tf.searchsorted(src, x)
     bucket = tf.clip_by_value(bucket - 1, 0, tf.shape(tgt)[0] - 2)
-    # print('====================== x bucket')
-    # print(tf.shape(x))
-    # print(tf.shape(bucket))
     src0 = tf.gather(src, bucket, batch_dims=1)
     src1 = tf.gather(src, bucket + 1, batch_dims=1)
     tgt0 = tf.gather(tgt, bucket, batch_dims=1)
     tgt1 = tf.gather(tgt, bucket + 1, batch_dims=1)
-    # print('====================== src0 sr1 tgt0 tgt1')
-    # print(tf.shape(src0))
-    # print(tf.shape(src1))
-    # print(tf.shape(tgt0))
-    # print(tf.shape(tgt1))
     xout = ((x - src0) * tgt1 + (src1 - x) * tgt0) / (src1 - src0)
     return tf.reshape(xout, x_shape)
 
@@ -128,10 +118,6 @@ def relax(s, t, distort):
     ds = s[:, 1:] - s[:, :-1]
     x = s
 
-    # print('-------------------- t')
-    # print(t)
-    # print('-------------------- x')
-    # print(x[:6, :])
     for i in range(5):
         # Compute objective.
         dx = x[:, 1:] - x[:, :-1]
@@ -140,34 +126,19 @@ def relax(s, t, distort):
         # obj = tf.reduce_sum(tf.math.square(a), axis=-1) \
         #     + tf.reduce_sum(xi * tf.math.square(x - t), axis=-1)
 
-        # print('-------------------- obj')
-        # print(obj[:6])
-
-        # Compute gradient.
-        # print('-------------------- g')
-        # print(g[:6, :])
         g = a / dx
         zg = tf.pad(g, [[0, 0], [1, 0]])
         gz = tf.pad(g, [[0, 0], [0, 1]])
-        grad = 2 * (zg - gz + xi * (x - t))
-        # print('-------------------- -grad')
-        # print(-grad)
+        halfgrad = zg - gz + xi * (x - t)
 
         # Compute hessian as tridiagonal matrix.
-        h = (1 - tf.math.log(dxds)) / tf.square(dxds) / tf.square(ds)
+        h = (1 - a) / tf.square(dx)
         zh = tf.pad(h, [[0, 0], [1, 0]])
         hz = tf.pad(h, [[0, 0], [0, 1]])
-        diag = 2 * (hz + zh + xi)
-        offdiag = -2 * h
-        zo = tf.pad(offdiag, [[0, 0], [1, 0]])
-        oz = tf.pad(offdiag, [[0, 0], [0, 1]])
-        compact = tf.stack([oz, diag, zo], axis=-2)
+        halfhess = tf.stack([-hz, hz + zh + xi, -zh], axis=-2)
         
         # Newton's method.
-        x -= tf.linalg.tridiagonal_solve(compact, grad)
-
-        # print('-------------------- x')
-        # print(x[:6, :])
+        x -= tf.linalg.tridiagonal_solve(halfhess, halfgrad)
 
     return x
 
@@ -304,11 +275,11 @@ def featurizer(normalize=None):
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-# @tf.function
+@tf.function
 def gp_covariance(gp, locs, cats):
     return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
-# @tf.function
+@tf.function
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
@@ -342,7 +313,7 @@ def mvn_log_pdf(u, m, cov):
     quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
     return tf.cast(-0.5 * (logdet + quad), tf.float32)
 
-# @tf.function
+@tf.function
 def gp_log_likelihood(data, gp):
     m, S = gp_covariance(gp, data['warplocs'].run({}), data['cats'])
     u = tf.cast(data['vals'], tf.float64)
