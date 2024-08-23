@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "geostat"
-version = "0.10.0"
+version = "0.11.1"
 requires-python = ">=3.8"
 description = "Model spatial data with Gaussian processes"
 readme = "README.md"
