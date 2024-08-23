@@ -1,4 +1,4 @@
-# geostat
+# Geostat
 
 Model space-time data with Gaussian processes.
 
@@ -9,7 +9,7 @@ such as an Nvidia RTX 4090 can handle 10k data points.
 
 ## Quickstart 
 
-Install geostat using pip:
+Install Geostat using pip:
 ```
 pip install geostat
 ```
