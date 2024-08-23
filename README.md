@@ -16,7 +16,7 @@ pip install geostat
 
 ## Examples
 
-[doc/gaussian-processes-in-geostat.ipynb](here)
+[here](doc/gaussian-processes-in-geostat.ipynb)
 
 ## Disclaimer
 
