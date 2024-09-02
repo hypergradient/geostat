@@ -25,6 +25,7 @@ pip install geostat
   than simpler ones.
   * [Making predictions in a shape.](doc/predictions-with-mesh.ipynb) Geostat
   has utility functions to make it easier to work with shapes.
+  * [Gaussian processes in Tensorflow.](doc/gaussian-processes-in-tensorflow.ipynb) A tutorial on how to implement Gaussian processes in Tensorflow.
 
 ## Documentation
 
