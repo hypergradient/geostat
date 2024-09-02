@@ -2,4 +2,9 @@ site_name: Geostat Documentation
 nav:
   - Home: index.md
   - About: about.md
-theme: mkdocs
+theme:
+  name: "mkdocs"
+
+plugins:
+- search
+- mkdocstrings

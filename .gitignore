@@ -72,7 +72,7 @@ instance/
 docs/_build/
 
 # MkDocs documentation
-documentation/site
+site/
 
 # PyBuilder
 target/
