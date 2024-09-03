@@ -29,7 +29,7 @@ pip install geostat
 
 ## Documentation
 
-Coming soon.
+[Website Link.](https://hypergradient.github.io/geostat/)
 
 ## Disclaimer
 

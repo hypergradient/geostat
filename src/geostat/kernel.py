@@ -22,7 +22,6 @@ def block_diag(blocks):
     return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 class Kernel(Op):
-    """This is a dummy comment."""
     def __init__(self, fa, autoinputs):
         if 'offset' not in autoinputs: autoinputs['offset'] = 'offset'
         if 'locs1' not in autoinputs: autoinputs['locs1'] = 'locs1'
