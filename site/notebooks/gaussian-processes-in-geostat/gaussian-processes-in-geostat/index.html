@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../../img/favicon.ico">
+        <title>Gaussian processes in geostat - Geostat Documentation</title>
+        <link href="../../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../../css/brands.min.css" rel="stylesheet">
+        <link href="../../../css/solid.min.css" rel="stylesheet">
+        <link href="../../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../../..">Geostat Documentation</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../../.." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../../../api/" class="nav-link">API Reference</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../../../examples/" class="nav-link">Examples</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../../../about/" class="nav-link">About</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#overview" class="nav-link">Overview</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#synthesizing-data" class="nav-link">Synthesizing data</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#inferring-parameters" class="nav-link">Inferring parameters</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="1"><a href="#generating-predictions" class="nav-link">Generating predictions</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<pre><code class="language-python">from geostat import GP, Model, Mesh, Parameters
+import geostat
+import geostat.kernel as krn
+import matplotlib.pyplot as pp
+import numpy as np
+</code></pre>
+<h1 id="overview">Overview</h1>
+<p>In this notebook we will:
+  * Use a Gaussian process to generate synthetic data with known geospatial parameters.
+  * Use a second Gaussian process to infer the geospatial parameters from the synthetic data.
+  * Use the fitted Gaussian process to interpolate locations on a mesh.</p>
+<h1 id="synthesizing-data">Synthesizing data</h1>
+<p>We will synthesize data at mesh locations in a square centered on the origin.</p>
+<p>First define mesh locations using a <code>Mesh</code> object. The <code>nx</code> argument specifies 80 mesh coordinates in the x direction, and keeps the pitch the same in the y direction (which results in 80 mesh coordinates in that direction as well).</p>
+<pre><code class="language-python">mesh = Mesh.from_bounds([-1, -1, 1, 1], nx=80)
+</code></pre>
+<p>Declare the terms of the spatial trend. The decorator converts the function <code>trend_featurizer</code> into a featurizer that Geostat can use. The <code>normalize</code> argument causes each feature to have zero mean and unit variance after being applied to mesh locations. It also adds a constant one feature. The method <code>mesh.locations()</code> returns an array of shape <code>[N, 2]</code>, where <code>N</code> is the number of locations. </p>
+<pre><code class="language-python">@geostat.featurizer(normalize=mesh.locations())
+def trend_featurizer(x, y): return x, y, x*x, x*y, y*y
+</code></pre>
+<p>Model parameters are specified here, along with their values. The return value <code>p</code> is a namespace.</p>
+<pre><code class="language-python">p = Parameters(alpha=0.25, range=0.33, sill=1., nugget=0.25)
+</code></pre>
+<p>The covariance function has three terms:</p>
+<ul>
+<li><code>TrendPrior</code> specifies a trend based on <code>trend_featurizer</code>. In <code>TrendPrior</code>, <code>alpha</code> parameterizes the normal distribution prior for trend coefficients. </li>
+<li><code>SquaredExponential</code>, a stationary covariance function.</li>
+<li><code>Noise</code>, uncorrelated noise.</li>
+</ul>
+<pre><code class="language-python">kernel = krn.TrendPrior(trend_featurizer, alpha=p.alpha) + \
+         krn.SquaredExponential(range=p.range, sill=p.sill) + \
+         krn.Noise(nugget=p.nugget)
+</code></pre>
+<p>Define a Gaussian process with zero mean and a covariance function given by <code>kernel</code>.</p>
+<pre><code class="language-python">gp = GP(0, kernel)
+</code></pre>
+<p>Instantiate a <code>Model</code> and then call <code>generate</code> to generate synthetic observations. The result <code>mesh_obs</code> has shape <code>[N]</code>.</p>
+<pre><code class="language-python">model = Model(gp)
+mesh_obs = model.generate(mesh.locations()).vals
+</code></pre>
+<p>When the data is plotted, you can see an overall trend with some localized variations. The method <code>mesh.slice()</code> forms the observations into a 2d array suitable for use with <code>pcolormesh</code>.</p>
+<pre><code class="language-python">vmin, vmax = mesh_obs.min(), mesh_obs.max()
+meshx, meshy, mesh_obs_2d = mesh.slice(mesh_obs) # Each return value is a 2d array.
+c = pp.pcolormesh(meshx, meshy, mesh_obs_2d, vmin=vmin, vmax=vmax)
+pp.colorbar(c)
+pp.title('Synthetic data')
+pp.show()
+</code></pre>
+<p><img alt="png" src="../output_15_0.png" /></p>
+<p>Of these synthetic datapoints we'll sample just 200, with which we'll try to reconstruct the rest of the data.</p>
+<pre><code class="language-python">sample_indices = np.random.choice(len(mesh_obs), [200], replace=False)
+locs = mesh.locations()[sample_indices, :]
+obs = mesh_obs[sample_indices]
+
+c = pp.scatter(locs[:, 0], locs[:, 1], c=obs, vmin=vmin, vmax=vmax)
+pp.colorbar(c)
+pp.title('Synthetic observations')
+pp.show()
+</code></pre>
+<p><img alt="png" src="../output_17_0.png" /></p>
+<h1 id="inferring-parameters">Inferring parameters</h1>
+<p>Now we <code>set</code> the parameters in model to something arbitrary and see if the model can infer the correct parameters from the data, which consists of <code>locs</code> and <code>obs</code>. We don't expect <code>alpha</code> to converge to what it used to be, since <code>TrendPrior</code> generates only a small number of trend coefficients using <code>alpha</code>. However, <code>sill</code>, <code>range</code>, and <code>nugget</code> should all converge to something close.</p>
+<p>(The <code>None</code> at the end suppresses extraneous output.)</p>
+<pre><code class="language-python">model.set(alpha=1.0, range=1.0, sill=0.5, nugget=0.5)
+
+model.fit(locs, obs, iters=500)
+
+None
+</code></pre>
+<pre><code>[iter    50 ll -237.51 time  1.86 reg  0.00 alpha  0.61 sill  0.84 range  0.60 nugget  0.56]
+[iter   100 ll -200.69 time  0.59 reg  0.00 alpha  0.37 sill  1.24 range  0.42 nugget  0.34]
+[iter   150 ll -194.76 time  0.59 reg  0.00 alpha  0.23 sill  1.44 range  0.37 nugget  0.26]
+[iter   200 ll -194.28 time  0.58 reg  0.00 alpha  0.17 sill  1.48 range  0.36 nugget  0.25]
+[iter   250 ll -194.12 time  0.58 reg  0.00 alpha  0.13 sill  1.47 range  0.36 nugget  0.25]
+[iter   300 ll -194.05 time  0.58 reg  0.00 alpha  0.11 sill  1.46 range  0.35 nugget  0.25]
+[iter   350 ll -194.01 time  0.58 reg  0.00 alpha  0.09 sill  1.46 range  0.35 nugget  0.25]
+[iter   400 ll -194.00 time  0.58 reg  0.00 alpha  0.09 sill  1.46 range  0.35 nugget  0.25]
+[iter   450 ll -193.99 time  0.58 reg  0.00 alpha  0.08 sill  1.47 range  0.35 nugget  0.25]
+[iter   500 ll -193.99 time  0.58 reg  0.00 alpha  0.08 sill  1.48 range  0.36 nugget  0.25]
+</code></pre>
+<h1 id="generating-predictions">Generating predictions</h1>
+<p>Call <code>model</code> to get predictions at the same mesh locations as before:</p>
+<pre><code class="language-python">mean, var = model.predict(mesh.locations())
+</code></pre>
+<pre><code class="language-python">meshx, meshy, mean2d = mesh.slice(mean) # Each return value is a 2d array.
+c = pp.pcolormesh(meshx, meshy, mean2d, vmin=vmin, vmax=vmax)
+pp.colorbar(c)
+pp.title('Prediction mean')
+pp.show()
+</code></pre>
+<p><img alt="png" src="../output_23_0.png" /></p>
+<p>For comparison, here's the original synthetic data:</p>
+<pre><code class="language-python">c = pp.pcolormesh(meshx, meshy, mesh_obs_2d, vmin=vmin, vmax=vmax)
+pp.colorbar(c)
+pp.title('Synthetic data')
+pp.show()
+</code></pre>
+<p><img alt="png" src="../output_25_0.png" /></p>
+<p>And here's a plot of prediction variance, which accounts for, among other things, the noise that the model is unable to reconstruct.</p>
+<pre><code class="language-python">meshx, meshy, var2d = mesh.slice(var) # Each return value is a 2d array.
+c = pp.pcolormesh(meshx, meshy, var2d, cmap='gist_heat_r')
+pp.colorbar(c)
+pp.title('Prediction variance')
+pp.show()
+</code></pre>
+<p><img alt="png" src="../output_27_0.png" /></p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../../js/base.js"></script>
+        <script src="../../../javascripts/mathjax.js"></script>
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="../../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
