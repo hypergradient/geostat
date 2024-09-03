@@ -7,7 +7,7 @@ nav:
   - About: about.md
 
 theme:
-  name: "mkdocs"
+  name: "material"
 
 plugins:
 - search
