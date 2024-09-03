@@ -16,16 +16,16 @@ pip install geostat
 
 ## Examples notebooks
 
-  * [An introduction to Geostat.](doc/gaussian-processes-in-geostat.ipynb)
+  * [An introduction to Geostat.](docs/gaussian-processes-in-geostat/gaussian-processes-in-geostat.ipynb)
   In Geostat, we create one model that is used to create synthetic data according
   to provided parameters, and we create a second model that does the inverse:
   it takes the data and infers the parameters.
-  * [Structured covariance functions.](doc/3d-gaussian-processes.ipynb) Here
+  * [Structured covariance functions.](docs/3d-gaussian-processes/3d-gaussian-processes.ipynb) Here
   we show how a progressively more complex covariance function fits data better
   than simpler ones.
-  * [Making predictions in a shape.](doc/predictions-with-mesh.ipynb) Geostat
+  * [Making predictions in a shape.](docs/predictions-with-mesh/predictions-with-mesh.ipynb) Geostat
   has utility functions to make it easier to work with shapes.
-  * [Gaussian processes in Tensorflow.](doc/gaussian-processes-in-tensorflow.ipynb) A tutorial on how to implement Gaussian processes in Tensorflow.
+  * [Gaussian processes in Tensorflow.](docs/gaussian-processes-in-tensorflow/gaussian-processes-in-tensorflow.ipynb) A tutorial on how to implement Gaussian processes in Tensorflow.
 
 ## Documentation
 
