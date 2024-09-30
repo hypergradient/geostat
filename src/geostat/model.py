@@ -120,8 +120,9 @@ def Mix(inputs, weights=None):
 
     Examples
     --------
-    If \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and $`f_2(x) \sim \mathrm{GP}(\mu_2, K_2)`$, and
-    ```math
+    If \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and \\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\\), and
+
+    \\[
     \mathbf{g}(x) = \begin{pmatrix}
     g_1(x)\\
     g_2(x)\\
@@ -129,13 +130,14 @@ def Mix(inputs, weights=None):
     \end{pmatrix} = A \begin{pmatrix}
     f_1(x)\\
     f_2(x)
-    \end{pmatrix},
-    ```
-    then the GP for $`\mathbf{g}(x)`$ can be implemented as:
+    \end{pmatrix}
+    \\]
+
+    then the GP for \\(\mathbf{g}(x)\\) can be implemented as:
     ```
     g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
     ```
-    The components of $`\mathbf{g}(x)`$ are specified using the `cats` parameter when calling `g.fit()`, `g.generate()`, or `g.predict()`.
+    The components of \\(\mathbf{g}(x)\\) are specified using the `cats` parameter when calling `g.fit()`, `g.generate()`, or `g.predict()`.
     """
 
     return GP(
