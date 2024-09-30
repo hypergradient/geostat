@@ -1,1 +1,2 @@
 *.ipynb filter=lfs diff=lfs merge=lfs -text
+docs/notebooks/gaussian-processes-in-tensorflow/gaussian-processes-in-tensorflow.ipynb filter=lfs diff=lfs merge=lfs -text
