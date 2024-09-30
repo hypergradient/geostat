@@ -619,8 +619,6 @@ class Model():
 
     def set(self, **values):
         """
-        set(**values)
-
         Sets the values of the model's parameters based on the provided keyword arguments.
         Each parameter specified must exist in the model; otherwise, a `ValueError` is raised.
 
@@ -675,8 +673,6 @@ class Model():
 
     def fit(self, locs, vals, cats=None, step_size=0.01, iters=100, reg=None):
         """
-        fit(locs, vals, cats=None, step_size=0.01, iters=100, reg=None)
-
         Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)
         using the Adam optimizer. Optionally performs regularization and can handle categorical data.
 
@@ -909,8 +905,6 @@ class Model():
 
     def generate(self, locs, cats=None):
         """
-        generate(locs, cats=None)
-
         Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.
         This method simulates values based on the GP's covariance structure, allowing for random sample generation.
 
@@ -990,8 +984,6 @@ class Model():
 
     def predict(self, locs2, cats2=None, *, subsample=None, reduce=None, tracker=None, pair=False):
         """
-        predict(locs2, cats2=None, *, subsample=None, reduce=None, tracker=None, pair=False)
-
         Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.
         Supports batch predictions for large datasets and can handle categorical data.
 
