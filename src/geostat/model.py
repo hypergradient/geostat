@@ -577,7 +577,7 @@ class Model():
                      Should be 'squared-exp' or 'gamma-exp'.
                      Default is 'squared-exp'.
 
-                verbose (boolean, optional):
+                verbose (:obj:`str`, optional):
                     Whether or not to print parameters.
                     Defaults to True.
 
