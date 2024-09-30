@@ -751,15 +751,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#src.geostat.model.Model.set--raises" class="md-nav__link">
-    <span class="md-ellipsis">
-      Raises
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#src.geostat.model.Model.set--examples" class="md-nav__link">
     <span class="md-ellipsis">
       Examples
@@ -1591,15 +1582,6 @@
   
     <nav class="md-nav" aria-label="set">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#src.geostat.model.Model.set--raises" class="md-nav__link">
-    <span class="md-ellipsis">
-      Raises
-    </span>
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#src.geostat.model.Model.set--examples" class="md-nav__link">
@@ -7284,8 +7266,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="normal">1254</span>
 <span class="normal">1255</span>
 <span class="normal">1256</span>
-<span class="normal">1257</span>
-<span class="normal">1258</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">1257</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">Model</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Model class for performing Gaussian Process (GP) training and prediction with optional warping.</span>
@@ -7417,10 +7398,9 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">            self (Model):</span>
 <span class="sd">                The model instance with updated parameter values, allowing for method chaining.</span>
 
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        * ValueError</span>
-<span class="sd">            If a provided parameter name does not exist in the model&#39;s parameters.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError:</span>
+<span class="sd">                If a provided parameter name does not exist in the model&#39;s parameters.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -7467,9 +7447,9 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">            cats (np.ndarray, optional):</span>
 <span class="sd">                A NumPy array containing categorical data for each observation in `locs`. If provided,</span>
 <span class="sd">                the data is sorted according to `cats` to enable stratified training. Defaults to None.</span>
-<span class="sd">            step_size (float, default=0.01):</span>
+<span class="sd">            step_size (float, optional):</span>
 <span class="sd">                The learning rate for the Adam optimizer.</span>
-<span class="sd">            iters (int, default=100):</span>
+<span class="sd">            iters (int, optional):</span>
 <span class="sd">                The total number of iterations to run for training.</span>
 <span class="sd">            reg (float or None, optional):</span>
 <span class="sd">                Regularization penalty parameter. If None, no regularization is applied.</span>
@@ -7780,7 +7760,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">                Only valid if parameters are sampled. Default is None.</span>
 <span class="sd">            tracker (Callable, optional):</span>
 <span class="sd">                A tracking function for monitoring progress when making predictions across multiple samples. Default is None.</span>
-<span class="sd">            pair (bool, default=False):</span>
+<span class="sd">            pair (bool, optional):</span>
 <span class="sd">                If True, performs pairwise predictions of mean and variance for each pair of input points in `locs2`.</span>
 
 <span class="sd">        Returns:</span>
@@ -8132,7 +8112,7 @@ the data is sorted according to <code>cats</code> to enable stratified training.
           <tr class="doc-section-item">
             <td><code>step_size</code></td>
             <td>
-                  <code>float, default=0.01</code>
+                  <code>float</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -8146,7 +8126,7 @@ the data is sorted according to <code>cats</code> to enable stratified training.
           <tr class="doc-section-item">
             <td><code>iters</code></td>
             <td>
-                  <code>int, default=100</code>
+                  <code>int</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -8225,7 +8205,8 @@ penalties specified by <code>reg</code>.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">668</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">667</span>
+<span class="normal">668</span>
 <span class="normal">669</span>
 <span class="normal">670</span>
 <span class="normal">671</span>
@@ -8329,8 +8310,7 @@ penalties specified by <code>reg</code>.</li>
 <span class="normal">769</span>
 <span class="normal">770</span>
 <span class="normal">771</span>
-<span class="normal">772</span>
-<span class="normal">773</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">772</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)</span>
 <span class="sd">    using the Adam optimizer. Optionally performs regularization and can handle categorical data.</span>
@@ -8343,9 +8323,9 @@ penalties specified by <code>reg</code>.</li>
 <span class="sd">        cats (np.ndarray, optional):</span>
 <span class="sd">            A NumPy array containing categorical data for each observation in `locs`. If provided,</span>
 <span class="sd">            the data is sorted according to `cats` to enable stratified training. Defaults to None.</span>
-<span class="sd">        step_size (float, default=0.01):</span>
+<span class="sd">        step_size (float, optional):</span>
 <span class="sd">            The learning rate for the Adam optimizer.</span>
-<span class="sd">        iters (int, default=100):</span>
+<span class="sd">        iters (int, optional):</span>
 <span class="sd">            The total number of iterations to run for training.</span>
 <span class="sd">        reg (float or None, optional):</span>
 <span class="sd">            Regularization penalty parameter. If None, no regularization is applied.</span>
@@ -8549,7 +8529,8 @@ the original order is restored before returning.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">898</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">897</span>
+<span class="normal">898</span>
 <span class="normal">899</span>
 <span class="normal">900</span>
 <span class="normal">901</span>
@@ -8623,8 +8604,7 @@ the original order is restored before returning.</li>
 <span class="normal">969</span>
 <span class="normal">970</span>
 <span class="normal">971</span>
-<span class="normal">972</span>
-<span class="normal">973</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">972</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.</span>
 <span class="sd">    This method simulates values based on the GP&#39;s covariance structure, allowing for random sample generation.</span>
@@ -8808,7 +8788,7 @@ Only valid if parameters are sampled. Default is None.</p>
           <tr class="doc-section-item">
             <td><code>pair</code></td>
             <td>
-                  <code>bool, default=False</code>
+                  <code>bool</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -8881,7 +8861,8 @@ in a batched manner to support large datasets efficiently.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 975</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 974</span>
+<span class="normal"> 975</span>
 <span class="normal"> 976</span>
 <span class="normal"> 977</span>
 <span class="normal"> 978</span>
@@ -9163,8 +9144,7 @@ in a batched manner to support large datasets efficiently.</li>
 <span class="normal">1254</span>
 <span class="normal">1255</span>
 <span class="normal">1256</span>
-<span class="normal">1257</span>
-<span class="normal">1258</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">1257</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.</span>
 <span class="sd">    Supports batch predictions for large datasets and can handle categorical data.</span>
@@ -9183,7 +9163,7 @@ in a batched manner to support large datasets efficiently.</li>
 <span class="sd">            Only valid if parameters are sampled. Default is None.</span>
 <span class="sd">        tracker (Callable, optional):</span>
 <span class="sd">            A tracking function for monitoring progress when making predictions across multiple samples. Default is None.</span>
-<span class="sd">        pair (bool, default=False):</span>
+<span class="sd">        pair (bool, optional):</span>
 <span class="sd">            If True, performs pairwise predictions of mean and variance for each pair of input points in `locs2`.</span>
 
 <span class="sd">    Returns:</span>
@@ -9521,12 +9501,30 @@ the value to be assigned to that parameter.</p>
           </tr>
       </tbody>
     </table>
-      <h6 id="src.geostat.model.Model.set--raises">Raises</h6>
-<ul>
-<li>ValueError
-    If a provided parameter name does not exist in the model's parameters.</li>
-</ul>
-<h6 id="src.geostat.model.Model.set--examples">Examples</h6>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>ValueError</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If a provided parameter name does not exist in the model's parameters.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+      <h6 id="src.geostat.model.Model.set--examples">Examples</h6>
 <p>Update parameter value using <code>set</code>:</p>
 <pre><code>from geostat import GP, Model
 from geostat.kernel import Noise
@@ -9596,8 +9594,7 @@ their values. The associated TensorFlow variables are also recreated.</li>
 <span class="normal">662</span>
 <span class="normal">663</span>
 <span class="normal">664</span>
-<span class="normal">665</span>
-<span class="normal">666</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
+<span class="normal">665</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sets the values of the model&#39;s parameters based on the provided keyword arguments.</span>
 <span class="sd">    Each parameter specified must exist in the model; otherwise, a `ValueError` is raised.</span>
@@ -9612,10 +9609,9 @@ their values. The associated TensorFlow variables are also recreated.</li>
 <span class="sd">        self (Model):</span>
 <span class="sd">            The model instance with updated parameter values, allowing for method chaining.</span>
 
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-<span class="sd">    * ValueError</span>
-<span class="sd">        If a provided parameter name does not exist in the model&#39;s parameters.</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError:</span>
+<span class="sd">            If a provided parameter name does not exist in the model&#39;s parameters.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
