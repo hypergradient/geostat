@@ -38,8 +38,7 @@ class GP:
     The class supports addition to combine two GP models, and it allows gathering variables 
     from the mean and kernel.
 
-    Parameters
-    ----------
+    Parameters:
         x (test, optional): Pandas DataFrame with columns for locations.
             Default: None
 
