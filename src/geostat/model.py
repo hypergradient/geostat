@@ -30,7 +30,7 @@ __all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturi
 
 @dataclass
 class GP:    
-    '''
+    """
     Gaussian Process (GP) model class with a mean function and a kernel.
 
     This class represents a Gaussian Process with specified mean and kernel functions.
@@ -45,7 +45,6 @@ class GP:
 
         kernel (krn.Kernel):
             The kernel function of the Gaussian Process. This parameter is required.
-
 
     Examples
     --------
@@ -90,7 +89,7 @@ class GP:
     -----
     - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.
     - Ensure that the kernel is always provided upon initialization.
-    '''
+    """
 
     mean: mn.Trend = None
     kernel: krn.Kernel = None
@@ -294,13 +293,12 @@ class NormalizingFeaturizer:
     It normalizes the resulting features and remembers normalization parameters using the mean and standard deviation calculated from the 
     original data and adds an intercept feature (a column of ones) to the matrix.
 
-    Parameters
-    ----------
-    * featurization : Callable
-        A function or callable that defines how the input location data should be featurized.
-    * locs : array-like or Tensor
-        The input location data used for calculating normalization parameters (mean and standard 
-        deviation) and featurizing new data.
+    Parameters:
+        featurization (Callable):
+            A function or callable that defines how the input location data should be featurized.
+        locs (array-like or Tensor):
+            The input location data used for calculating normalization parameters (mean and standard 
+            deviation) and featurizing new data.
 
     Examples
     --------
@@ -357,11 +355,10 @@ class Featurizer:
     and generates the corresponding feature matrix. If no featurization function is provided, 
     it produces a matrix with appropriate dimensions containing only ones.
 
-    Parameters
-    ----------
-    * featurization : Callable or None
-        A function that takes in the individual components of location data and returns the features.
-        If set to `None`, the featurizer will produce an empty feature matrix (i.e., only ones).
+    Parameters:
+        featurization (Callable or None):
+            A function that takes in the individual components of location data and returns the features.
+            If set to `None`, the featurizer will produce an empty feature matrix (i.e., only ones).
 
     Examples
     --------
@@ -507,26 +504,25 @@ class Model():
     The `Model` class integrates a GP model with optional data warping, and supports data generation on given location,
     training on given location and observation data, and prediction on given location.
 
-    Parameters
-    ----------
-    * gp : GP
-        The Gaussian Process model to be used for training and prediction.
-    * warp : Warp, optional
-        An optional warping transformation applied to the data. If not specified, `NoWarp` 
-        is used by default.
-    * parameter_sample_size : int, optional
-        The number of parameter samples to draw. Default is None.
-    * locs : np.ndarray, optional
-        A NumPy array containing location data.
-    * vals : np.ndarray, optional
-        A NumPy array containing observed values corresponding to `locs`.
-    * cats : np.ndarray, optional
-        A NumPy array containing categorical data.
-    * report : Callable, optional
-        A custom reporting function to display model parameters. If not provided, a default 
-        reporting function is used.
-    * verbose : bool, default=True
-        Whether to print model parameters and status updates.
+    Parameters:
+        gp (GP):
+            The Gaussian Process model to be used for training and prediction.
+        warp (Warp, optional):
+            An optional warping transformation applied to the data. If not specified, `NoWarp` 
+            is used by default.
+        parameter_sample_size (int, optional):
+            The number of parameter samples to draw. Default is None.
+        locs (np.ndarray, optional):
+            A NumPy array containing location data.
+        vals (np.ndarray, optional):
+            A NumPy array containing observed values corresponding to `locs`.
+        cats (np.ndarray, optional):
+            A NumPy array containing categorical data.
+        report (Callable, optional):
+            A custom reporting function to display model parameters. If not provided, a default 
+            reporting function is used.
+        verbose (bool, default=True):
+            Whether to print model parameters and status updates.
 
     Examples
     --------
