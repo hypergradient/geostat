@@ -39,11 +39,13 @@ class GP:
     from the mean and kernel.
 
     Parameters:
-        x (test, optional): Pandas DataFrame with columns for locations.
-            Default: None
+        show_plots : boolean, optional
+            Whether or not to show variogram plots.
+            Default is True.
 
-        u : Pandas Series
-            A Pandas Series containing observations. Required.  
+        verbose : boolean, optional
+            Whether or not to print parameters.
+            Default is True.
         
     * mean : mn.Trend, optional
         The mean function of the Gaussian Process. If not provided or set to 0, 
