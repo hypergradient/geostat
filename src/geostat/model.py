@@ -124,6 +124,17 @@ def Mix(inputs, weights=None):
 
     \\(\mathbf{g}(x) = \begin{pmatrix} g_1(x) g_2(x) g_3(x) \end{pmatrix} = A \begin{pmatrix} f_1(x) f_2(x) \end{pmatrix}\\)
 
+    ```math
+    \mathbf{g}(x) = \begin{pmatrix}
+    g_1(x)\\
+    g_2(x)\\
+    g_3(x)
+    \end{pmatrix} = A \begin{pmatrix}
+    f_1(x)\\
+    f_2(x)
+    \end{pmatrix},
+    ```
+
     then the GP for \\(\mathbf{g}(x)\\) can be implemented as:
     ```
     g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
