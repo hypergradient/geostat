@@ -5613,15 +5613,15 @@ If no mean is provided, a zero mean is used by default. The kernel must always b
 The class supports addition to combine two GP models, and it allows gathering variables 
 from the mean and kernel.</p>
 <h5 id="src.geostat.model.GP--parameters">Parameters</h5>
-<p>mean : mn.Trend, optional
+<ul>
+<li>mean : mn.Trend, optional
     The mean function of the Gaussian Process. If not provided or set to 0, 
-    a ZeroTrend is used as the default mean.
-kernel : krn.Kernel
-    The kernel function of the Gaussian Process. This parameter is required.</p>
+    a ZeroTrend is used as the default mean.</li>
+<li>kernel : krn.Kernel
+    The kernel function of the Gaussian Process. This parameter is required.</li>
+</ul>
 <h5 id="src.geostat.model.GP--examples">Examples</h5>
 <p>Creating a simple Gaussian Process with default mean and a Noise kernel:</p>
-<blockquote>
-<blockquote>
 <blockquote>
 <p>import geostat.mean as mn
 import geostat.kernel as krn
@@ -5630,31 +5630,19 @@ p = Parameters(nugget=1., sill=1., beta=[4., 3., 2., 1.])
 kernel = krn.Noise(p.nugget)
 gp = GP(kernel=kernel)</p>
 </blockquote>
-</blockquote>
-</blockquote>
 <p>The mean defaults to ZeroTrend if not provided.</p>
-<blockquote>
-<blockquote>
 <blockquote>
 <p>gp.mean
 <ZeroTrend object></p>
 </blockquote>
-</blockquote>
-</blockquote>
 <p>Specifying both mean and kernel:</p>
-<blockquote>
-<blockquote>
 <blockquote>
 <p>@geostat.featurizer()
 def trend_featurizer(x, y): return 1., x, y, x*y
 mean_function = mn.Trend(trend_featurizer, beta=p.beta)
 gp = GP(mean=mean_function, kernel=kernel)</p>
 </blockquote>
-</blockquote>
-</blockquote>
 <p>Adding two GP objects:</p>
-<blockquote>
-<blockquote>
 <blockquote>
 <p>gp1 = GP(kernel=krn.Noise(p.nugget))
 gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))
@@ -5664,15 +5652,9 @@ combined_gp.mean  # ZeroTrend + Trend
 combined_gp.kernel  # Noise Kernel + Delta Kernel
 <Noise + Delta object></p>
 </blockquote>
-</blockquote>
-</blockquote>
 <p>Gathering variables from the mean and kernel:</p>
 <blockquote>
-<blockquote>
-<blockquote>
 <p>gp.gather_vars()</p>
-</blockquote>
-</blockquote>
 </blockquote>
 <h4 id="src.geostat.model.GP--output-will-be-a-union-of-the-variables-gathered-from-mean-and-kernel">Output will be a union of the variables gathered from mean and kernel.</h4>
 <h5 id="src.geostat.model.GP--notes">Notes</h5>
@@ -5772,48 +5754,48 @@ combined_gp.kernel  # Noise Kernel + Delta Kernel
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    mean : mn.Trend, optional</span>
+<span class="sd">    * mean : mn.Trend, optional</span>
 <span class="sd">        The mean function of the Gaussian Process. If not provided or set to 0, </span>
 <span class="sd">        a ZeroTrend is used as the default mean.</span>
-<span class="sd">    kernel : krn.Kernel</span>
+<span class="sd">    * kernel : krn.Kernel</span>
 <span class="sd">        The kernel function of the Gaussian Process. This parameter is required.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    Creating a simple Gaussian Process with default mean and a Noise kernel:</span>
 
-<span class="sd">    &gt;&gt;&gt; import geostat.mean as mn</span>
-<span class="sd">    &gt;&gt;&gt; import geostat.kernel as krn</span>
-<span class="sd">    &gt;&gt;&gt; from geostat import Parameters, GP</span>
-<span class="sd">    &gt;&gt;&gt; p = Parameters(nugget=1., sill=1., beta=[4., 3., 2., 1.])</span>
-<span class="sd">    &gt;&gt;&gt; kernel = krn.Noise(p.nugget)</span>
-<span class="sd">    &gt;&gt;&gt; gp = GP(kernel=kernel)</span>
+<span class="sd">    &gt; import geostat.mean as mn</span>
+<span class="sd">    &gt; import geostat.kernel as krn</span>
+<span class="sd">    &gt; from geostat import Parameters, GP</span>
+<span class="sd">    &gt; p = Parameters(nugget=1., sill=1., beta=[4., 3., 2., 1.])</span>
+<span class="sd">    &gt; kernel = krn.Noise(p.nugget)</span>
+<span class="sd">    &gt; gp = GP(kernel=kernel)</span>
 
 <span class="sd">    The mean defaults to ZeroTrend if not provided.</span>
 
-<span class="sd">    &gt;&gt;&gt; gp.mean</span>
+<span class="sd">    &gt; gp.mean</span>
 <span class="sd">    &lt;ZeroTrend object&gt;</span>
 
 <span class="sd">    Specifying both mean and kernel:</span>
 
-<span class="sd">    &gt;&gt;&gt; @geostat.featurizer()</span>
-<span class="sd">    &gt;&gt;&gt; def trend_featurizer(x, y): return 1., x, y, x*y</span>
-<span class="sd">    &gt;&gt;&gt; mean_function = mn.Trend(trend_featurizer, beta=p.beta)</span>
-<span class="sd">    &gt;&gt;&gt; gp = GP(mean=mean_function, kernel=kernel)</span>
+<span class="sd">    &gt; @geostat.featurizer()</span>
+<span class="sd">    &gt; def trend_featurizer(x, y): return 1., x, y, x*y</span>
+<span class="sd">    &gt; mean_function = mn.Trend(trend_featurizer, beta=p.beta)</span>
+<span class="sd">    &gt; gp = GP(mean=mean_function, kernel=kernel)</span>
 
 <span class="sd">    Adding two GP objects:</span>
 
-<span class="sd">    &gt;&gt;&gt; gp1 = GP(kernel=krn.Noise(p.nugget))</span>
-<span class="sd">    &gt;&gt;&gt; gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))</span>
-<span class="sd">    &gt;&gt;&gt; combined_gp = gp1 + gp2</span>
-<span class="sd">    &gt;&gt;&gt; combined_gp.mean  # ZeroTrend + Trend</span>
+<span class="sd">    &gt; gp1 = GP(kernel=krn.Noise(p.nugget))</span>
+<span class="sd">    &gt; gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))</span>
+<span class="sd">    &gt; combined_gp = gp1 + gp2</span>
+<span class="sd">    &gt; combined_gp.mean  # ZeroTrend + Trend</span>
 <span class="sd">    &lt;ZeroTrend + Trend object&gt;</span>
-<span class="sd">    &gt;&gt;&gt; combined_gp.kernel  # Noise Kernel + Delta Kernel</span>
+<span class="sd">    &gt; combined_gp.kernel  # Noise Kernel + Delta Kernel</span>
 <span class="sd">    &lt;Noise + Delta object&gt;</span>
 
 <span class="sd">    Gathering variables from the mean and kernel:</span>
 
-<span class="sd">    &gt;&gt;&gt; gp.gather_vars()</span>
+<span class="sd">    &gt; gp.gather_vars()</span>
 <span class="sd">    # Output will be a union of the variables gathered from mean and kernel.</span>
 
 <span class="sd">    Notes</span>
