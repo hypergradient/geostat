@@ -559,30 +559,30 @@ class Model():
 
     def __post_init__(self):
 
-        # '''
-        # Parameters:
-        #         x : Pandas DataFrame with columns for locations.
+        '''
+        Parameters:
+                x : Pandas DataFrame with columns for locations.
 
-        #         u : A Pandas Series containing observations.
+                u : A Pandas Series containing observations.
 
-        #         featurization : function, optional
-        #             Should be a function that takes x1 (n-dim array of input data)
-        #             and returns the coordinates, i.e., x, y, x**2, y**2.
-        #             Example: def featurization(x1):
-        #                         return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
-        #             Default is None.
+                featurization : function, optional
+                    Should be a function that takes x1 (n-dim array of input data)
+                    and returns the coordinates, i.e., x, y, x**2, y**2.
+                    Example: def featurization(x1):
+                                return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
+                    Default is None.
 
-        #         latent : List[GP]
-        #              Name of the covariance function to use in the GP.
-        #              Should be 'squared-exp' or 'gamma-exp'.
-        #              Default is 'squared-exp'.
+                latent : List[GP]
+                     Name of the covariance function to use in the GP.
+                     Should be 'squared-exp' or 'gamma-exp'.
+                     Default is 'squared-exp'.
 
-        #         verbose : boolean, optional
-        #             Whether or not to print parameters.
-        #             Default is True.
+                verbose : boolean, optional
+                    Whether or not to print parameters.
+                    Default is True.
 
-        # Performs Gaussian process training and prediction.
-        # '''
+        Performs Gaussian process training and prediction.
+        '''
 
         if self.warp is None: self.warp = NoWarp()
 
