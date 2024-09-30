@@ -287,6 +287,56 @@ class StratigraphicWarpLocations(Op):
 
 class NormalizingFeaturizer:
     """
+    NormalizingFeaturizer class for producing normalized feature matrices (F matrix) with an intercept.
+
+    The `NormalizingFeaturizer` takes raw location data and applies a specified featurization function.
+    It normalizes the resulting features using the mean and standard deviation calculated from the 
+    original data and adds an intercept feature (a column of ones) to the matrix.
+
+    Parameters
+    ----------
+    * featurization : Callable
+        A function or callable that defines how the input location data should be featurized.
+    * locs : array-like or Tensor
+        The input location data used for calculating normalization parameters (mean and standard 
+        deviation) and featurizing new data.
+
+    Examples
+    --------
+    Creating a `NormalizingFeaturizer` using a custom featurization function and location data:
+
+    ```
+    import tensorflow as tf
+    from geostat.model import NormalizingFeaturizer
+
+    # Define a simple featurization function
+    def custom_featurizer(x, y):
+        return x, y, x * y
+
+    # Sample location data
+    locs = tf.constant([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+
+    # Create the NormalizingFeaturizer
+    norm_featurizer = NormalizingFeaturizer(custom_featurizer, locs)
+    ```
+
+    Using the `NormalizingFeaturizer` to featurize new location data:
+
+    ```
+    new_locs = tf.constant([[7.0, 8.0], [9.0, 10.0]])
+    F_matrix = norm_featurizer(new_locs)
+    # F_matrix will contain normalized features with an additional intercept column
+    ```
+
+    Notes
+    -----
+    - The normalization parameters (`unnorm_mean` and `unnorm_std`) are calculated based on the 
+      initial `locs` data provided during initialization.
+    - The `__call__` method applies the normalization and adds an intercept feature when used 
+      to featurize new location data.
+    """
+
+    """
     Produces featurized locations (F matrix) and remembers normalization
     parameters.  Adds an intercept feature.
     """
