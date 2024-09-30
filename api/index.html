@@ -6448,7 +6448,7 @@ combined_gp.kernel  # &lt;Noise + Delta object&gt;
 <span class="normal">115</span>
 <span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">GP</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Gaussian Process (GP) model class with a mean function and a kernel.</span>
 
 <span class="sd">    This class represents a Gaussian Process with specified mean and kernel functions.</span>
@@ -6514,7 +6514,7 @@ combined_gp.kernel  # &lt;Noise + Delta object&gt;
 <span class="sd">    -----</span>
 <span class="sd">    - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.</span>
 <span class="sd">    - Ensure that the kernel is always provided upon initialization.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
 
     <span class="n">mean</span><span class="p">:</span> <span class="n">mn</span><span class="o">.</span><span class="n">Trend</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">krn</span><span class="o">.</span><span class="n">Kernel</span> <span class="o">=</span> <span class="kc">None</span>
