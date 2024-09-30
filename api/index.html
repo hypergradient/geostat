@@ -10096,7 +10096,8 @@ F_matrix = norm_featurizer(new_locs)
       <h5 id="src.geostat.model.Mix--examples">Examples</h5>
 <p>If <span class="arithmatex">\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\)</span> and <span class="arithmatex">\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\)</span>, and</p>
 <p><span class="arithmatex">\(\mathbf{g}(x) = egin{pmatrix} g_1(x) g_2(x) g_3(x) \end{pmatrix} = A egin{pmatrix} f_1(x) f_2(x) \end{pmatrix}\)</span></p>
-<pre><code class="language-math">\mathbf{g}(x) = egin{pmatrix}
+<div class="arithmatex">\[
+\mathbf{g}(x) = egin{pmatrix}
 g_1(x)\
 g_2(x)\
 g_3(x)
@@ -10104,7 +10105,7 @@ g_3(x)
 f_1(x)\
 f_2(x)
 \end{pmatrix},
-</code></pre>
+\]</div>
 <p>then the GP for <span class="arithmatex">\(\mathbf{g}(x)\)</span> can be implemented as:</p>
 <pre><code>g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
 </code></pre>
@@ -10164,7 +10165,7 @@ f_2(x)
 
 <span class="sd">    \\(\mathbf{g}(x) = \begin{pmatrix} g_1(x) g_2(x) g_3(x) \end{pmatrix} = A \begin{pmatrix} f_1(x) f_2(x) \end{pmatrix}\\)</span>
 
-<span class="sd">    ```math</span>
+<span class="sd">    $$</span>
 <span class="sd">    \mathbf{g}(x) = \begin{pmatrix}</span>
 <span class="sd">    g_1(x)\\</span>
 <span class="sd">    g_2(x)\\</span>
@@ -10173,7 +10174,7 @@ f_2(x)
 <span class="sd">    f_1(x)\\</span>
 <span class="sd">    f_2(x)</span>
 <span class="sd">    \end{pmatrix},</span>
-<span class="sd">    ```</span>
+<span class="sd">    $$</span>
 
 <span class="sd">    then the GP for \\(\mathbf{g}(x)\\) can be implemented as:</span>
 <span class="sd">    ```</span>
