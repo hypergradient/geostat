@@ -29,64 +29,7 @@ MVN = tfp.distributions.MultivariateNormalTriL
 __all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturizer', 'StratigraphicWarp']
 
 @dataclass
-class GP:
-
-    '''
-    Parameters:
-            x1 : n-dim array
-                Locations of input data.
-                
-            u1 : 1-d array
-                Values to be kriged.
-            
-            bins : int or None
-                The number of bins to use on the variogram cloud.
-                If None, variogram function is fit to the variogram cloud
-                and is not binned first.
-                
-            variogram_func : str
-                    Name of the variogram model to use in the kriging. 
-                    Should be 'linear', 'gaussian', or 'spherical'.
-                    Default is 'gaussian'.
-
-            cutoff_dist : str or int, optional
-                The maximum lag distance to include in variogram modeling.
-                
-            featurization : function, optional
-                Should be a function that takes x1 (n-dim array of input data) 
-                and returns the coordinates, i.e., x, y, x**2, y**2.
-                Example below.
-                Default is None.
-                
-            project : function, opt
-                A function that takes multiple vectors, and returns
-                a tuple of projected vectors.
-
-            epsg_proj : str
-                The projected coordinate system to use. Ignored if project=False.
-                Default is 'EPSG:3310' (California Albers).
-
-            show_plots : boolean, optional
-                Whether or not to show variogram plots.
-                Default is True.
-
-            verbose : boolean, optional
-                Whether or not to print parameters.
-                Default is True.
-
-
-    Performs experimental variogram calculation, bins data, and fits variogram model to estimate variogram parameters.       
-                
-    Performs ordinary and universal kriging in up to 3 spatial dimensions.
-    
-    
-    Trend model example:
-    def featurization(x1):    
-        return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2
-    
-    
-    '''
-
+class GP:    
     '''
     Gaussian Process (GP) model class with a mean function and a kernel.
 
@@ -96,19 +39,13 @@ class GP:
     from the mean and kernel.
 
     Parameters:
-            show_plots : boolean, optional
-                Whether or not to show variogram plots.
-                Default is True.
+        mean : mn.Trend, optional
+            The mean function of the Gaussian Process. If not provided or set to 0, 
+            a ZeroTrend is used as the default mean.
 
-            verbose : boolean, optional
-                Whether or not to print parameters.
-                Default is True.
-        
-    * mean : mn.Trend, optional
-        The mean function of the Gaussian Process. If not provided or set to 0, 
-        a ZeroTrend is used as the default mean.
-    * kernel : krn.Kernel
-        The kernel function of the Gaussian Process. This parameter is required.
+        kernel : krn.Kernel
+            The kernel function of the Gaussian Process. This parameter is required.
+
 
     Examples
     --------
