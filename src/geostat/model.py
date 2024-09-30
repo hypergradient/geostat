@@ -30,7 +30,7 @@ __all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturi
 
 @dataclass
 class GP:
-    """
+    '''
     Gaussian Process (GP) model class with a mean function and a kernel.
 
     This class represents a Gaussian Process with specified mean and kernel functions.
@@ -96,7 +96,7 @@ class GP:
     -----
     - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.
     - Ensure that the kernel is always provided upon initialization.
-    """
+    '''
 
     mean: mn.Trend = None
     kernel: krn.Kernel = None
