@@ -560,8 +560,7 @@ class Model():
     def __post_init__(self):
         '''
         Parameters:
-            x (test, optional): Pandas DataFrame with columns for locations.
-                Default is None.
+            x (test, optional): Pandas DataFrame with columns for locations. (None)
 
             u : A Pandas Series containing observations. Required.
 
