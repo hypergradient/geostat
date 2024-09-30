@@ -290,7 +290,7 @@ class NormalizingFeaturizer:
     NormalizingFeaturizer class for producing normalized feature matrices (F matrix) with an intercept.
 
     The `NormalizingFeaturizer` takes raw location data and applies a specified featurization function.
-    It normalizes the resulting features using the mean and standard deviation calculated from the 
+    It normalizes the resulting features and remembers normalization parameters using the mean and standard deviation calculated from the 
     original data and adds an intercept feature (a column of ones) to the matrix.
 
     Parameters
@@ -336,10 +336,6 @@ class NormalizingFeaturizer:
       to featurize new location data.
     """
 
-    """
-    Produces featurized locations (F matrix) and remembers normalization
-    parameters.  Adds an intercept feature.
-    """
     def __init__(self, featurization, locs):
         self.unnorm_featurizer = Featurizer(featurization)
         F_unnorm = self.unnorm_featurizer(locs)
@@ -354,8 +350,57 @@ class NormalizingFeaturizer:
 
 class Featurizer:
     """
-    Produces featurized locations (F matrix).
+    Featurizer class for producing feature matrices (F matrix) from location data.
+
+    The `Featurizer` applies a specified featurization function to the input location data 
+    and generates the corresponding feature matrix. If no featurization function is provided, 
+    it produces a matrix with appropriate dimensions containing only ones.
+
+    Parameters
+    ----------
+    * featurization : Callable or None
+        A function that takes in the individual components of location data and returns the features.
+        If set to `None`, the featurizer will produce an empty feature matrix (i.e., only ones).
+
+    Examples
+    --------
+    Creating a `Featurizer` using a custom featurization function:
+
+    ```
+    import tensorflow as tf
+    from geostat.model import Featurizer
+
+    # Define a custom featurization function
+    def simple_featurizer(x, y):
+        return x, y, x * y
+
+    # Initialize the Featurizer
+    featurizer = Featurizer(simple_featurizer)
+    ```
+
+    Using the `Featurizer` to transform location data:
+
+    ```
+    locs = tf.constant([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+    F_matrix = featurizer(locs)
+    # F_matrix will contain the features: (x, y, x*y) for each location
+    ```
+
+    Handling the case where no featurization is provided:
+
+    ```
+    featurizer_no_feat = Featurizer(None)
+    F_matrix = featurizer_no_feat(locs)
+    # Since no featurization function is provided, F_matrix will have shape (3, 0)
+    ```
+
+    Notes
+    -----
+    - The `__call__` method is used to apply the featurization to input location data.
+    - If `featurization` returns a tuple, it is assumed to represent multiple features, 
+      which will be stacked to form the feature matrix.
     """
+
     def __init__(self, featurization):
         self.featurization = featurization
 
