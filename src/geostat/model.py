@@ -84,13 +84,6 @@ class GP:
     combined_gp.mean  # <ZeroTrend + Trend object>
     combined_gp.kernel  # <Noise + Delta object>
     ```
-    
-    Gathering variables from the mean and kernel:
-
-    ```
-    gp.gather_vars()
-    ```
-    # Output will be a union of the variables gathered from mean and kernel.
 
     Notes
     -----
