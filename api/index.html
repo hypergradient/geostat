@@ -669,6 +669,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#src.geostat.model.Model.__post_init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __post_init__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#src.geostat.model.Model.fit" class="md-nav__link">
     <span class="md-ellipsis">
       fit
@@ -1613,6 +1622,15 @@
   <a href="#src.geostat.model.Model--notes" class="md-nav__link">
     <span class="md-ellipsis">
       Notes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#src.geostat.model.Model.__post_init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __post_init__
     </span>
   </a>
   
@@ -7406,30 +7424,30 @@ model = Model(gp=gp, locs=locs, vals=vals)
 
     <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="c1"># &#39;&#39;&#39;</span>
-        <span class="c1"># Parameters:</span>
-        <span class="c1">#         x : Pandas DataFrame with columns for locations.</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">                x : Pandas DataFrame with columns for locations.</span>
 
-        <span class="c1">#         u : A Pandas Series containing observations.</span>
+<span class="sd">                u : A Pandas Series containing observations.</span>
 
-        <span class="c1">#         featurization : function, optional</span>
-        <span class="c1">#             Should be a function that takes x1 (n-dim array of input data)</span>
-        <span class="c1">#             and returns the coordinates, i.e., x, y, x**2, y**2.</span>
-        <span class="c1">#             Example: def featurization(x1):</span>
-        <span class="c1">#                         return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
-        <span class="c1">#             Default is None.</span>
+<span class="sd">                featurization : function, optional</span>
+<span class="sd">                    Should be a function that takes x1 (n-dim array of input data)</span>
+<span class="sd">                    and returns the coordinates, i.e., x, y, x**2, y**2.</span>
+<span class="sd">                    Example: def featurization(x1):</span>
+<span class="sd">                                return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
+<span class="sd">                    Default is None.</span>
 
-        <span class="c1">#         latent : List[GP]</span>
-        <span class="c1">#              Name of the covariance function to use in the GP.</span>
-        <span class="c1">#              Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
-        <span class="c1">#              Default is &#39;squared-exp&#39;.</span>
+<span class="sd">                latent : List[GP]</span>
+<span class="sd">                     Name of the covariance function to use in the GP.</span>
+<span class="sd">                     Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
+<span class="sd">                     Default is &#39;squared-exp&#39;.</span>
 
-        <span class="c1">#         verbose : boolean, optional</span>
-        <span class="c1">#             Whether or not to print parameters.</span>
-        <span class="c1">#             Default is True.</span>
+<span class="sd">                verbose : boolean, optional</span>
+<span class="sd">                    Whether or not to print parameters.</span>
+<span class="sd">                    Default is True.</span>
 
-        <span class="c1"># Performs Gaussian process training and prediction.</span>
-        <span class="c1"># &#39;&#39;&#39;</span>
+<span class="sd">        Performs Gaussian process training and prediction.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">warp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warp</span> <span class="o">=</span> <span class="n">NoWarp</span><span class="p">()</span>
 
@@ -8129,6 +8147,228 @@ model = Model(gp=gp, locs=locs, vals=vals)
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="src.geostat.model.Model.__post_init__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">__post_init__</span><span class="p">()</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>x</code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Pandas DataFrame with columns for locations.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>u</code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A Pandas Series containing observations.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>featurization</code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>function, optional
+Should be a function that takes x1 (n-dim array of input data)
+and returns the coordinates, i.e., x, y, x<strong>2, y</strong>2.
+Example: def featurization(x1):
+        return x1[:, 0], x1[:, 1], x1[:, 0]<strong>2, x1[:, 1]</strong>2.
+Default is None.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>latent</code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List[GP]
+Name of the covariance function to use in the GP.
+Should be 'squared-exp' or 'gamma-exp'.
+Default is 'squared-exp'.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>verbose</code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>boolean, optional
+Whether or not to print parameters.
+Default is True.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+      <p>Performs Gaussian process training and prediction.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/geostat/model.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Parameters:</span>
+<span class="sd">            x : Pandas DataFrame with columns for locations.</span>
+
+<span class="sd">            u : A Pandas Series containing observations.</span>
+
+<span class="sd">            featurization : function, optional</span>
+<span class="sd">                Should be a function that takes x1 (n-dim array of input data)</span>
+<span class="sd">                and returns the coordinates, i.e., x, y, x**2, y**2.</span>
+<span class="sd">                Example: def featurization(x1):</span>
+<span class="sd">                            return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
+<span class="sd">                Default is None.</span>
+
+<span class="sd">            latent : List[GP]</span>
+<span class="sd">                 Name of the covariance function to use in the GP.</span>
+<span class="sd">                 Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
+<span class="sd">                 Default is &#39;squared-exp&#39;.</span>
+
+<span class="sd">            verbose : boolean, optional</span>
+<span class="sd">                Whether or not to print parameters.</span>
+<span class="sd">                Default is True.</span>
+
+<span class="sd">    Performs Gaussian process training and prediction.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">warp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warp</span> <span class="o">=</span> <span class="n">NoWarp</span><span class="p">()</span>
+
+    <span class="c1"># Default reporting function.</span>
+    <span class="k">def</span> <span class="nf">default_report</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">fmt</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{:5d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{:5.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">formatter</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;floatkind&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">{:5.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">}):</span>
+                    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">fmt</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="n">default_report</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">locs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">locs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cats</span><span class="p">)</span>
+
+    <span class="c1"># Collect parameters and create TF parameters.</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_vars</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">create_tf_variable</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
