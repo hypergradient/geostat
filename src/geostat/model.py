@@ -561,7 +561,7 @@ class Model():
         '''
         Parameters:
             x (test, optional): Pandas DataFrame with columns for locations.
-                Default: None
+            Default: None
 
             u : A Pandas Series containing observations. Required.
 
