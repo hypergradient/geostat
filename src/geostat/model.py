@@ -39,13 +39,13 @@ class GP:
     from the mean and kernel.
 
     Parameters:
-        show_plots : boolean, optional
-            Whether or not to show variogram plots.
-            Default is True.
+            show_plots : boolean, optional
+                Whether or not to show variogram plots.
+                Default is True.
 
-        verbose : boolean, optional
-            Whether or not to print parameters.
-            Default is True.
+            verbose : boolean, optional
+                Whether or not to print parameters.
+                Default is True.
         
     * mean : mn.Trend, optional
         The mean function of the Gaussian Process. If not provided or set to 0, 
