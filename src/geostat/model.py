@@ -39,11 +39,11 @@ class GP:
     from the mean and kernel.
 
     Parameters:
-        mean : mn.Trend, optional
+        mean (mn.Trend, optional):
             The mean function of the Gaussian Process. If not provided or set to 0, 
             a ZeroTrend is used as the default mean.
 
-        kernel : krn.Kernel
+        kernel (krn.Kernel):
             The kernel function of the Gaussian Process. This parameter is required.
 
 
