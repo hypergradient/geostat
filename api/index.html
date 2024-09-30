@@ -7388,8 +7388,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="normal">1292</span>
 <span class="normal">1293</span>
 <span class="normal">1294</span>
-<span class="normal">1295</span>
-<span class="normal">1296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">1295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">Model</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Model class for performing Gaussian Process (GP) training and prediction with optional warping.</span>
@@ -7451,8 +7450,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
     <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Parameters:</span>
-<span class="sd">            x (test, optional): Pandas DataFrame with columns for locations.</span>
-<span class="sd">                Default is None.</span>
+<span class="sd">            x (test, optional): Pandas DataFrame with columns for locations. (None)</span>
 
 <span class="sd">            u : A Pandas Series containing observations. Required.</span>
 
@@ -8231,8 +8229,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Pandas DataFrame with columns for locations.
-Default is None.</p>
+                <p>Pandas DataFrame with columns for locations. (None)</p>
               </div>
             </td>
             <td>
@@ -8387,12 +8384,10 @@ Defaults to True.</p>
 <span class="normal">637</span>
 <span class="normal">638</span>
 <span class="normal">639</span>
-<span class="normal">640</span>
-<span class="normal">641</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">640</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Parameters:</span>
-<span class="sd">        x (test, optional): Pandas DataFrame with columns for locations.</span>
-<span class="sd">            Default is None.</span>
+<span class="sd">        x (test, optional): Pandas DataFrame with columns for locations. (None)</span>
 
 <span class="sd">        u : A Pandas Series containing observations. Required.</span>
 
@@ -8539,7 +8534,8 @@ penalties specified by <code>reg</code>.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">700</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">699</span>
+<span class="normal">700</span>
 <span class="normal">701</span>
 <span class="normal">702</span>
 <span class="normal">703</span>
@@ -8645,8 +8641,7 @@ penalties specified by <code>reg</code>.</li>
 <span class="normal">803</span>
 <span class="normal">804</span>
 <span class="normal">805</span>
-<span class="normal">806</span>
-<span class="normal">807</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">806</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)</span>
 <span class="sd">    using the Adam optimizer. Optionally performs regularization and can handle categorical data.</span>
@@ -8813,7 +8808,8 @@ the original order is restored before returning.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 932</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 931</span>
+<span class="normal"> 932</span>
 <span class="normal"> 933</span>
 <span class="normal"> 934</span>
 <span class="normal"> 935</span>
@@ -8889,8 +8885,7 @@ the original order is restored before returning.</li>
 <span class="normal">1005</span>
 <span class="normal">1006</span>
 <span class="normal">1007</span>
-<span class="normal">1008</span>
-<span class="normal">1009</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">1008</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.</span>
 <span class="sd">    This method simulates values based on the GP&#39;s covariance structure, allowing for random sample generation.</span>
@@ -9039,7 +9034,8 @@ in a batched manner to support large datasets efficiently.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1011</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1010</span>
+<span class="normal">1011</span>
 <span class="normal">1012</span>
 <span class="normal">1013</span>
 <span class="normal">1014</span>
@@ -9323,8 +9319,7 @@ in a batched manner to support large datasets efficiently.</li>
 <span class="normal">1292</span>
 <span class="normal">1293</span>
 <span class="normal">1294</span>
-<span class="normal">1295</span>
-<span class="normal">1296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">1295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.</span>
 <span class="sd">    Supports batch predictions for large datasets and can handle categorical data.</span>
@@ -9667,7 +9662,8 @@ their values. The associated TensorFlow variables are also recreated.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">646</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">645</span>
+<span class="normal">646</span>
 <span class="normal">647</span>
 <span class="normal">648</span>
 <span class="normal">649</span>
@@ -9718,8 +9714,7 @@ their values. The associated TensorFlow variables are also recreated.</li>
 <span class="normal">694</span>
 <span class="normal">695</span>
 <span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
+<span class="normal">697</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sets the values of the model&#39;s parameters based on the provided keyword arguments.</span>
 <span class="sd">    Each parameter specified must exist in the model; otherwise, a `ValueError` is raised.</span>
