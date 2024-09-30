@@ -40,6 +40,12 @@ class GP:
 
     Parameters
     ----------
+        x (test, optional): Pandas DataFrame with columns for locations.
+            Default: None
+
+        u : Pandas Series
+            A Pandas Series containing observations. Required.  
+        
     * mean : mn.Trend, optional
         The mean function of the Gaussian Process. If not provided or set to 0, 
         a ZeroTrend is used as the default mean.
@@ -558,39 +564,9 @@ class Model():
     verbose: bool = True
 
     def __post_init__(self):
-        '''
-        Parameters:
-            x (test, optional): Pandas DataFrame with columns for locations.
-                Default: None
-
-            u : Pandas Series
-                A Pandas Series containing observations. Required.
-
-            featurization (function, optional):
-                Should be a function that takes x1 (n-dim array of input data)
-                and returns the coordinates, i.e., x, y, x**2, y**2.
-                Example:
-                    def featurization(x1):
-                        return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2
-                Default: None
-
-            latent (List[GP], optional):
-                Name of the covariance function to use in the GP.
-                Should be 'squared-exp' or 'gamma-exp'.
-                Default: 'squared-exp'
-
-            verbose (str, optional):
-                Whether or not to print parameters.
-                Default: True
-
-        Performs Gaussian process training and prediction.
-        '''
-
-
-
         # '''
         # Parameters:
-        #         x (test, optional): Pandas DataFrame with columns for locations.
+        #         x : Pandas DataFrame with columns for locations.
 
         #         u : A Pandas Series containing observations.
 
@@ -606,9 +582,9 @@ class Model():
         #              Should be 'squared-exp' or 'gamma-exp'.
         #              Default is 'squared-exp'.
 
-        #         verbose (:obj:`str`, optional):
+        #         verbose : boolean, optional
         #             Whether or not to print parameters.
-        #             Defaults to True.
+        #             Default is True.
 
         # Performs Gaussian process training and prediction.
         # '''
