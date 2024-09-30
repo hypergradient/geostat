@@ -6638,11 +6638,11 @@ reporting function is used.</p>
           <tr class="doc-section-item">
             <td><code>verbose</code></td>
             <td>
-                  <code>bool, default=True</code>
+                  <code>bool</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Whether to print model parameters and status updates.</p>
+                <p>Whether to print model parameters and status updates. Default is True.</p>
               </div>
             </td>
             <td>
@@ -7462,8 +7462,8 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">        report (Callable, optional):</span>
 <span class="sd">            A custom reporting function to display model parameters. If not provided, a default </span>
 <span class="sd">            reporting function is used.</span>
-<span class="sd">        verbose (bool, default=True):</span>
-<span class="sd">            Whether to print model parameters and status updates.</span>
+<span class="sd">        verbose (bool, optional):</span>
+<span class="sd">            Whether to print model parameters and status updates. Default is True.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
