@@ -521,8 +521,8 @@ class Model():
         report (Callable, optional):
             A custom reporting function to display model parameters. If not provided, a default 
             reporting function is used.
-        verbose (bool, default=True):
-            Whether to print model parameters and status updates.
+        verbose (bool, optional):
+            Whether to print model parameters and status updates. Default is True.
 
     Examples
     --------
