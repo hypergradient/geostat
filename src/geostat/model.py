@@ -40,48 +40,48 @@ class GP:
 
     Parameters
     ----------
-    mean : mn.Trend, optional
+    * mean : mn.Trend, optional
         The mean function of the Gaussian Process. If not provided or set to 0, 
         a ZeroTrend is used as the default mean.
-    kernel : krn.Kernel
+    * kernel : krn.Kernel
         The kernel function of the Gaussian Process. This parameter is required.
 
     Examples
     --------
     Creating a simple Gaussian Process with default mean and a Noise kernel:
 
-    >>> import geostat.mean as mn
-    >>> import geostat.kernel as krn
-    >>> from geostat import Parameters, GP
-    >>> p = Parameters(nugget=1., sill=1., beta=[4., 3., 2., 1.])
-    >>> kernel = krn.Noise(p.nugget)
-    >>> gp = GP(kernel=kernel)
+    > import geostat.mean as mn
+    > import geostat.kernel as krn
+    > from geostat import Parameters, GP
+    > p = Parameters(nugget=1., sill=1., beta=[4., 3., 2., 1.])
+    > kernel = krn.Noise(p.nugget)
+    > gp = GP(kernel=kernel)
     
     The mean defaults to ZeroTrend if not provided.
 
-    >>> gp.mean
+    > gp.mean
     <ZeroTrend object>
 
     Specifying both mean and kernel:
 
-    >>> @geostat.featurizer()
-    >>> def trend_featurizer(x, y): return 1., x, y, x*y
-    >>> mean_function = mn.Trend(trend_featurizer, beta=p.beta)
-    >>> gp = GP(mean=mean_function, kernel=kernel)
+    > @geostat.featurizer()
+    > def trend_featurizer(x, y): return 1., x, y, x*y
+    > mean_function = mn.Trend(trend_featurizer, beta=p.beta)
+    > gp = GP(mean=mean_function, kernel=kernel)
 
     Adding two GP objects:
 
-    >>> gp1 = GP(kernel=krn.Noise(p.nugget))
-    >>> gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))
-    >>> combined_gp = gp1 + gp2
-    >>> combined_gp.mean  # ZeroTrend + Trend
+    > gp1 = GP(kernel=krn.Noise(p.nugget))
+    > gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))
+    > combined_gp = gp1 + gp2
+    > combined_gp.mean  # ZeroTrend + Trend
     <ZeroTrend + Trend object>
-    >>> combined_gp.kernel  # Noise Kernel + Delta Kernel
+    > combined_gp.kernel  # Noise Kernel + Delta Kernel
     <Noise + Delta object>
 
     Gathering variables from the mean and kernel:
 
-    >>> gp.gather_vars()
+    > gp.gather_vars()
     # Output will be a union of the variables gathered from mean and kernel.
 
     Notes
