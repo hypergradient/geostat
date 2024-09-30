@@ -7389,7 +7389,10 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="normal">1293</span>
 <span class="normal">1294</span>
 <span class="normal">1295</span>
-<span class="normal">1296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">1296</span>
+<span class="normal">1297</span>
+<span class="normal">1298</span>
+<span class="normal">1299</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">Model</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Model class for performing Gaussian Process (GP) training and prediction with optional warping.</span>
@@ -7452,54 +7455,57 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Parameters:</span>
 <span class="sd">            x (test, optional): Pandas DataFrame with columns for locations.</span>
-<span class="sd">            Default: None</span>
+<span class="sd">                Default: None</span>
 
-<span class="sd">            u : A Pandas Series containing observations. Required.</span>
+<span class="sd">            u : Pandas Series</span>
+<span class="sd">                A Pandas Series containing observations. Required.</span>
 
 <span class="sd">            featurization (function, optional):</span>
 <span class="sd">                Should be a function that takes x1 (n-dim array of input data)</span>
 <span class="sd">                and returns the coordinates, i.e., x, y, x**2, y**2.</span>
-<span class="sd">                Example: def featurization(x1):</span>
-<span class="sd">                            return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
-<span class="sd">                Default is None.</span>
+<span class="sd">                Example:</span>
+<span class="sd">                    def featurization(x1):</span>
+<span class="sd">                        return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2</span>
+<span class="sd">                Default: None</span>
 
 <span class="sd">            latent (List[GP], optional):</span>
 <span class="sd">                Name of the covariance function to use in the GP.</span>
 <span class="sd">                Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
-<span class="sd">                Default is &#39;squared-exp&#39;.</span>
+<span class="sd">                Default: &#39;squared-exp&#39;</span>
 
 <span class="sd">            verbose (str, optional):</span>
 <span class="sd">                Whether or not to print parameters.</span>
-<span class="sd">                Defaults to True.</span>
+<span class="sd">                Default: True</span>
 
 <span class="sd">        Performs Gaussian process training and prediction.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 
 
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        Parameters:</span>
-<span class="sd">                x (test, optional): Pandas DataFrame with columns for locations.</span>
 
-<span class="sd">                u : A Pandas Series containing observations.</span>
+        <span class="c1"># &#39;&#39;&#39;</span>
+        <span class="c1"># Parameters:</span>
+        <span class="c1">#         x (test, optional): Pandas DataFrame with columns for locations.</span>
 
-<span class="sd">                featurization : function, optional</span>
-<span class="sd">                    Should be a function that takes x1 (n-dim array of input data)</span>
-<span class="sd">                    and returns the coordinates, i.e., x, y, x**2, y**2.</span>
-<span class="sd">                    Example: def featurization(x1):</span>
-<span class="sd">                                return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
-<span class="sd">                    Default is None.</span>
+        <span class="c1">#         u : A Pandas Series containing observations.</span>
 
-<span class="sd">                latent : List[GP]</span>
-<span class="sd">                     Name of the covariance function to use in the GP.</span>
-<span class="sd">                     Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
-<span class="sd">                     Default is &#39;squared-exp&#39;.</span>
+        <span class="c1">#         featurization : function, optional</span>
+        <span class="c1">#             Should be a function that takes x1 (n-dim array of input data)</span>
+        <span class="c1">#             and returns the coordinates, i.e., x, y, x**2, y**2.</span>
+        <span class="c1">#             Example: def featurization(x1):</span>
+        <span class="c1">#                         return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
+        <span class="c1">#             Default is None.</span>
 
-<span class="sd">                verbose (:obj:`str`, optional):</span>
-<span class="sd">                    Whether or not to print parameters.</span>
-<span class="sd">                    Defaults to True.</span>
+        <span class="c1">#         latent : List[GP]</span>
+        <span class="c1">#              Name of the covariance function to use in the GP.</span>
+        <span class="c1">#              Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
+        <span class="c1">#              Default is &#39;squared-exp&#39;.</span>
 
-<span class="sd">        Performs Gaussian process training and prediction.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1">#         verbose (:obj:`str`, optional):</span>
+        <span class="c1">#             Whether or not to print parameters.</span>
+        <span class="c1">#             Defaults to True.</span>
+
+        <span class="c1"># Performs Gaussian process training and prediction.</span>
+        <span class="c1"># &#39;&#39;&#39;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">warp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warp</span> <span class="o">=</span> <span class="n">NoWarp</span><span class="p">()</span>
 
@@ -8231,20 +8237,8 @@ model = Model(gp=gp, locs=locs, vals=vals)
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Pandas DataFrame with columns for locations.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code>Default</code></td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>None</p>
+                <p>Pandas DataFrame with columns for locations.
+Default: None</p>
               </div>
             </td>
             <td>
@@ -8257,7 +8251,8 @@ model = Model(gp=gp, locs=locs, vals=vals)
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A Pandas Series containing observations. Required.</p>
+                <p>Pandas Series
+A Pandas Series containing observations. Required.</p>
               </div>
             </td>
             <td>
@@ -8273,9 +8268,10 @@ model = Model(gp=gp, locs=locs, vals=vals)
               <div class="doc-md-description">
                 <p>Should be a function that takes x1 (n-dim array of input data)
 and returns the coordinates, i.e., x, y, x<strong>2, y</strong>2.
-Example: def featurization(x1):
-            return x1[:, 0], x1[:, 1], x1[:, 0]<strong>2, x1[:, 1]</strong>2.
-Default is None.</p>
+Example:
+    def featurization(x1):
+        return x1[:, 0], x1[:, 1], x1[:, 0]<strong>2, x1[:, 1]</strong>2
+Default: None</p>
               </div>
             </td>
             <td>
@@ -8291,7 +8287,7 @@ Default is None.</p>
               <div class="doc-md-description">
                 <p>Name of the covariance function to use in the GP.
 Should be 'squared-exp' or 'gamma-exp'.
-Default is 'squared-exp'.</p>
+Default: 'squared-exp'</p>
               </div>
             </td>
             <td>
@@ -8306,7 +8302,7 @@ Default is 'squared-exp'.</p>
             <td>
               <div class="doc-md-description">
                 <p>Whether or not to print parameters.
-Defaults to True.</p>
+Default: True</p>
               </div>
             </td>
             <td>
@@ -8400,58 +8396,64 @@ Defaults to True.</p>
 <span class="normal">638</span>
 <span class="normal">639</span>
 <span class="normal">640</span>
-<span class="normal">641</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Parameters:</span>
 <span class="sd">        x (test, optional): Pandas DataFrame with columns for locations.</span>
-<span class="sd">        Default: None</span>
+<span class="sd">            Default: None</span>
 
-<span class="sd">        u : A Pandas Series containing observations. Required.</span>
+<span class="sd">        u : Pandas Series</span>
+<span class="sd">            A Pandas Series containing observations. Required.</span>
 
 <span class="sd">        featurization (function, optional):</span>
 <span class="sd">            Should be a function that takes x1 (n-dim array of input data)</span>
 <span class="sd">            and returns the coordinates, i.e., x, y, x**2, y**2.</span>
-<span class="sd">            Example: def featurization(x1):</span>
-<span class="sd">                        return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
-<span class="sd">            Default is None.</span>
+<span class="sd">            Example:</span>
+<span class="sd">                def featurization(x1):</span>
+<span class="sd">                    return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2</span>
+<span class="sd">            Default: None</span>
 
 <span class="sd">        latent (List[GP], optional):</span>
 <span class="sd">            Name of the covariance function to use in the GP.</span>
 <span class="sd">            Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
-<span class="sd">            Default is &#39;squared-exp&#39;.</span>
+<span class="sd">            Default: &#39;squared-exp&#39;</span>
 
 <span class="sd">        verbose (str, optional):</span>
 <span class="sd">            Whether or not to print parameters.</span>
-<span class="sd">            Defaults to True.</span>
+<span class="sd">            Default: True</span>
 
 <span class="sd">    Performs Gaussian process training and prediction.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
 
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Parameters:</span>
-<span class="sd">            x (test, optional): Pandas DataFrame with columns for locations.</span>
 
-<span class="sd">            u : A Pandas Series containing observations.</span>
+    <span class="c1"># &#39;&#39;&#39;</span>
+    <span class="c1"># Parameters:</span>
+    <span class="c1">#         x (test, optional): Pandas DataFrame with columns for locations.</span>
 
-<span class="sd">            featurization : function, optional</span>
-<span class="sd">                Should be a function that takes x1 (n-dim array of input data)</span>
-<span class="sd">                and returns the coordinates, i.e., x, y, x**2, y**2.</span>
-<span class="sd">                Example: def featurization(x1):</span>
-<span class="sd">                            return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
-<span class="sd">                Default is None.</span>
+    <span class="c1">#         u : A Pandas Series containing observations.</span>
 
-<span class="sd">            latent : List[GP]</span>
-<span class="sd">                 Name of the covariance function to use in the GP.</span>
-<span class="sd">                 Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
-<span class="sd">                 Default is &#39;squared-exp&#39;.</span>
+    <span class="c1">#         featurization : function, optional</span>
+    <span class="c1">#             Should be a function that takes x1 (n-dim array of input data)</span>
+    <span class="c1">#             and returns the coordinates, i.e., x, y, x**2, y**2.</span>
+    <span class="c1">#             Example: def featurization(x1):</span>
+    <span class="c1">#                         return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.</span>
+    <span class="c1">#             Default is None.</span>
 
-<span class="sd">            verbose (:obj:`str`, optional):</span>
-<span class="sd">                Whether or not to print parameters.</span>
-<span class="sd">                Defaults to True.</span>
+    <span class="c1">#         latent : List[GP]</span>
+    <span class="c1">#              Name of the covariance function to use in the GP.</span>
+    <span class="c1">#              Should be &#39;squared-exp&#39; or &#39;gamma-exp&#39;.</span>
+    <span class="c1">#              Default is &#39;squared-exp&#39;.</span>
 
-<span class="sd">    Performs Gaussian process training and prediction.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1">#         verbose (:obj:`str`, optional):</span>
+    <span class="c1">#             Whether or not to print parameters.</span>
+    <span class="c1">#             Defaults to True.</span>
+
+    <span class="c1"># Performs Gaussian process training and prediction.</span>
+    <span class="c1"># &#39;&#39;&#39;</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">warp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warp</span> <span class="o">=</span> <span class="n">NoWarp</span><span class="p">()</span>
 
@@ -8551,10 +8553,7 @@ penalties specified by <code>reg</code>.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">703</span>
 <span class="normal">704</span>
 <span class="normal">705</span>
 <span class="normal">706</span>
@@ -8658,7 +8657,10 @@ penalties specified by <code>reg</code>.</li>
 <span class="normal">804</span>
 <span class="normal">805</span>
 <span class="normal">806</span>
-<span class="normal">807</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">807</span>
+<span class="normal">808</span>
+<span class="normal">809</span>
+<span class="normal">810</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)</span>
 <span class="sd">    using the Adam optimizer. Optionally performs regularization and can handle categorical data.</span>
@@ -8825,10 +8827,7 @@ the original order is restored before returning.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 932</span>
-<span class="normal"> 933</span>
-<span class="normal"> 934</span>
-<span class="normal"> 935</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 935</span>
 <span class="normal"> 936</span>
 <span class="normal"> 937</span>
 <span class="normal"> 938</span>
@@ -8902,7 +8901,10 @@ the original order is restored before returning.</li>
 <span class="normal">1006</span>
 <span class="normal">1007</span>
 <span class="normal">1008</span>
-<span class="normal">1009</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.</span>
 <span class="sd">    This method simulates values based on the GP&#39;s covariance structure, allowing for random sample generation.</span>
@@ -9051,10 +9053,7 @@ in a batched manner to support large datasets efficiently.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1011</span>
-<span class="normal">1012</span>
-<span class="normal">1013</span>
-<span class="normal">1014</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1014</span>
 <span class="normal">1015</span>
 <span class="normal">1016</span>
 <span class="normal">1017</span>
@@ -9336,7 +9335,10 @@ in a batched manner to support large datasets efficiently.</li>
 <span class="normal">1293</span>
 <span class="normal">1294</span>
 <span class="normal">1295</span>
-<span class="normal">1296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">1296</span>
+<span class="normal">1297</span>
+<span class="normal">1298</span>
+<span class="normal">1299</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.</span>
 <span class="sd">    Supports batch predictions for large datasets and can handle categorical data.</span>
@@ -9679,10 +9681,7 @@ their values. The associated TensorFlow variables are also recreated.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">646</span>
-<span class="normal">647</span>
-<span class="normal">648</span>
-<span class="normal">649</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">649</span>
 <span class="normal">650</span>
 <span class="normal">651</span>
 <span class="normal">652</span>
@@ -9731,7 +9730,10 @@ their values. The associated TensorFlow variables are also recreated.</li>
 <span class="normal">695</span>
 <span class="normal">696</span>
 <span class="normal">697</span>
-<span class="normal">698</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sets the values of the model&#39;s parameters based on the provided keyword arguments.</span>
 <span class="sd">    Each parameter specified must exist in the model; otherwise, a `ValueError` is raised.</span>
