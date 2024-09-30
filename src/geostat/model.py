@@ -628,10 +628,9 @@ class Model():
             self (Model):
                 The model instance with updated parameter values, allowing for method chaining.
 
-        Raises
-        ------
-        * ValueError
-            If a provided parameter name does not exist in the model's parameters.
+        Raises:
+            ValueError:
+                If a provided parameter name does not exist in the model's parameters.
 
         Examples
         --------
@@ -678,9 +677,9 @@ class Model():
             cats (np.ndarray, optional):
                 A NumPy array containing categorical data for each observation in `locs`. If provided,
                 the data is sorted according to `cats` to enable stratified training. Defaults to None.
-            step_size (float, default=0.01):
+            step_size (float, optional):
                 The learning rate for the Adam optimizer.
-            iters (int, default=100):
+            iters (int, optional):
                 The total number of iterations to run for training.
             reg (float or None, optional):
                 Regularization penalty parameter. If None, no regularization is applied.
@@ -991,7 +990,7 @@ class Model():
                 Only valid if parameters are sampled. Default is None.
             tracker (Callable, optional):
                 A tracking function for monitoring progress when making predictions across multiple samples. Default is None.
-            pair (bool, default=False):
+            pair (bool, optional):
                 If True, performs pairwise predictions of mean and variance for each pair of input points in `locs2`.
 
         Returns:
