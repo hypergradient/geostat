@@ -120,7 +120,7 @@ def Mix(inputs, weights=None):
 
     Examples
     --------
-    If $`f_1(x) \sim \mathrm{GP}(\mu_1, K_1)`$ and $`f_2(x) \sim \mathrm{GP}(\mu_2, K_2)`$, and
+    If \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and $`f_2(x) \sim \mathrm{GP}(\mu_2, K_2)`$, and
     ```math
     \mathbf{g}(x) = \begin{pmatrix}
     g_1(x)\\
