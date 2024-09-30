@@ -510,8 +510,8 @@ class Model():
         warp (Warp, optional):
             An optional warping transformation applied to the data. If not specified, `NoWarp` 
             is used by default.
-        parameter_sample_size (int, optional):
-            The number of parameter samples to draw. Default is 0.
+        parameter_sample_size (int, optional, 0):
+            The number of parameter samples to draw. Default is None.
         locs (np.ndarray, optional):
             A NumPy array containing location data.
         vals (np.ndarray, optional):
