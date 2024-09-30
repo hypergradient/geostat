@@ -510,7 +510,7 @@ class Model():
         warp (Warp, optional):
             An optional warping transformation applied to the data. If not specified, `NoWarp` 
             is used by default.
-        parameter_sample_size (int, 0):
+        parameter_sample_size (int, optional):
             The number of parameter samples to draw. Default is None.
         locs (np.ndarray, optional):
             A NumPy array containing location data.
@@ -618,17 +618,15 @@ class Model():
         Sets the values of the model's parameters based on the provided keyword arguments.
         Each parameter specified must exist in the model; otherwise, a `ValueError` is raised.
 
-        Parameters
-        ----------
-        * values : keyword arguments
-            A dictionary of parameter names and their corresponding values that should be 
-            set in the model. Each key corresponds to a parameter name, and the value is 
-            the value to be assigned to that parameter.
+        Parameters:
+            values (keyword arguments):
+                A dictionary of parameter names and their corresponding values that should be 
+                set in the model. Each key corresponds to a parameter name, and the value is 
+                the value to be assigned to that parameter.
 
-        Returns
-        -------
-        * self : Model
-            The model instance with updated parameter values, allowing for method chaining.
+        Returns:
+            self (Model):
+                The model instance with updated parameter values, allowing for method chaining.
 
         Raises
         ------
@@ -672,26 +670,24 @@ class Model():
         Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)
         using the Adam optimizer. Optionally performs regularization and can handle categorical data.
 
-        Parameters
-        ----------
-        * locs : np.ndarray
-            A NumPy array containing the input locations for training.
-        * vals : np.ndarray
-            A NumPy array containing observed values corresponding to the `locs`.
-        * cats : np.ndarray, optional
-            A NumPy array containing categorical data for each observation in `locs`. If provided,
-            the data is sorted according to `cats` to enable stratified training. Defaults to None.
-        * step_size : float, default=0.01
-            The learning rate for the Adam optimizer.
-        * iters : int, default=100
-            The total number of iterations to run for training.
-        * reg : float or None, optional
-            Regularization penalty parameter. If None, no regularization is applied.
+        Parameters:        
+            locs (np.ndarray):
+                A NumPy array containing the input locations for training.
+            vals (np.ndarray):
+                A NumPy array containing observed values corresponding to the `locs`.
+            cats (np.ndarray, optional):
+                A NumPy array containing categorical data for each observation in `locs`. If provided,
+                the data is sorted according to `cats` to enable stratified training. Defaults to None.
+            step_size (float, default=0.01):
+                The learning rate for the Adam optimizer.
+            iters (int, default=100):
+                The total number of iterations to run for training.
+            reg (float or None, optional):
+                Regularization penalty parameter. If None, no regularization is applied.
 
-        Returns
-        -------
-        * self : Model
-            The model instance with updated parameters, allowing for method chaining.
+        Returns:
+            self (Model):
+                The model instance with updated parameters, allowing for method chaining.
 
         Examples
         --------
@@ -904,19 +900,17 @@ class Model():
         Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.
         This method simulates values based on the GP's covariance structure, allowing for random sample generation.
 
-        Parameters
-        ----------
-        * locs : np.ndarray
-            A NumPy array containing the input locations for which to generate synthetic values.
-        * cats : np.ndarray, optional
-            A NumPy array containing categorical data corresponding to `locs`. If provided, data points 
-            are permuted according to `cats` for stratified generation. Defaults to None.
+        Parameters:
+            locs (np.ndarray):
+                A NumPy array containing the input locations for which to generate synthetic values.
+            cats (np.ndarray, optional):
+                A NumPy array containing categorical data corresponding to `locs`. If provided, data points 
+                are permuted according to `cats` for stratified generation. Defaults to None.
 
-        Returns
-        -------
-        * self : Model
-            The model instance with generated values stored in `self.vals` and corresponding locations stored 
-            in `self.locs`. This enables method chaining.
+        Returns:
+            self (Model):
+                The model instance with generated values stored in `self.vals` and corresponding locations stored 
+                in `self.locs`. This enables method chaining.
 
         Examples
         --------
@@ -983,30 +977,28 @@ class Model():
         Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.
         Supports batch predictions for large datasets and can handle categorical data.
 
-        Parameters
-        ----------
-        * locs2 : np.ndarray
-            A NumPy array containing the input locations for which predictions are to be made.
-        * cats2 : np.ndarray, optional
-            A NumPy array containing categorical data for the prediction locations (`locs2`). If provided,
-            the data points will be permuted according to `cats2`. Default is None.
-        * subsample : int, optional
-            Specifies the number of parameter samples to be used for prediction when `parameter_sample_size` is set.
-            Only valid if parameters are sampled. Default is None.
-        * reduce : str, optional
-            Specifies the reduction method ('mean' or 'median') to aggregate predictions from multiple parameter samples.
-            Only valid if parameters are sampled. Default is None.
-        * tracker : Callable, optional
-            A tracking function for monitoring progress when making predictions across multiple samples. Default is None.
-        * pair : bool, default=False
-            If True, performs pairwise predictions of mean and variance for each pair of input points in `locs2`.
+        Parameters:
+            locs2 (np.ndarray):
+                A NumPy array containing the input locations for which predictions are to be made.
+            cats2 (np.ndarray, optional):
+                A NumPy array containing categorical data for the prediction locations (`locs2`). If provided,
+                the data points will be permuted according to `cats2`. Default is None.
+            subsample (int, optional):
+                Specifies the number of parameter samples to be used for prediction when `parameter_sample_size` is set.
+                Only valid if parameters are sampled. Default is None.
+            reduce (str, optional):
+                Specifies the reduction method ('mean' or 'median') to aggregate predictions from multiple parameter samples.
+                Only valid if parameters are sampled. Default is None.
+            tracker (Callable, optional):
+                A tracking function for monitoring progress when making predictions across multiple samples. Default is None.
+            pair (bool, default=False):
+                If True, performs pairwise predictions of mean and variance for each pair of input points in `locs2`.
 
-        Returns
-        -------
-        * m : np.ndarray
-            The predicted mean values for the input locations.
-        * v : np.ndarray
-            The predicted variances for the input locations.
+        Returns:
+            m (np.ndarray):
+                The predicted mean values for the input locations.
+            v (np.ndarray):
+                The predicted variances for the input locations.
 
         Examples
         --------
