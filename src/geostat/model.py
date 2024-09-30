@@ -561,54 +561,57 @@ class Model():
         '''
         Parameters:
             x (test, optional): Pandas DataFrame with columns for locations.
-            Default: None
+                Default: None
 
-            u : A Pandas Series containing observations. Required.
+            u : Pandas Series
+                A Pandas Series containing observations. Required.
 
             featurization (function, optional):
                 Should be a function that takes x1 (n-dim array of input data)
                 and returns the coordinates, i.e., x, y, x**2, y**2.
-                Example: def featurization(x1):
-                            return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
-                Default is None.
+                Example:
+                    def featurization(x1):
+                        return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2
+                Default: None
 
             latent (List[GP], optional):
                 Name of the covariance function to use in the GP.
                 Should be 'squared-exp' or 'gamma-exp'.
-                Default is 'squared-exp'.
+                Default: 'squared-exp'
 
             verbose (str, optional):
                 Whether or not to print parameters.
-                Defaults to True.
+                Default: True
 
         Performs Gaussian process training and prediction.
         '''
 
 
-        '''
-        Parameters:
-                x (test, optional): Pandas DataFrame with columns for locations.
 
-                u : A Pandas Series containing observations.
+        # '''
+        # Parameters:
+        #         x (test, optional): Pandas DataFrame with columns for locations.
 
-                featurization : function, optional
-                    Should be a function that takes x1 (n-dim array of input data)
-                    and returns the coordinates, i.e., x, y, x**2, y**2.
-                    Example: def featurization(x1):
-                                return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
-                    Default is None.
+        #         u : A Pandas Series containing observations.
 
-                latent : List[GP]
-                     Name of the covariance function to use in the GP.
-                     Should be 'squared-exp' or 'gamma-exp'.
-                     Default is 'squared-exp'.
+        #         featurization : function, optional
+        #             Should be a function that takes x1 (n-dim array of input data)
+        #             and returns the coordinates, i.e., x, y, x**2, y**2.
+        #             Example: def featurization(x1):
+        #                         return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
+        #             Default is None.
 
-                verbose (:obj:`str`, optional):
-                    Whether or not to print parameters.
-                    Defaults to True.
+        #         latent : List[GP]
+        #              Name of the covariance function to use in the GP.
+        #              Should be 'squared-exp' or 'gamma-exp'.
+        #              Default is 'squared-exp'.
 
-        Performs Gaussian process training and prediction.
-        '''
+        #         verbose (:obj:`str`, optional):
+        #             Whether or not to print parameters.
+        #             Defaults to True.
+
+        # Performs Gaussian process training and prediction.
+        # '''
 
         if self.warp is None: self.warp = NoWarp()
 
