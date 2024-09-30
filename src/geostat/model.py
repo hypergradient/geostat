@@ -579,7 +579,7 @@ class Model():
 
                 verbose : boolean, optional
                     Whether or not to print parameters.
-                    Default is True.
+                    Defaults to True.
 
         Performs Gaussian process training and prediction.
         '''
