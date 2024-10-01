@@ -30,7 +30,7 @@ pip install mkdocs
 mkdocs gh-deploy
 ```
 
-To exclude a function named `example_function` from the documentations, add the following two lines to `api.md`
+To exclude a function named `example_function` from the documentation, add the following two lines to `api.md`
 ```
         filters:
           - "!example_function"
