@@ -269,6 +269,51 @@ class SquaredExponential(Kernel):
         return e['sill'] * tf.exp(-0.5 * e['d2'] / tf.square(e['range']))
 
 class GammaExponential(Kernel):
+    """
+    GammaExponential kernel class for Gaussian Processes (GPs).
+
+    The `GammaExponential` class defines a kernel that generalizes the Squared Exponential kernel by introducing
+    a gamma parameter, allowing for greater flexibility in modeling covariance structures. It can capture processes
+    with varying degrees of smoothness, depending on the value of `gamma`.
+
+    Parameters:
+        range (float or tf.Variable):
+            The length scale parameter that controls how quickly the covariance decreases with distance.
+        sill (float or tf.Variable):
+            The variance (sill) of the kernel, representing the maximum covariance value.
+        gamma (float or tf.Variable):
+            The smoothness parameter. A value of 1 results in the standard exponential kernel, while a value of 2 
+            recovers the Squared Exponential kernel. Values between 0 and 2 adjust the smoothness of the kernel.
+        scale (optional):
+            An optional scale parameter that can be used to modify the metric. Default is None.
+        metric (optional):
+            An optional metric used for distance calculation. Default is None.
+
+    Examples
+    --------
+    Creating and using a `GammaExponential` kernel:
+
+    ```
+    from geostat.kernel import GammaExponential
+
+    # Create a GammaExponential kernel with sill=1.0, range=2.0, and gamma=1.5
+    gamma_exp_kernel = GammaExponential(range=2.0, sill=1.0, gamma=1.5)
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = gamma_exp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0, 'range': 2.0, 'gamma': 1.5})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the covariance matrix using the gamma-exponential formula:
+        \\( C(x, x') = \\text{sill} \cdot \exp\left(-\left(\\frac{d^2}{\\text{range}^2}\\right)^{\\text{gamma} / 2}\\right) \\),
+        where \\(d^2\\) is the squared distance between `locs1` and `locs2`.
+    - The `vars` method returns the parameter dictionary for `sill`, `range`, and `gamma` using the `ppp` and `bpp` functions.
+    - The `GammaExponential` kernel provides a more flexible covariance structure than the Squared Exponential kernel,
+        allowing for varying degrees of smoothness.
+    """
+
     def __init__(self, range, sill, gamma, scale=None, metric=None):
         fa = dict(sill=sill, range=range, gamma=gamma, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
