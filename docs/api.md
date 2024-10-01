@@ -12,6 +12,10 @@
         show_root_heading: True
         show_source: True
 
+    selection:
+      filters:
+        - "!__call__"
+
 ---
 
 <!-- ::: src.geostat.krige
