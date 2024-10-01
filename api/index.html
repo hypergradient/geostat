@@ -461,15 +461,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#src.geostat.kernel.Kernel.call" class="md-nav__link">
-    <span class="md-ellipsis">
-      call
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -498,15 +489,6 @@
   <a href="#src.geostat.kernel.Mix--notes" class="md-nav__link">
     <span class="md-ellipsis">
       Notes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#src.geostat.kernel.Mix.gather_vars" class="md-nav__link">
-    <span class="md-ellipsis">
-      gather_vars
     </span>
   </a>
   
@@ -1537,15 +1519,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#src.geostat.kernel.Kernel.call" class="md-nav__link">
-    <span class="md-ellipsis">
-      call
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1574,15 +1547,6 @@
   <a href="#src.geostat.kernel.Mix--notes" class="md-nav__link">
     <span class="md-ellipsis">
       Notes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#src.geostat.kernel.Mix.gather_vars" class="md-nav__link">
-    <span class="md-ellipsis">
-      gather_vars
     </span>
   </a>
   
@@ -3841,39 +3805,6 @@ product_kernel = kernel1 * kernel2   # Multiplying kernels
 
 
 
-<div class="doc doc-object doc-function">
-
-
-<h4 id="src.geostat.kernel.Kernel.call" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">call</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></code>
-
-</h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Returns tuple <code>(mean, covariance)</code> for locations.
-Return values may be unbroadcasted.</p>
-
-            <details class="quote">
-              <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns tuple `(mean, covariance)` for locations.</span>
-<span class="sd">    Return values may be unbroadcasted.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">pass</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
 
 
   </div>
@@ -4223,44 +4154,6 @@ covariance_matrix = mixed_kernel({'locs1': locs1, 'locs2': locs2, 'weights': [[0
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="src.geostat.kernel.Mix.gather_vars" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">gather_vars</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Make a special version of gather_vars because
-we want to gather variables from <code>inputs</code>
-even when it's not in autoinputs</p>
-
-            <details class="quote">
-              <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1066</span>
-<span class="normal">1067</span>
-<span class="normal">1068</span>
-<span class="normal">1069</span>
-<span class="normal">1070</span>
-<span class="normal">1071</span>
-<span class="normal">1072</span>
-<span class="normal">1073</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">gather_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a special version of gather_vars because</span>
-<span class="sd">       we want to gather variables from `inputs`</span>
-<span class="sd">       even when it&#39;s not in autoinputs&quot;&quot;&quot;</span>
-    <span class="n">vv</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">gather_vars</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">iput</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">:</span>
-        <span class="n">cache</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">|=</span> <span class="n">iput</span><span class="o">.</span><span class="n">gather_vars</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
 
 
 
