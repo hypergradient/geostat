@@ -1284,8 +1284,5 @@ class Observation(Op):
         vv |= self.noise.vars()
         return vv
 
-    def __call__(self, e):
-        """
-        Dummy.
-        """
+    def __call__(self, e):        
         return 0.
