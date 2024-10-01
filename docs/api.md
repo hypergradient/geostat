@@ -1,11 +1,11 @@
 # API Reference
 
-::: src.geostat.custom_op
+<!-- ::: src.geostat.custom_op
     options:
         show_root_heading: True
         show_source: True
 
----
+--- -->
 
 ::: src.geostat.kernel
     options:
@@ -14,7 +14,7 @@
 
 ---
 
-::: src.geostat.krige
+<!-- ::: src.geostat.krige
     options:
         show_root_heading: True
         show_source: True
@@ -40,14 +40,14 @@
         show_root_heading: True
         show_source: True
 
----
+--- -->
 
 ::: src.geostat.model
     options:
         show_root_heading: True
         show_source: True
 
----
+<!-- ---
 
 ::: src.geostat.op
     options:
@@ -59,4 +59,4 @@
 ::: src.geostat.param
     options:
         show_root_heading: True
-        show_source: True
+        show_source: True -->
