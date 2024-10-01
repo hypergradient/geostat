@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.34">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.35f28582.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
       
       
 
@@ -849,6 +849,15 @@
   <a href="#src.geostat.model.Mix--examples" class="md-nav__link">
     <span class="md-ellipsis">
       Examples
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#src.geostat.model.Mix--notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notes
     </span>
   </a>
   
@@ -1711,6 +1720,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#src.geostat.model.Mix--notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notes
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2138,7 +2156,7 @@
 
     <div class="doc doc-contents ">
 
-      <p>Returns tuple <code>(mean, covariance)</code> for locations.
+        <p>Returns tuple <code>(mean, covariance)</code> for locations.
 Return values have correct shapes.</p>
 
             <details class="quote">
@@ -2181,7 +2199,7 @@ Return values have correct shapes.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Returns tuple <code>(mean, covariance)</code> for locations.
+        <p>Returns tuple <code>(mean, covariance)</code> for locations.
 Return values may be unbroadcasted.</p>
 
             <details class="quote">
@@ -2390,7 +2408,7 @@ Return values may be unbroadcasted.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Make a special version of gather_vars because
+        <p>Make a special version of gather_vars because
 we want to gather variables from <code>inputs</code>
 even when it's not in autoinputs</p>
 
@@ -2508,7 +2526,7 @@ even when it's not in autoinputs</p>
 
     <div class="doc doc-contents ">
 
-      <p>Dummy.</p>
+        <p>Dummy.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/kernel.py</code></summary>
@@ -2547,7 +2565,7 @@ even when it's not in autoinputs</p>
 
     <div class="doc doc-contents ">
 
-      <p>Return a dense block-diagonal matrix.</p>
+        <p>Return a dense block-diagonal matrix.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/kernel.py</code></summary>
@@ -2573,7 +2591,7 @@ even when it's not in autoinputs</p>
 
     <div class="doc doc-contents ">
 
-      <p><code>x</code> has arbitrary shape [...], but must be non-negative.
+        <p><code>x</code> has arbitrary shape [...], but must be non-negative.
 <code>sills</code> and <code>ranges</code> both have shape [K].</p>
 
             <details class="quote">
@@ -2614,7 +2632,7 @@ even when it's not in autoinputs</p>
 
     <div class="doc doc-contents ">
 
-      <p><code>x</code> has arbitrary shape [...], but must be non-negative.
+        <p><code>x</code> has arbitrary shape [...], but must be non-negative.
 <code>sills</code> and <code>ranges</code> both have shape [K].</p>
 
             <details class="quote">
@@ -2673,7 +2691,7 @@ even when it's not in autoinputs</p>
 
     <div class="doc doc-contents ">
 
-      <p><code>x</code> has arbitrary shape [...], but must be non-negative.
+        <p><code>x</code> has arbitrary shape [...], but must be non-negative.
 <code>sills</code> and <code>ranges</code> both have shape [K].</p>
 
             <details class="quote">
@@ -2742,7 +2760,7 @@ even when it's not in autoinputs</p>
 
     <div class="doc doc-contents ">
 
-      <p><code>x</code> has arbitrary shape [...], but must be non-negative.
+        <p><code>x</code> has arbitrary shape [...], but must be non-negative.
 <code>sills</code> and <code>ranges</code> both have shape [K].</p>
 
             <details class="quote">
@@ -4297,7 +4315,7 @@ Default is True.</p>
           </tr>
       </tbody>
     </table>
-      <p>Performs experimental variogram calculation, bins data, and fits variogram model to estimate variogram parameters.       </p>
+        <p>Performs experimental variogram calculation, bins data, and fits variogram model to estimate variogram parameters.       </p>
 <p>Performs ordinary and universal kriging in up to 3 spatial dimensions.</p>
 <p>Trend model example:
 def featurization(x1):  <br />
@@ -5279,7 +5297,7 @@ Kriging variance.</p>
           </tr>
       </tbody>
     </table>
-      <p>Performs ordinary or universal kriging using the estimated variogram parameters.</p>
+        <p>Performs ordinary or universal kriging using the estimated variogram parameters.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/krige.py</code></summary>
@@ -5728,7 +5746,7 @@ Found using Pythagorean Theorem to roughly find one half the distance across the
 
     <div class="doc doc-contents ">
 
-      <p>Returns tuple <code>(mean, covariance)</code> for locations.
+        <p>Returns tuple <code>(mean, covariance)</code> for locations.
 Return values have correct shapes.</p>
 
             <details class="quote">
@@ -5879,7 +5897,7 @@ Return values have correct shapes.</p>
     <div class="doc doc-contents ">
 
 
-      <p>Featurizer class for producing feature matrices (F matrix) from location data.</p>
+        <p>Featurizer class for producing feature matrices (F matrix) from location data.</p>
 <p>The <code>Featurizer</code> applies a specified featurization function to the input location data 
 and generates the corresponding feature matrix. If no featurization function is provided, 
 it produces a matrix with appropriate dimensions containing only ones.</p>
@@ -5913,7 +5931,7 @@ If set to <code>None</code>, the featurizer will produce an empty feature matrix
           </tr>
       </tbody>
     </table>
-      <h5 id="src.geostat.model.Featurizer--examples">Examples</h5>
+        <h5 id="src.geostat.model.Featurizer--examples">Examples</h5>
 <p>Creating a <code>Featurizer</code> using a custom featurization function:</p>
 <pre><code>import tensorflow as tf
 from geostat.model import Featurizer
@@ -5944,48 +5962,7 @@ F_matrix = featurizer_no_feat(locs)
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">381</span>
-<span class="normal">382</span>
-<span class="normal">383</span>
-<span class="normal">384</span>
-<span class="normal">385</span>
-<span class="normal">386</span>
-<span class="normal">387</span>
-<span class="normal">388</span>
-<span class="normal">389</span>
-<span class="normal">390</span>
-<span class="normal">391</span>
-<span class="normal">392</span>
-<span class="normal">393</span>
-<span class="normal">394</span>
-<span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span>
-<span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span>
-<span class="normal">406</span>
-<span class="normal">407</span>
-<span class="normal">408</span>
-<span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span>
-<span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span>
-<span class="normal">419</span>
-<span class="normal">420</span>
-<span class="normal">421</span>
-<span class="normal">422</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">422</span>
 <span class="normal">423</span>
 <span class="normal">424</span>
 <span class="normal">425</span>
@@ -6013,7 +5990,48 @@ F_matrix = featurizer_no_feat(locs)
 <span class="normal">447</span>
 <span class="normal">448</span>
 <span class="normal">449</span>
-<span class="normal">450</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Featurizer</span><span class="p">:</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Featurizer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Featurizer class for producing feature matrices (F matrix) from location data.</span>
 
@@ -6124,7 +6142,7 @@ F_matrix = featurizer_no_feat(locs)
     <div class="doc doc-contents ">
 
 
-      <p>Gaussian Process (GP) model class with a mean function and a kernel.</p>
+        <p>Gaussian Process (GP) model class with a mean function and a kernel.</p>
 <p>This class represents a Gaussian Process with specified mean and kernel functions.
 If no mean is provided, a zero mean is used by default. The kernel must always be specified.
 The class supports addition to combine two GP models, and it allows gathering variables 
@@ -6173,7 +6191,7 @@ a ZeroTrend is used as the default mean.</p>
           </tr>
       </tbody>
     </table>
-      <h5 id="src.geostat.model.GP--examples">Examples</h5>
+        <h5 id="src.geostat.model.GP--examples">Examples</h5>
 <p>Creating a simple Gaussian Process with default mean and a Noise kernel:</p>
 <pre><code>import geostat.mean as mn
 import geostat.kernel as krn
@@ -6405,7 +6423,7 @@ combined_gp.kernel  # &lt;Noise + Delta object&gt;
     <div class="doc doc-contents ">
 
 
-      <p>Model class for performing Gaussian Process (GP) training and prediction with optional warping.</p>
+        <p>Model class for performing Gaussian Process (GP) training and prediction with optional warping.</p>
 <p>The <code>Model</code> class integrates a GP model with optional data warping, and supports data generation on given location,
 training on given location and observation data, and prediction on given location.</p>
 
@@ -6537,7 +6555,7 @@ reporting function is used.</p>
           </tr>
       </tbody>
     </table>
-      <h5 id="src.geostat.model.Model--examples">Examples</h5>
+        <h5 id="src.geostat.model.Model--examples">Examples</h5>
 <p>Initializing a <code>Model</code> with a Gaussian Process:</p>
 <pre><code>from geostat import GP, Model
 from geostat.kernel import Noise
@@ -6556,48 +6574,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 530</span>
-<span class="normal"> 531</span>
-<span class="normal"> 532</span>
-<span class="normal"> 533</span>
-<span class="normal"> 534</span>
-<span class="normal"> 535</span>
-<span class="normal"> 536</span>
-<span class="normal"> 537</span>
-<span class="normal"> 538</span>
-<span class="normal"> 539</span>
-<span class="normal"> 540</span>
-<span class="normal"> 541</span>
-<span class="normal"> 542</span>
-<span class="normal"> 543</span>
-<span class="normal"> 544</span>
-<span class="normal"> 545</span>
-<span class="normal"> 546</span>
-<span class="normal"> 547</span>
-<span class="normal"> 548</span>
-<span class="normal"> 549</span>
-<span class="normal"> 550</span>
-<span class="normal"> 551</span>
-<span class="normal"> 552</span>
-<span class="normal"> 553</span>
-<span class="normal"> 554</span>
-<span class="normal"> 555</span>
-<span class="normal"> 556</span>
-<span class="normal"> 557</span>
-<span class="normal"> 558</span>
-<span class="normal"> 559</span>
-<span class="normal"> 560</span>
-<span class="normal"> 561</span>
-<span class="normal"> 562</span>
-<span class="normal"> 563</span>
-<span class="normal"> 564</span>
-<span class="normal"> 565</span>
-<span class="normal"> 566</span>
-<span class="normal"> 567</span>
-<span class="normal"> 568</span>
-<span class="normal"> 569</span>
-<span class="normal"> 570</span>
-<span class="normal"> 571</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 571</span>
 <span class="normal"> 572</span>
 <span class="normal"> 573</span>
 <span class="normal"> 574</span>
@@ -7314,7 +7291,48 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="normal">1285</span>
 <span class="normal">1286</span>
 <span class="normal">1287</span>
-<span class="normal">1288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">1288</span>
+<span class="normal">1289</span>
+<span class="normal">1290</span>
+<span class="normal">1291</span>
+<span class="normal">1292</span>
+<span class="normal">1293</span>
+<span class="normal">1294</span>
+<span class="normal">1295</span>
+<span class="normal">1296</span>
+<span class="normal">1297</span>
+<span class="normal">1298</span>
+<span class="normal">1299</span>
+<span class="normal">1300</span>
+<span class="normal">1301</span>
+<span class="normal">1302</span>
+<span class="normal">1303</span>
+<span class="normal">1304</span>
+<span class="normal">1305</span>
+<span class="normal">1306</span>
+<span class="normal">1307</span>
+<span class="normal">1308</span>
+<span class="normal">1309</span>
+<span class="normal">1310</span>
+<span class="normal">1311</span>
+<span class="normal">1312</span>
+<span class="normal">1313</span>
+<span class="normal">1314</span>
+<span class="normal">1315</span>
+<span class="normal">1316</span>
+<span class="normal">1317</span>
+<span class="normal">1318</span>
+<span class="normal">1319</span>
+<span class="normal">1320</span>
+<span class="normal">1321</span>
+<span class="normal">1322</span>
+<span class="normal">1323</span>
+<span class="normal">1324</span>
+<span class="normal">1325</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span>
+<span class="normal">1328</span>
+<span class="normal">1329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">Model</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Model class for performing Gaussian Process (GP) training and prediction with optional warping.</span>
@@ -8099,7 +8117,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
 
     <div class="doc doc-contents ">
 
-      <p>Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)
+        <p>Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)
 using the Adam optimizer. Optionally performs regularization and can handle categorical data.</p>
 
 
@@ -8224,7 +8242,7 @@ the data is sorted according to <code>cats</code> to enable stratified training.
           </tr>
       </tbody>
     </table>
-      <h6 id="src.geostat.model.Model.fit--examples">Examples</h6>
+        <h6 id="src.geostat.model.Model.fit--examples">Examples</h6>
 <p>Fitting a model using training data:</p>
 <pre><code>from geostat import GP, Model
 from geostat.kernel import Noise
@@ -8253,48 +8271,7 @@ penalties specified by <code>reg</code>.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">698</span>
-<span class="normal">699</span>
-<span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span>
-<span class="normal">708</span>
-<span class="normal">709</span>
-<span class="normal">710</span>
-<span class="normal">711</span>
-<span class="normal">712</span>
-<span class="normal">713</span>
-<span class="normal">714</span>
-<span class="normal">715</span>
-<span class="normal">716</span>
-<span class="normal">717</span>
-<span class="normal">718</span>
-<span class="normal">719</span>
-<span class="normal">720</span>
-<span class="normal">721</span>
-<span class="normal">722</span>
-<span class="normal">723</span>
-<span class="normal">724</span>
-<span class="normal">725</span>
-<span class="normal">726</span>
-<span class="normal">727</span>
-<span class="normal">728</span>
-<span class="normal">729</span>
-<span class="normal">730</span>
-<span class="normal">731</span>
-<span class="normal">732</span>
-<span class="normal">733</span>
-<span class="normal">734</span>
-<span class="normal">735</span>
-<span class="normal">736</span>
-<span class="normal">737</span>
-<span class="normal">738</span>
-<span class="normal">739</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">739</span>
 <span class="normal">740</span>
 <span class="normal">741</span>
 <span class="normal">742</span>
@@ -8358,7 +8335,48 @@ penalties specified by <code>reg</code>.</li>
 <span class="normal">800</span>
 <span class="normal">801</span>
 <span class="normal">802</span>
-<span class="normal">803</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">803</span>
+<span class="normal">804</span>
+<span class="normal">805</span>
+<span class="normal">806</span>
+<span class="normal">807</span>
+<span class="normal">808</span>
+<span class="normal">809</span>
+<span class="normal">810</span>
+<span class="normal">811</span>
+<span class="normal">812</span>
+<span class="normal">813</span>
+<span class="normal">814</span>
+<span class="normal">815</span>
+<span class="normal">816</span>
+<span class="normal">817</span>
+<span class="normal">818</span>
+<span class="normal">819</span>
+<span class="normal">820</span>
+<span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)</span>
 <span class="sd">    using the Adam optimizer. Optionally performs regularization and can handle categorical data.</span>
@@ -8481,7 +8499,7 @@ penalties specified by <code>reg</code>.</li>
 
     <div class="doc doc-contents ">
 
-      <p>Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.
+        <p>Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.
 This method simulates values based on the GP's covariance structure, allowing for random sample generation.</p>
 
 
@@ -8551,7 +8569,7 @@ in <code>self.locs</code>. This enables method chaining.</p>
           </tr>
       </tbody>
     </table>
-      <h6 id="src.geostat.model.Model.generate--examples">Examples</h6>
+        <h6 id="src.geostat.model.Model.generate--examples">Examples</h6>
 <p>Generating synthetic values for a set of locations:</p>
 <pre><code>from geostat import GP, Model
 from geostat.kernel import Noise
@@ -8577,48 +8595,7 @@ the original order is restored before returning.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 928</span>
-<span class="normal"> 929</span>
-<span class="normal"> 930</span>
-<span class="normal"> 931</span>
-<span class="normal"> 932</span>
-<span class="normal"> 933</span>
-<span class="normal"> 934</span>
-<span class="normal"> 935</span>
-<span class="normal"> 936</span>
-<span class="normal"> 937</span>
-<span class="normal"> 938</span>
-<span class="normal"> 939</span>
-<span class="normal"> 940</span>
-<span class="normal"> 941</span>
-<span class="normal"> 942</span>
-<span class="normal"> 943</span>
-<span class="normal"> 944</span>
-<span class="normal"> 945</span>
-<span class="normal"> 946</span>
-<span class="normal"> 947</span>
-<span class="normal"> 948</span>
-<span class="normal"> 949</span>
-<span class="normal"> 950</span>
-<span class="normal"> 951</span>
-<span class="normal"> 952</span>
-<span class="normal"> 953</span>
-<span class="normal"> 954</span>
-<span class="normal"> 955</span>
-<span class="normal"> 956</span>
-<span class="normal"> 957</span>
-<span class="normal"> 958</span>
-<span class="normal"> 959</span>
-<span class="normal"> 960</span>
-<span class="normal"> 961</span>
-<span class="normal"> 962</span>
-<span class="normal"> 963</span>
-<span class="normal"> 964</span>
-<span class="normal"> 965</span>
-<span class="normal"> 966</span>
-<span class="normal"> 967</span>
-<span class="normal"> 968</span>
-<span class="normal"> 969</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 969</span>
 <span class="normal"> 970</span>
 <span class="normal"> 971</span>
 <span class="normal"> 972</span>
@@ -8652,7 +8629,48 @@ the original order is restored before returning.</li>
 <span class="normal">1000</span>
 <span class="normal">1001</span>
 <span class="normal">1002</span>
-<span class="normal">1003</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span>
+<span class="normal">1018</span>
+<span class="normal">1019</span>
+<span class="normal">1020</span>
+<span class="normal">1021</span>
+<span class="normal">1022</span>
+<span class="normal">1023</span>
+<span class="normal">1024</span>
+<span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.</span>
 <span class="sd">    This method simulates values based on the GP&#39;s covariance structure, allowing for random sample generation.</span>
@@ -8745,7 +8763,7 @@ the original order is restored before returning.</li>
 
     <div class="doc doc-contents ">
 
-      <p>Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.
+        <p>Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.
 Supports batch predictions for large datasets and can handle categorical data.</p>
 
 
@@ -8882,7 +8900,7 @@ Only valid if parameters are sampled. Default is None.</p>
           </tr>
       </tbody>
     </table>
-      <h6 id="src.geostat.model.Model.predict--examples">Examples</h6>
+        <h6 id="src.geostat.model.Model.predict--examples">Examples</h6>
 <p>Making predictions for a set of locations:</p>
 <pre><code>from geostat import GP, Model
 from geostat.kernel import Noise
@@ -8909,48 +8927,7 @@ in a batched manner to support large datasets efficiently.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1005</span>
-<span class="normal">1006</span>
-<span class="normal">1007</span>
-<span class="normal">1008</span>
-<span class="normal">1009</span>
-<span class="normal">1010</span>
-<span class="normal">1011</span>
-<span class="normal">1012</span>
-<span class="normal">1013</span>
-<span class="normal">1014</span>
-<span class="normal">1015</span>
-<span class="normal">1016</span>
-<span class="normal">1017</span>
-<span class="normal">1018</span>
-<span class="normal">1019</span>
-<span class="normal">1020</span>
-<span class="normal">1021</span>
-<span class="normal">1022</span>
-<span class="normal">1023</span>
-<span class="normal">1024</span>
-<span class="normal">1025</span>
-<span class="normal">1026</span>
-<span class="normal">1027</span>
-<span class="normal">1028</span>
-<span class="normal">1029</span>
-<span class="normal">1030</span>
-<span class="normal">1031</span>
-<span class="normal">1032</span>
-<span class="normal">1033</span>
-<span class="normal">1034</span>
-<span class="normal">1035</span>
-<span class="normal">1036</span>
-<span class="normal">1037</span>
-<span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span>
-<span class="normal">1043</span>
-<span class="normal">1044</span>
-<span class="normal">1045</span>
-<span class="normal">1046</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1046</span>
 <span class="normal">1047</span>
 <span class="normal">1048</span>
 <span class="normal">1049</span>
@@ -9192,7 +9169,48 @@ in a batched manner to support large datasets efficiently.</li>
 <span class="normal">1285</span>
 <span class="normal">1286</span>
 <span class="normal">1287</span>
-<span class="normal">1288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">1288</span>
+<span class="normal">1289</span>
+<span class="normal">1290</span>
+<span class="normal">1291</span>
+<span class="normal">1292</span>
+<span class="normal">1293</span>
+<span class="normal">1294</span>
+<span class="normal">1295</span>
+<span class="normal">1296</span>
+<span class="normal">1297</span>
+<span class="normal">1298</span>
+<span class="normal">1299</span>
+<span class="normal">1300</span>
+<span class="normal">1301</span>
+<span class="normal">1302</span>
+<span class="normal">1303</span>
+<span class="normal">1304</span>
+<span class="normal">1305</span>
+<span class="normal">1306</span>
+<span class="normal">1307</span>
+<span class="normal">1308</span>
+<span class="normal">1309</span>
+<span class="normal">1310</span>
+<span class="normal">1311</span>
+<span class="normal">1312</span>
+<span class="normal">1313</span>
+<span class="normal">1314</span>
+<span class="normal">1315</span>
+<span class="normal">1316</span>
+<span class="normal">1317</span>
+<span class="normal">1318</span>
+<span class="normal">1319</span>
+<span class="normal">1320</span>
+<span class="normal">1321</span>
+<span class="normal">1322</span>
+<span class="normal">1323</span>
+<span class="normal">1324</span>
+<span class="normal">1325</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span>
+<span class="normal">1328</span>
+<span class="normal">1329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.</span>
 <span class="sd">    Supports batch predictions for large datasets and can handle categorical data.</span>
@@ -9493,7 +9511,7 @@ in a batched manner to support large datasets efficiently.</li>
 
     <div class="doc doc-contents ">
 
-      <p>Sets the values of the model's parameters based on the provided keyword arguments.
+        <p>Sets the values of the model's parameters based on the provided keyword arguments.
 Each parameter specified must exist in the model; otherwise, a <code>ValueError</code> is raised.</p>
 
 
@@ -9572,7 +9590,7 @@ the value to be assigned to that parameter.</p>
           </tr>
       </tbody>
     </table>
-      <h6 id="src.geostat.model.Model.set--examples">Examples</h6>
+        <h6 id="src.geostat.model.Model.set--examples">Examples</h6>
 <p>Update parameter value using <code>set</code>:</p>
 <pre><code>from geostat import GP, Model
 from geostat.kernel import Noise
@@ -9593,48 +9611,7 @@ their values. The associated TensorFlow variables are also recreated.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">647</span>
-<span class="normal">648</span>
-<span class="normal">649</span>
-<span class="normal">650</span>
-<span class="normal">651</span>
-<span class="normal">652</span>
-<span class="normal">653</span>
-<span class="normal">654</span>
-<span class="normal">655</span>
-<span class="normal">656</span>
-<span class="normal">657</span>
-<span class="normal">658</span>
-<span class="normal">659</span>
-<span class="normal">660</span>
-<span class="normal">661</span>
-<span class="normal">662</span>
-<span class="normal">663</span>
-<span class="normal">664</span>
-<span class="normal">665</span>
-<span class="normal">666</span>
-<span class="normal">667</span>
-<span class="normal">668</span>
-<span class="normal">669</span>
-<span class="normal">670</span>
-<span class="normal">671</span>
-<span class="normal">672</span>
-<span class="normal">673</span>
-<span class="normal">674</span>
-<span class="normal">675</span>
-<span class="normal">676</span>
-<span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span>
-<span class="normal">682</span>
-<span class="normal">683</span>
-<span class="normal">684</span>
-<span class="normal">685</span>
-<span class="normal">686</span>
-<span class="normal">687</span>
-<span class="normal">688</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">688</span>
 <span class="normal">689</span>
 <span class="normal">690</span>
 <span class="normal">691</span>
@@ -9642,7 +9619,48 @@ their values. The associated TensorFlow variables are also recreated.</li>
 <span class="normal">693</span>
 <span class="normal">694</span>
 <span class="normal">695</span>
-<span class="normal">696</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
+<span class="normal">710</span>
+<span class="normal">711</span>
+<span class="normal">712</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span>
+<span class="normal">720</span>
+<span class="normal">721</span>
+<span class="normal">722</span>
+<span class="normal">723</span>
+<span class="normal">724</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sets the values of the model&#39;s parameters based on the provided keyword arguments.</span>
 <span class="sd">    Each parameter specified must exist in the model; otherwise, a `ValueError` is raised.</span>
@@ -9720,7 +9738,7 @@ their values. The associated TensorFlow variables are also recreated.</li>
     <div class="doc doc-contents ">
 
 
-      <p>NormalizingFeaturizer class for producing normalized feature matrices (F matrix) with an intercept.</p>
+        <p>NormalizingFeaturizer class for producing normalized feature matrices (F matrix) with an intercept.</p>
 <p>The <code>NormalizingFeaturizer</code> takes raw location data and applies a specified featurization function.
 It normalizes the resulting features and remembers normalization parameters using the mean and standard deviation calculated from the 
 original data and adds an intercept feature (a column of ones) to the matrix.</p>
@@ -9768,7 +9786,7 @@ deviation) and featurizing new data.</p>
           </tr>
       </tbody>
     </table>
-      <h5 id="src.geostat.model.NormalizingFeaturizer--examples">Examples</h5>
+        <h5 id="src.geostat.model.NormalizingFeaturizer--examples">Examples</h5>
 <p>Creating a <code>NormalizingFeaturizer</code> using a custom featurization function and location data:</p>
 <pre><code>import tensorflow as tf
 from geostat.model import NormalizingFeaturizer
@@ -9798,48 +9816,7 @@ F_matrix = norm_featurizer(new_locs)
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span>
-<span class="normal">329</span>
-<span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span>
-<span class="normal">333</span>
-<span class="normal">334</span>
-<span class="normal">335</span>
-<span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
-<span class="normal">339</span>
-<span class="normal">340</span>
-<span class="normal">341</span>
-<span class="normal">342</span>
-<span class="normal">343</span>
-<span class="normal">344</span>
-<span class="normal">345</span>
-<span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span>
-<span class="normal">351</span>
-<span class="normal">352</span>
-<span class="normal">353</span>
-<span class="normal">354</span>
-<span class="normal">355</span>
-<span class="normal">356</span>
-<span class="normal">357</span>
-<span class="normal">358</span>
-<span class="normal">359</span>
-<span class="normal">360</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
 <span class="normal">363</span>
@@ -9858,7 +9835,48 @@ F_matrix = norm_featurizer(new_locs)
 <span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
-<span class="normal">379</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">NormalizingFeaturizer</span><span class="p">:</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">NormalizingFeaturizer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    NormalizingFeaturizer class for producing normalized feature matrices (F matrix) with an intercept.</span>
 
@@ -9958,17 +9976,17 @@ F_matrix = norm_featurizer(new_locs)
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Warp</span><span class="p">:</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Warp</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">prep</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        `locs` is numpy.</span>
@@ -10005,18 +10023,18 @@ F_matrix = norm_featurizer(new_locs)
 
     <div class="doc doc-contents ">
 
-      <p><code>locs</code> is numpy.</p>
+        <p><code>locs</code> is numpy.</p>
 <p>Returns a WarpLocations.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">prep</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">prep</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    `locs` is numpy.</span>
 
@@ -10049,7 +10067,7 @@ F_matrix = norm_featurizer(new_locs)
 
     <div class="doc doc-contents ">
 
-      <p>Linearly combine GPs.</p>
+        <p>Linearly combines multiple Gaussian Processes (GPs) into a single GP using specified weights.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -10084,7 +10102,8 @@ F_matrix = norm_featurizer(new_locs)
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How inputs are to be combined. If not given, the identity matrix is assumed.</p>
+                <p>A matrix specifying how the inputs are to be combined. If not provided, 
+an identity matrix is assumed, meaning the GPs are combined without weighting.</p>
               </div>
             </td>
             <td>
@@ -10093,7 +10112,49 @@ F_matrix = norm_featurizer(new_locs)
           </tr>
       </tbody>
     </table>
-      <h5 id="src.geostat.model.Mix--examples">Examples</h5>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>GP</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="src.geostat.model.GP" href="#src.geostat.model.GP">GP</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new GP object representing the linear combination of the input GPs with the specified weights.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <h5 id="src.geostat.model.Mix--examples">Examples</h5>
+<p>Combining two GPs into a new multi-output GP:</p>
+<p>Suppose you have two GPs: 
+<span class="arithmatex">\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\)</span> and <span class="arithmatex">\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\)</span>, 
+and you want to create a new multi-output GP <span class="arithmatex">\(\mathbf{g}(x)\)</span> defined as:</p>
+<div class="arithmatex">\[
+\mathbf{g}(x) = \begin{pmatrix}
+g_1(x) \\
+g_2(x) \\
+g_3(x)
+\end{pmatrix} = A \begin{pmatrix}
+f_1(x) \\
+f_2(x)
+\end{pmatrix},
+\]</div>
+<p>where <span class="arithmatex">\(A\)</span> is the weights matrix. This can be implemented as:</p>
+<pre><code>g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
+</code></pre>
+<p>The resulting GP <span class="arithmatex">\(\mathbf{g}(x)\)</span> can then be used for fitting, generating, or predicting 
+with methods such as <code>g.fit()</code>, <code>g.generate()</code>, or <code>g.predict()</code>.</p>
 <p>If <span class="arithmatex">\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\)</span> and <span class="arithmatex">\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\)</span>, and</p>
 <div class="arithmatex">\[
 \mathbf{g}(x) = \begin{pmatrix}
@@ -10109,6 +10170,12 @@ f_2(x)
 <pre><code>g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
 </code></pre>
 <p>The components of <span class="arithmatex">\(\mathbf{g}(x)\)</span> are specified using the <code>cats</code> parameter when calling <code>g.fit()</code>, <code>g.generate()</code>, or <code>g.predict()</code>.</p>
+<h5 id="src.geostat.model.Mix--notes">Notes</h5>
+<ul>
+<li>The <code>weights</code> parameter defines how the input GPs are linearly combined. If omitted, 
+  each GP is assumed to be independent, and the identity matrix is used.</li>
+<li>The resulting GP supports all standard operations (e.g., <code>fit</code>, <code>generate</code>, <code>predict</code>).</li>
+</ul>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
@@ -10146,18 +10213,94 @@ f_2(x)
 <span class="normal">142</span>
 <span class="normal">143</span>
 <span class="normal">144</span>
-<span class="normal">145</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Mix</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Mix</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Linearly combine GPs.</span>
+<span class="sd">    Linearly combines multiple Gaussian Processes (GPs) into a single GP using specified weights.</span>
 
 <span class="sd">    Parameters:</span>
 <span class="sd">        inputs (list of GPs):  </span>
 <span class="sd">            A list of GP objects to be combined.</span>
 <span class="sd">        weights (matrix, optional):  </span>
-<span class="sd">            How inputs are to be combined. If not given, the identity matrix is assumed.</span>
+<span class="sd">            A matrix specifying how the inputs are to be combined. If not provided, </span>
+<span class="sd">            an identity matrix is assumed, meaning the GPs are combined without weighting.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        GP (GP):</span>
+<span class="sd">            A new GP object representing the linear combination of the input GPs with the specified weights.</span>
+
+
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
+<span class="sd">    Combining two GPs into a new multi-output GP:</span>
+
+<span class="sd">    Suppose you have two GPs: </span>
+<span class="sd">    \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and \\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\\), </span>
+<span class="sd">    and you want to create a new multi-output GP \\(\mathbf{g}(x)\\) defined as:</span>
+
+<span class="sd">    $$</span>
+<span class="sd">    \mathbf{g}(x) = \\begin{pmatrix}</span>
+<span class="sd">    g_1(x) \\\\</span>
+<span class="sd">    g_2(x) \\\\</span>
+<span class="sd">    g_3(x)</span>
+<span class="sd">    \end{pmatrix} = A \\begin{pmatrix}</span>
+<span class="sd">    f_1(x) \\\\</span>
+<span class="sd">    f_2(x)</span>
+<span class="sd">    \end{pmatrix},</span>
+<span class="sd">    $$</span>
+
+<span class="sd">    where \\(A\\) is the weights matrix. This can be implemented as:</span>
+
+<span class="sd">    ```</span>
+<span class="sd">    g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    The resulting GP \\(\mathbf{g}(x)\\) can then be used for fitting, generating, or predicting </span>
+<span class="sd">    with methods such as `g.fit()`, `g.generate()`, or `g.predict()`.</span>
+
+
+
 <span class="sd">    If \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and \\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\\), and</span>
 
 <span class="sd">    $$</span>
@@ -10176,6 +10319,12 @@ f_2(x)
 <span class="sd">    g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])</span>
 <span class="sd">    ```</span>
 <span class="sd">    The components of \\(\mathbf{g}(x)\\) are specified using the `cats` parameter when calling `g.fit()`, `g.generate()`, or `g.predict()`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The `weights` parameter defines how the input GPs are linearly combined. If omitted, </span>
+<span class="sd">      each GP is assumed to be independent, and the identity matrix is used.</span>
+<span class="sd">    - The resulting GP supports all standard operations (e.g., `fit`, `generate`, `predict`).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">GP</span><span class="p">(</span>
@@ -10198,39 +10347,39 @@ f_2(x)
 
     <div class="doc doc-contents ">
 
-      <p><code>offset</code> is i2-i1, where i1 and i2 are the starting indices of locs1
+        <p><code>offset</code> is i2-i1, where i1 and i2 are the starting indices of locs1
 and locs2.  It is used to create the diagonal non-zero elements
 of a Noise covariance function.  An non-zero offset results in a
 covariance matrix with non-zero entries along an off-center diagonal.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">467</span>
-<span class="normal">468</span>
-<span class="normal">469</span>
-<span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span>
-<span class="normal">473</span>
-<span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
-<span class="normal">480</span>
-<span class="normal">481</span>
-<span class="normal">482</span>
-<span class="normal">483</span>
-<span class="normal">484</span>
-<span class="normal">485</span>
-<span class="normal">486</span>
-<span class="normal">487</span>
-<span class="normal">488</span>
-<span class="normal">489</span>
-<span class="normal">490</span>
-<span class="normal">491</span>
-<span class="normal">492</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
 <span class="k">def</span> <span class="nf">gp_covariance2</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">locs1</span><span class="p">,</span> <span class="n">cats1</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    `offset` is i2-i1, where i1 and i2 are the starting indices of locs1</span>
@@ -10273,29 +10422,29 @@ covariance matrix with non-zero entries along an off-center diagonal.</p>
 
     <div class="doc doc-contents ">
 
-      <p><code>src</code>: (batch, breaks)
+        <p><code>src</code>: (batch, breaks)
 <code>tgt</code>: (batch, breaks)
 <code>x</code>  : (batch)</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
 <span class="k">def</span> <span class="nf">interpolate_1d_tf</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    `src`: (batch, breaks)</span>
@@ -10329,16 +10478,16 @@ covariance matrix with non-zero entries along an off-center diagonal.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Log PDF of a multivariate gaussian.</p>
+        <p>Log PDF of a multivariate gaussian.</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">494</span>
-<span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
-<span class="normal">498</span>
-<span class="normal">499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">mvn_log_pdf</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">cov</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">mvn_log_pdf</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">cov</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Log PDF of a multivariate gaussian.&quot;&quot;&quot;</span>
     <span class="n">u_adj</span> <span class="o">=</span> <span class="n">u</span> <span class="o">-</span> <span class="n">m</span>
     <span class="n">logdet</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">logdet</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">cov</span><span class="p">)</span>
@@ -10400,7 +10549,7 @@ covariance matrix with non-zero entries along an off-center diagonal.</p>
     <div class="doc doc-contents ">
 
 
-      <p>The <code>autoinputs</code> parameter contains a blob of upstream ops. The leaves
+        <p>The <code>autoinputs</code> parameter contains a blob of upstream ops. The leaves
 in the blob are either the op itself or a string identifier. In the
 latter case, the string identifier should be present as a key in the
 <code>cache</code> that gets passed in.</p>
@@ -10590,7 +10739,7 @@ various reasons.</p>
 
     <div class="doc doc-contents ">
 
-      <p><code>e</code> is a dict of params and evaluated inputs from upstream ops.
+        <p><code>e</code> is a dict of params and evaluated inputs from upstream ops.
 Other values in <code>e</code> are supplied by the caller.</p>
 
             <details class="quote">
@@ -10623,7 +10772,7 @@ Other values in <code>e</code> are supplied by the caller.</p>
 
     <div class="doc doc-contents ">
 
-      <p><code>cache</code> maps from Op ids to sets of variable names.</p>
+        <p><code>cache</code> maps from Op ids to sets of variable names.</p>
 <p>Returns a dict of parameters, keyed by name.</p>
 
             <details class="quote">
@@ -10672,7 +10821,7 @@ Other values in <code>e</code> are supplied by the caller.</p>
 
     <div class="doc doc-contents ">
 
-      <p>If op has already been run, return result. Else:
+        <p>If op has already been run, return result. Else:
     - Assemble inputs by recursively calling upstream ops.
     - Execute op by calling <code>__call__</code>.
     - Store result in cache.</p>
@@ -10764,7 +10913,7 @@ Other values in <code>e</code> are supplied by the caller.</p>
               Bases: <code><span title="tensorflow.types.experimental.TraceType">TraceType</span></code></p>
 
 
-      <p>A trace type to override TF's default behavior, which is
+        <p>A trace type to override TF's default behavior, which is
 to treat dataclass-based onjects as dicts.</p>
 
               <details class="quote">
@@ -11035,7 +11184,7 @@ to treat dataclass-based onjects as dicts.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Create TF variable for underlying parameter or update it</p>
+        <p>Create TF variable for underlying parameter or update it</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/param.py</code></summary>
@@ -11089,7 +11238,7 @@ to treat dataclass-based onjects as dicts.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Create tensor for surface parameter</p>
+        <p>Create tensor for surface parameter</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/param.py</code></summary>
@@ -11146,7 +11295,7 @@ to treat dataclass-based onjects as dicts.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Bounded paper parameter (maybe).</p>
+        <p>Bounded paper parameter (maybe).</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/param.py</code></summary>
@@ -11180,7 +11329,7 @@ to treat dataclass-based onjects as dicts.</p>
 
     <div class="doc doc-contents ">
 
-      <p>For each Parameter encountered in the nested blob,
+        <p>For each Parameter encountered in the nested blob,
 replace it with its surface tensor.</p>
 
             <details class="quote">
@@ -11231,7 +11380,7 @@ replace it with its surface tensor.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Positive paper parameter (maybe).</p>
+        <p>Positive paper parameter (maybe).</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/param.py</code></summary>
@@ -11265,7 +11414,7 @@ replace it with its surface tensor.</p>
 
     <div class="doc doc-contents ">
 
-      <p>Unbounded paper parameter (maybe).</p>
+        <p>Unbounded paper parameter (maybe).</p>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/param.py</code></summary>
@@ -11341,10 +11490,10 @@ replace it with its surface tensor.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.07f07601.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.56dfad97.min.js"></script>
+      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       
