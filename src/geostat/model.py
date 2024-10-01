@@ -126,8 +126,8 @@ def Mix(inputs, weights=None):
 
     $$
     \mathbf{g}(x) = \begin{pmatrix}
-    g_1(x)\\
-    g_2(x)\\
+    g_1(x)\\\\
+    g_2(x)\\\\
     g_3(x)
     \end{pmatrix}
     $$
