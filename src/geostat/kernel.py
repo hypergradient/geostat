@@ -333,6 +333,46 @@ def ramp(x):
     return tf.maximum(0., 1. - ax), grad
 
 class Ramp(Kernel):
+    """
+    Ramp kernel class for Gaussian Processes (GPs).
+
+    The `Ramp` class defines a kernel that produces a covariance structure resembling a "ramp" function.
+    It is characterized by a sill (variance) and a range (length scale) and can optionally use a metric for scaling.
+
+    Parameters:
+        range (float or tf.Variable):
+            The length scale parameter that controls how quickly the covariance decreases with distance.
+        sill (float or tf.Variable):
+            The variance (sill) of the kernel, representing the maximum covariance value.
+        scale (optional):
+            An optional scale parameter that can be used to modify the metric. Default is None.
+        metric (optional):
+            An optional metric used for distance calculation. Default is None.
+
+    Examples
+    --------
+    Creating and using a `Ramp` kernel:
+
+    ```
+    from geostat.kernel import Ramp
+
+    # Create a Ramp kernel with sill=1.0 and range=2.0
+    ramp_kernel = Ramp(range=2.0, sill=1.0)
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = ramp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0, 'range': 2.0})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the covariance matrix using the ramp function:
+        \\( C(x, x') = \\text{sill} \cdot \\text{ramp}\left(\\frac{\sqrt{d^2}}{\\text{range}}\\right) \\),
+        where \\(d^2\\) is the squared distance between `locs1` and `locs2`.
+    - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp` function.
+    - The `Ramp` kernel can be used in cases where the covariance structure exhibits a linear decay with increasing distance.
+    """
+
     def __init__(self, range, sill, scale=None, metric=None):
         fa = dict(sill=sill, range=range, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
