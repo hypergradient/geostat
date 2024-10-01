@@ -122,7 +122,7 @@ def Mix(inputs, weights=None):
     --------
     If \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and \\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\\), and
 
-    \\(\mathbf{g}(x) = \begin{pmatrix}
+    \\(\mathbf{g}(x) = \\begin{pmatrix}
     g_1(x)\\\\\\\\
     g_2(x)\\\\\\\\
     g_3(x)
