@@ -10,7 +10,9 @@
 ::: src.geostat.kernel
     options:
         show_root_heading: True
-        show_source: True  
+        show_source: True
+        filters:
+          - "!__call__"
 
 ---
 
