@@ -10,11 +10,7 @@
 ::: src.geostat.kernel
     options:
         show_root_heading: True
-        show_source: True
-
-    selection:
-        members:
-            - Kernel      
+        show_source: True  
 
 ---
 
