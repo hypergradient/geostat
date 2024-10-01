@@ -15,6 +15,11 @@
           - "!__call__"
           - "!call"
           - "!gather_vars"
+          - "!block_diag"
+          - "!quadstack"
+          - "!rampstack"
+          - "!smooth_convex"
+          - "!smooth_convex_grad"
 
 ---
 
