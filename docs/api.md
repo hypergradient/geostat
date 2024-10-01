@@ -13,8 +13,8 @@
         show_source: True
 
     selection:
-      filters:
-        - "Kernel.__call__"
+        members:
+            - Kernel      
 
 ---
 
