@@ -462,15 +462,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#src.geostat.kernel.Kernel.__call__" class="md-nav__link">
-    <span class="md-ellipsis">
-      __call__
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#src.geostat.kernel.Kernel.call" class="md-nav__link">
     <span class="md-ellipsis">
       call
@@ -1541,15 +1532,6 @@
   <a href="#src.geostat.kernel.Kernel--notes" class="md-nav__link">
     <span class="md-ellipsis">
       Notes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#src.geostat.kernel.Kernel.__call__" class="md-nav__link">
-    <span class="md-ellipsis">
-      __call__
     </span>
   </a>
   
@@ -3858,49 +3840,6 @@ product_kernel = kernel1 * kernel2   # Multiplying kernels
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="src.geostat.kernel.Kernel.__call__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></code>
-
-</h4>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Returns tuple <code>(mean, covariance)</code> for locations.
-Return values have correct shapes.</p>
-
-            <details class="quote">
-              <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns tuple `(mean, covariance)` for locations.</span>
-<span class="sd">    Return values have correct shapes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">C</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">C</span> <span class="o">=</span> <span class="mf">0.</span>
-    <span class="n">n1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;locs1&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">n2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;locs2&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="p">[</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">C</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
 
 <div class="doc doc-object doc-function">
 
