@@ -29,7 +29,7 @@ MVN = tfp.distributions.MultivariateNormalTriL
 __all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturizer', 'StratigraphicWarp']
 
 @dataclass
-class GP:
+class GP:    
     """
     Gaussian Process (GP) model class with a mean function and a kernel.
 
@@ -38,13 +38,13 @@ class GP:
     The class supports addition to combine two GP models, and it allows gathering variables 
     from the mean and kernel.
 
-    Parameters
-    ----------
-    * mean : mn.Trend, optional
-        The mean function of the Gaussian Process. If not provided or set to 0, 
-        a ZeroTrend is used as the default mean.
-    * kernel : krn.Kernel
-        The kernel function of the Gaussian Process. This parameter is required.
+    Parameters:
+        mean (mn.Trend, optional):
+            The mean function of the Gaussian Process. If not provided or set to 0, 
+            a ZeroTrend is used as the default mean.
+
+        kernel (krn.Kernel):
+            The kernel function of the Gaussian Process. This parameter is required.
 
     Examples
     --------
@@ -84,13 +84,6 @@ class GP:
     combined_gp.mean  # <ZeroTrend + Trend object>
     combined_gp.kernel  # <Noise + Delta object>
     ```
-    
-    Gathering variables from the mean and kernel:
-
-    ```
-    gp.gather_vars()
-    ```
-    # Output will be a union of the variables gathered from mean and kernel.
 
     Notes
     -----
@@ -116,6 +109,57 @@ class GP:
         return self.mean.gather_vars() | self.kernel.gather_vars()
 
 def Mix(inputs, weights=None):
+    """
+    Linearly combines multiple Gaussian Processes (GPs) into a single GP using specified weights.
+
+    Parameters:
+        inputs (list of GPs):  
+            A list of GP objects to be combined.
+        weights (matrix, optional):  
+            A matrix specifying how the inputs are to be combined. If not provided, 
+            an identity matrix is assumed, meaning the GPs are combined without weighting.
+
+    Returns:
+        GP (GP):
+            A new GP object representing the linear combination of the input GPs with the specified weights.
+
+
+
+    Examples
+    --------
+    Combining two GPs into a new multi-output GP:
+
+    Suppose you have two GPs: 
+    \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and \\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\\), 
+    and you want to create a new multi-output GP \\(\mathbf{g}(x)\\) defined as:
+
+    $$
+    \mathbf{g}(x) = \\begin{pmatrix}
+    g_1(x) \\\\
+    g_2(x) \\\\
+    g_3(x)
+    \end{pmatrix} = A \\begin{pmatrix}
+    f_1(x) \\\\
+    f_2(x)
+    \end{pmatrix},
+    $$
+
+    where \\(A\\) is the weights matrix. This can be implemented as:
+
+    ```
+    g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
+    ```
+
+    The resulting GP \\(\mathbf{g}(x)\\) can then be used for fitting, generating, or predicting 
+    with methods such as `g.fit()`, `g.generate()`, or `g.predict()` and its components are specified using the `cats` parameter.
+    
+    Notes
+    -----
+    - The `weights` parameter defines how the input GPs are linearly combined. If omitted, 
+      each GP is assumed to be independent, and the identity matrix is used.
+    - The resulting GP supports all standard operations (e.g., `fit`, `generate`, `predict`).
+    """
+
     return GP(
         mn.Mix([i.mean for i in inputs], weights), 
         krn.Mix([i.kernel for i in inputs], weights))
@@ -294,9 +338,54 @@ class StratigraphicWarpLocations(Op):
 
 class NormalizingFeaturizer:
     """
-    Produces featurized locations (F matrix) and remembers normalization
-    parameters.  Adds an intercept feature.
+    NormalizingFeaturizer class for producing normalized feature matrices (F matrix) with an intercept.
+
+    The `NormalizingFeaturizer` takes raw location data and applies a specified featurization function.
+    It normalizes the resulting features and remembers normalization parameters using the mean and standard deviation calculated from the 
+    original data and adds an intercept feature (a column of ones) to the matrix.
+
+    Parameters:
+        featurization (Callable):
+            A function or callable that defines how the input location data should be featurized.
+        locs (array-like or Tensor):
+            The input location data used for calculating normalization parameters (mean and standard 
+            deviation) and featurizing new data.
+
+    Examples
+    --------
+    Creating a `NormalizingFeaturizer` using a custom featurization function and location data:
+
+    ```
+    import tensorflow as tf
+    from geostat.model import NormalizingFeaturizer
+
+    # Define a simple featurization function
+    def custom_featurizer(x, y):
+        return x, y, x * y
+
+    # Sample location data
+    locs = tf.constant([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+
+    # Create the NormalizingFeaturizer
+    norm_featurizer = NormalizingFeaturizer(custom_featurizer, locs)
+    ```
+
+    Using the `NormalizingFeaturizer` to featurize new location data:
+
+    ```
+    new_locs = tf.constant([[7.0, 8.0], [9.0, 10.0]])
+    F_matrix = norm_featurizer(new_locs)
+    # F_matrix will contain normalized features with an additional intercept column
+    ```
+
+    Notes
+    -----
+    - The normalization parameters (`unnorm_mean` and `unnorm_std`) are calculated based on the 
+      initial `locs` data provided during initialization.
+    - The `__call__` method applies the normalization and adds an intercept feature when used 
+      to featurize new location data.
     """
+
     def __init__(self, featurization, locs):
         self.unnorm_featurizer = Featurizer(featurization)
         F_unnorm = self.unnorm_featurizer(locs)
@@ -311,8 +400,56 @@ class NormalizingFeaturizer:
 
 class Featurizer:
     """
-    Produces featurized locations (F matrix).
+    Featurizer class for producing feature matrices (F matrix) from location data.
+
+    The `Featurizer` applies a specified featurization function to the input location data 
+    and generates the corresponding feature matrix. If no featurization function is provided, 
+    it produces a matrix with appropriate dimensions containing only ones.
+
+    Parameters:
+        featurization (Callable or None):
+            A function that takes in the individual components of location data and returns the features.
+            If set to `None`, the featurizer will produce an empty feature matrix (i.e., only ones).
+
+    Examples
+    --------
+    Creating a `Featurizer` using a custom featurization function:
+
+    ```
+    import tensorflow as tf
+    from geostat.model import Featurizer
+
+    # Define a custom featurization function
+    def simple_featurizer(x, y):
+        return x, y, x * y
+
+    # Initialize the Featurizer
+    featurizer = Featurizer(simple_featurizer)
+    ```
+
+    Using the `Featurizer` to transform location data:
+
+    ```
+    locs = tf.constant([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+    F_matrix = featurizer(locs)
+    # F_matrix will contain the features: (x, y, x*y) for each location
+    ```
+
+    Handling the case where no featurization is provided:
+
+    ```
+    featurizer_no_feat = Featurizer(None)
+    F_matrix = featurizer_no_feat(locs)
+    # Since no featurization function is provided, F_matrix will have shape (3, 0)
+    ```
+
+    Notes
+    -----
+    - The `__call__` method is used to apply the featurization to input location data.
+    - If `featurization` returns a tuple, it is assumed to represent multiple features, 
+      which will be stacked to form the feature matrix.
     """
+
     def __init__(self, featurization):
         self.featurization = featurization
 
@@ -412,6 +549,53 @@ def gp_train_step(
 
 @dataclass
 class Model():
+    """
+    Model class for performing Gaussian Process (GP) training and prediction with optional warping.
+
+    The `Model` class integrates a GP model with optional data warping, and supports data generation on given location,
+    training on given location and observation data, and prediction on given location.
+
+    Parameters:
+        gp (GP):
+            The Gaussian Process model to be used for training and prediction.
+        warp (Warp, optional):
+            An optional warping transformation applied to the data. If not specified, `NoWarp` 
+            is used by default.
+        parameter_sample_size (int, optional):
+            The number of parameter samples to draw. Default is None.
+        locs (np.ndarray, optional):
+            A NumPy array containing location data.
+        vals (np.ndarray, optional):
+            A NumPy array containing observed values corresponding to `locs`.
+        cats (np.ndarray, optional):
+            A NumPy array containing categorical data.
+        report (Callable, optional):
+            A custom reporting function to display model parameters. If not provided, a default 
+            reporting function is used.
+        verbose (bool, optional):
+            Whether to print model parameters and status updates. Default is True.
+
+    Examples
+    --------
+    Initializing a `Model` with a Gaussian Process:
+
+    ```
+    from geostat import GP, Model
+    from geostat.kernel import Noise
+    import numpy as np
+
+    gp = GP(kernel=Noise(1.0))
+    locs = np.array([[0.0, 1.0], [1.0, 2.0]])
+    vals = np.array([1.0, 2.0])
+    model = Model(gp=gp, locs=locs, vals=vals)
+    ```
+
+    Notes
+    -----
+    - The `__post_init__` method sets up default values, initializes the warping if not provided, 
+      and sets up reporting and data preprocessing.
+    """
+
     gp: GP
     warp: Warp = None
     parameter_sample_size: Optional[int] = None
@@ -422,31 +606,30 @@ class Model():
     verbose: bool = True
 
     def __post_init__(self):
+        # '''
+        # Parameters:
+        #         x : Pandas DataFrame with columns for locations.
 
-        '''
-        Parameters:
-                x : Pandas DataFrame with columns for locations.
+        #         u : A Pandas Series containing observations.
 
-                u : A Pandas Series containing observations.
+        #         featurization : function, optional
+        #             Should be a function that takes x1 (n-dim array of input data)
+        #             and returns the coordinates, i.e., x, y, x**2, y**2.
+        #             Example: def featurization(x1):
+        #                         return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
+        #             Default is None.
 
-                featurization : function, optional
-                    Should be a function that takes x1 (n-dim array of input data)
-                    and returns the coordinates, i.e., x, y, x**2, y**2.
-                    Example: def featurization(x1):
-                                return x1[:, 0], x1[:, 1], x1[:, 0]**2, x1[:, 1]**2.
-                    Default is None.
+        #         latent : List[GP]
+        #              Name of the covariance function to use in the GP.
+        #              Should be 'squared-exp' or 'gamma-exp'.
+        #              Default is 'squared-exp'.
 
-                latent : List[GP]
-                     Name of the covariance function to use in the GP.
-                     Should be 'squared-exp' or 'gamma-exp'.
-                     Default is 'squared-exp'.
+        #         verbose : boolean, optional
+        #             Whether or not to print parameters.
+        #             Default is True.
 
-                verbose : boolean, optional
-                    Whether or not to print parameters.
-                    Default is True.
-
-        Performs Gaussian process training and prediction.
-        '''
+        # Performs Gaussian process training and prediction.
+        # '''
 
         if self.warp is None: self.warp = NoWarp()
 
@@ -482,6 +665,47 @@ class Model():
         return self.gp.gather_vars() | self.warp.gather_vars()
 
     def set(self, **values):
+        """
+        Sets the values of the model's parameters based on the provided keyword arguments.
+        Each parameter specified must exist in the model; otherwise, a `ValueError` is raised.
+
+        Parameters:
+            values (keyword arguments):
+                A dictionary of parameter names and their corresponding values that should be 
+                set in the model. Each key corresponds to a parameter name, and the value is 
+                the value to be assigned to that parameter.
+
+        Returns:
+            self (Model):
+                The model instance with updated parameter values, allowing for method chaining.
+
+        Raises:
+            ValueError:
+                If a provided parameter name does not exist in the model's parameters.
+
+        Examples
+        --------
+        Update parameter value using `set`:
+
+        ```
+        from geostat import GP, Model
+        from geostat.kernel import Noise
+
+        # Create model
+        kernel = Noise(nugget=1.0)
+        model = Model(GP(0, kernel))
+
+        # Update parameters
+        model.set(nugget=0.5)
+        ```
+
+        Notes
+        -----
+        - The `set` method retrieves the current parameters using `gather_vars` and updates 
+        their values. The associated TensorFlow variables are also recreated.
+        - This method is useful for dynamically updating the model's parameters after initialization.
+        """
+
         parameters = self.gather_vars()
         for name, v in values.items():
             if name in parameters:
@@ -492,6 +716,63 @@ class Model():
         return self
 
     def fit(self, locs, vals, cats=None, step_size=0.01, iters=100, reg=None):
+        """
+        Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)
+        using the Adam optimizer. Optionally performs regularization and can handle categorical data.
+
+        Parameters:        
+            locs (np.ndarray):
+                A NumPy array containing the input locations for training.
+            vals (np.ndarray):
+                A NumPy array containing observed values corresponding to the `locs`.
+            cats (np.ndarray, optional):
+                A NumPy array containing categorical data for each observation in `locs`. If provided,
+                the data is sorted according to `cats` to enable stratified training. Defaults to None.
+            step_size (float, optional):
+                The learning rate for the Adam optimizer.
+            iters (int, optional):
+                The total number of iterations to run for training.
+            reg (float or None, optional):
+                Regularization penalty parameter. If None, no regularization is applied.
+
+        Returns:
+            self (Model):
+                The model instance with updated parameters, allowing for method chaining.
+
+        Examples
+        --------
+        Fitting a model using training data:
+
+        ```
+        from geostat import GP, Model
+        from geostat.kernel import Noise
+
+        # Create model
+        kernel = Noise(nugget=1.0)
+        model = Model(GP(0, kernel))
+
+        # Fit model
+        locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])
+        vals = np.array([10.0, 15.0, 20.0])
+        model.fit(locs, vals, step_size=0.05, iters=500)
+        ```
+
+        Using categorical data for training:
+
+        ```
+        cats = np.array([1, 1, 2])
+        model.fit(locs, vals, cats=cats, step_size=0.01, iters=300)
+        ```
+
+        Notes
+        -----
+        - The `fit` method uses the Adam optimizer to minimize the negative log-likelihood (`ll`) and any regularization 
+        penalties specified by `reg`.
+        - During training, if `cats` are provided, data points are sorted according to `cats` to ensure grouped training.
+        - The `verbose` flag determines whether training progress is printed after each iteration.
+        - After training, parameter values are saved and can be accessed or updated using the model's attributes.
+        """
+
         # Collect parameters and create TF parameters.
         parameters = self.gather_vars()
 
@@ -665,6 +946,50 @@ class Model():
             locs=locs, vals=vals, cats=cats)
 
     def generate(self, locs, cats=None):
+        """
+        Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.
+        This method simulates values based on the GP's covariance structure, allowing for random sample generation.
+
+        Parameters:
+            locs (np.ndarray):
+                A NumPy array containing the input locations for which to generate synthetic values.
+            cats (np.ndarray, optional):
+                A NumPy array containing categorical data corresponding to `locs`. If provided, data points 
+                are permuted according to `cats` for stratified generation. Defaults to None.
+
+        Returns:
+            self (Model):
+                The model instance with generated values stored in `self.vals` and corresponding locations stored 
+                in `self.locs`. This enables method chaining.
+
+        Examples
+        --------
+        Generating synthetic values for a set of locations:
+
+        ```
+        from geostat import GP, Model
+        from geostat.kernel import Noise
+
+        # Create model
+        kernel = Noise(nugget=1.0)
+        model = Model(GP(0, kernel))
+
+        # Generate values based on locs
+        locs = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+        model.generate(locs)
+        generated_vals = model.vals  # Access the generated values
+        ```
+
+        Notes
+        -----
+        - Conditional generation is currently not supported, and this method will raise an assertion error if 
+        `self.locs` and `self.vals` are already defined.
+        - Generation from a distribution is not yet supported, and an assertion error will be raised if 
+        `self.parameter_sample_size` is not `None`.
+        - If `cats` are provided, the data is permuted according to `cats` for stratified generation, and 
+        the original order is restored before returning.
+        """
+
         assert self.locs is None and self.vals is None, 'Conditional generation not yet supported'
         assert self.parameter_sample_size is None, 'Generation from a distribution not yet supported'
 
@@ -698,10 +1023,64 @@ class Model():
         return self
 
     def predict(self, locs2, cats2=None, *, subsample=None, reduce=None, tracker=None, pair=False):
-        '''
-        Performs GP predictions of the mean and variance.
-        Has support for batch predictions for large data sets.
-        '''
+        """
+        Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.
+        Supports batch predictions for large datasets and can handle categorical data.
+
+        Parameters:
+            locs2 (np.ndarray):
+                A NumPy array containing the input locations for which predictions are to be made.
+            cats2 (np.ndarray, optional):
+                A NumPy array containing categorical data for the prediction locations (`locs2`). If provided,
+                the data points will be permuted according to `cats2`. Default is None.
+            subsample (int, optional):
+                Specifies the number of parameter samples to be used for prediction when `parameter_sample_size` is set.
+                Only valid if parameters are sampled. Default is None.
+            reduce (str, optional):
+                Specifies the reduction method ('mean' or 'median') to aggregate predictions from multiple parameter samples.
+                Only valid if parameters are sampled. Default is None.
+            tracker (Callable, optional):
+                A tracking function for monitoring progress when making predictions across multiple samples. Default is None.
+            pair (bool, optional):
+                If True, performs pairwise predictions of mean and variance for each pair of input points in `locs2`.
+
+        Returns:
+            m (np.ndarray):
+                The predicted mean values for the input locations.
+            v (np.ndarray):
+                The predicted variances for the input locations.
+
+        Examples
+        --------
+        Making predictions for a set of locations:
+
+        ```
+        from geostat import GP, Model
+        from geostat.kernel import Noise
+
+        # Create model
+        kernel = Noise(nugget=1.0)
+        model = Model(GP(0, kernel))
+        locs2 = np.array([[7.0, 8.0], [9.0, 10.0]])
+        mean, variance = model.predict(locs2)
+        ```
+
+        Making predictions with categorical data:
+
+        ```
+        cats2 = np.array([1, 2])
+        mean, variance = model.predict(locs2, cats2=cats2)
+        ```
+
+        Notes
+        -----
+        - If `subsample` is specified, it should be used only when `parameter_sample_size` is defined.
+        - The `reduce` parameter allows aggregation of predictions, but it's valid only with sampled parameters.
+        - The method supports pairwise predictions by setting `pair=True`, which is useful for predicting 
+        the covariance between two sets of locations.
+        - The internal `interpolate_batch` and `interpolate_pair_batch` functions handle the prediction computations
+        in a batched manner to support large datasets efficiently.
+        """
 
         assert subsample is None or self.parameter_sample_size is not None, \
             '`subsample` is only valid with sampled parameters'

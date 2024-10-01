@@ -1,6 +1,8 @@
 ## Development and testing
 
+```
 pip install -e .[test]
+```
 
 ## Build
 
@@ -23,10 +25,16 @@ The source folder of the documentation website is the gh-pages branch. Unfortuna
 pip install mkdocs
 ```
 
-2 - Navigate to the GitHub repository and checkout to the main branch
+2 - Navigate to the GitHub repository and checkout to the branch the documentation should be build from
 
-3 - Update the documentation
+3 - Build and deploy the documentation
 ```
 mkdocs gh-deploy
+```
+
+To exclude a function named `example_function` from the documentation, add the following two lines to `api.md`
+```
+        filters:
+          - "!example_function"
 ```
 
