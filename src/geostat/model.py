@@ -110,16 +110,51 @@ class GP:
 
 def Mix(inputs, weights=None):
     """
-    Linearly combine GPs.
+    Linearly combines multiple Gaussian Processes (GPs) into a single GP using specified weights.
 
     Parameters:
         inputs (list of GPs):  
             A list of GP objects to be combined.
         weights (matrix, optional):  
-            How inputs are to be combined. If not given, the identity matrix is assumed.
+            A matrix specifying how the inputs are to be combined. If not provided, 
+            an identity matrix is assumed, meaning the GPs are combined without weighting.
+
+    Returns:
+        GP (GP):
+            A new GP object representing the linear combination of the input GPs with the specified weights.
+
+
 
     Examples
     --------
+    Combining two GPs into a new multi-output GP:
+
+    Suppose you have two GPs: 
+    \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and \\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\\), 
+    and you want to create a new multi-output GP \\(\mathbf{g}(x)\\) defined as:
+
+    $$
+    \mathbf{g}(x) = \\begin{pmatrix}
+    g_1(x) \\\\
+    g_2(x) \\\\
+    g_3(x)
+    \end{pmatrix} = A \\begin{pmatrix}
+    f_1(x) \\\\
+    f_2(x)
+    \end{pmatrix},
+    $$
+
+    where \\(A\\) is the weights matrix. This can be implemented as:
+
+    ```
+    g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
+    ```
+
+    The resulting GP \\(\mathbf{g}(x)\\) can then be used for fitting, generating, or predicting 
+    with methods such as `g.fit()`, `g.generate()`, or `g.predict()`.
+
+
+
     If \\(f_1(x) \sim \mathrm{GP}(\mu_1, K_1)\\) and \\(f_2(x) \sim \mathrm{GP}(\mu_2, K_2)\\), and
 
     $$
@@ -138,6 +173,12 @@ def Mix(inputs, weights=None):
     g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
     ```
     The components of \\(\mathbf{g}(x)\\) are specified using the `cats` parameter when calling `g.fit()`, `g.generate()`, or `g.predict()`.
+    
+    Notes
+    -----
+    - The `weights` parameter defines how the input GPs are linearly combined. If omitted, 
+      each GP is assumed to be independent, and the identity matrix is used.
+    - The resulting GP supports all standard operations (e.g., `fit`, `generate`, `predict`).
     """
 
     return GP(
