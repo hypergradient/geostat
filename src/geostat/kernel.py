@@ -251,8 +251,8 @@ class SquaredExponential(Kernel):
     Notes
     -----
     - The `call` method computes the covariance matrix using the squared exponential formula:
-        \( C(x, x') = \text{sill} \cdot \exp\left(-0.5 \frac{d^2}{\text{range}^2}\right) \),
-        where \(d^2\) is the squared distance between `locs1` and `locs2`.
+        \\( C(x, x') = \text{sill} \cdot \exp\left(-0.5 \frac{d^2}{\text{range}^2}\right) \\),
+        where \\(d^2\\) is the squared distance between `locs1` and `locs2`.
     - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp` function.
     - This kernel is appropriate for modeling smooth, continuous processes with no abrupt changes.
     """
