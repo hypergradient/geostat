@@ -13,6 +13,8 @@
         show_source: True
         filters:
           - "!__call__"
+          - "!call"
+          - "!gather_vars"
 
 ---
 
