@@ -424,6 +424,48 @@ def rampstack(x, sills, ranges):
     return tf.reduce_sum(y, -1), grad
 
 class RampStack(Kernel):
+    """
+    RampStack kernel class for Gaussian Processes (GPs).
+
+    The `RampStack` class defines a kernel that extends the standard `Ramp` kernel by allowing for multiple 
+    sills and ranges, effectively creating a "stacked" ramp function. This kernel can capture more complex 
+    covariance structures with multiple levels of decay.
+
+    Parameters:
+        range (list or tf.Variable):
+            A list or TensorFlow variable representing the length scale parameters that control how quickly 
+            the covariance decreases with distance.
+        sill (list or tf.Variable):
+            A list or TensorFlow variable representing the variance (sill) values for each ramp component.
+        scale (optional):
+            An optional scale parameter that can be used to modify the metric. Default is None.
+        metric (optional):
+            An optional metric used for distance calculation. Default is None.
+
+    Examples
+    --------
+    Creating and using a `RampStack` kernel:
+
+    ```
+    from geostat.kernel import RampStack
+
+    # Create a RampStack kernel with multiple sills and ranges
+    ramp_stack_kernel = RampStack(range=[2.0, 3.0], sill=[1.0, 0.5])
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = ramp_stack_kernel({'locs1': locs1, 'locs2': locs2, 'sill': [1.0, 0.5], 'range': [2.0, 3.0]})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the covariance matrix using the `rampstack` function, which applies 
+        multiple ramp functions based on the provided `sill` and `range` values for each component.
+    - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp_list` function.
+    - The `RampStack` kernel is useful for modeling complex processes that exhibit multiple levels of variability 
+        or changes in smoothness at different scales.
+    """
+
     def __init__(self, range, sill, scale=None, metric=None):
         fa = dict(sill=sill, range=range, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
@@ -521,6 +563,48 @@ def smooth_convex_grad(x, sills, ranges):
     return y, grad
 
 class SmoothConvex(Kernel):
+    """
+    SmoothConvex kernel class for Gaussian Processes (GPs).
+
+    The `SmoothConvex` class defines a kernel that produces a smooth and convex covariance structure. 
+    It allows for multiple sills and ranges, enabling a more complex representation of covariance that 
+    smoothly transitions across different scales.
+
+    Parameters:
+        range (list or tf.Variable):
+            A list or TensorFlow variable representing the length scale parameters that control how 
+            quickly the covariance decreases with distance.
+        sill (list or tf.Variable):
+            A list or TensorFlow variable representing the variance (sill) values for each smooth convex component.
+        scale (optional):
+            An optional scale parameter that can be used to modify the metric. Default is None.
+        metric (optional):
+            An optional metric used for distance calculation. Default is None.
+
+    Examples
+    --------
+    Creating and using a `SmoothConvex` kernel:
+
+    ```
+    from geostat.kernel import SmoothConvex
+
+    # Create a SmoothConvex kernel with multiple sills and ranges
+    smooth_convex_kernel = SmoothConvex(range=[2.0, 3.0], sill=[1.0, 0.5])
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = smooth_convex_kernel({'locs1': locs1, 'locs2': locs2, 'sill': [1.0, 0.5], 'range': [2.0, 3.0]})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the covariance matrix using the `smooth_convex` function, which applies 
+        multiple convex functions based on the provided `sill` and `range` values for each component.
+    - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp_list` function.
+    - The `SmoothConvex` kernel is useful for modeling processes that require smooth transitions and convexity 
+        in their covariance structure across different scales.
+    """
+
     def __init__(self, range, sill, scale=None, metric=None):
         fa = dict(sill=sill, range=range, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
@@ -549,6 +633,48 @@ def quadstack(x, sills, ranges):
     return tf.reduce_sum(y, -1)
 
 class QuadStack(Kernel):
+    """
+    QuadStack kernel class for Gaussian Processes (GPs).
+
+    The `QuadStack` class defines a kernel that combines multiple quadratic components to model complex 
+    covariance structures. It allows for multiple sills and ranges, providing flexibility in capturing 
+    covariance that varies across different scales.
+
+    Parameters:
+        range (list or tf.Variable):
+            A list or TensorFlow variable representing the length scale parameters that control how 
+            quickly the covariance decreases with distance.
+        sill (list or tf.Variable):
+            A list or TensorFlow variable representing the variance (sill) values for each quadratic component.
+        scale (optional):
+            An optional scale parameter that can be used to modify the metric. Default is None.
+        metric (optional):
+            An optional metric used for distance calculation. Default is None.
+
+    Examples
+    --------
+    Creating and using a `QuadStack` kernel:
+
+    ```
+    from geostat.kernel import QuadStack
+
+    # Create a QuadStack kernel with multiple sills and ranges
+    quad_stack_kernel = QuadStack(range=[2.0, 3.0], sill=[1.0, 0.5])
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = quad_stack_kernel({'locs1': locs1, 'locs2': locs2, 'sill': [1.0, 0.5], 'range': [2.0, 3.0]})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the covariance matrix using the `quadstack` function, which applies 
+        multiple quadratic functions based on the provided `sill` and `range` values for each component.
+    - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp_list` function.
+    - The `QuadStack` kernel is useful for modeling processes that exhibit multiple levels of variability 
+        or changes in smoothness at different scales with a quadratic structure.
+    """
+
     def __init__(self, range, sill, scale=None, metric=None):
         fa = dict(sill=sill, range=range, scale=scale)
         autoinputs = scale_to_metric(scale, metric)
@@ -566,6 +692,43 @@ class QuadStack(Kernel):
         return quadstack(tf.sqrt(e['d2']), e['sill'], e['range'])
 
 class Wiener(Kernel):
+    """
+    Wiener kernel class for Gaussian Processes (GPs).
+
+    The `Wiener` class defines a kernel that represents a Wiener process (or Brownian motion) in one dimension.
+    It models the covariance based on the minimum distance along a specified axis of integration, starting 
+    from a given point.
+
+    Parameters:
+        axis (int):
+            The axis along which the Wiener process operates (e.g., 0 for x-axis, 1 for y-axis).
+        start (float):
+            The starting point of the Wiener process along the specified axis.
+
+    Examples
+    --------
+    Creating and using a `Wiener` kernel:
+
+    ```
+    from geostat.kernel import Wiener
+
+    # Create a Wiener kernel operating along the x-axis starting from 0.0
+    wiener_kernel = Wiener(axis=0, start=0.0)
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = wiener_kernel({'locs1': locs1, 'locs2': locs2})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the covariance matrix using the Wiener process formula, which is based 
+        on the minimum distance along the specified `axis` from the `start` point.
+    - The `vars` method returns an empty dictionary since the Wiener kernel does not have tunable parameters.
+    - The `Wiener` kernel is suitable for modeling processes that evolve with time or any other 
+        ordered dimension, representing a type of random walk or Brownian motion.
+    """
+
     def __init__(self, axis, start):
 
         self.axis = axis
@@ -587,6 +750,45 @@ class Wiener(Kernel):
         return k
 
 class IntSquaredExponential(Kernel):
+    """
+    Integrated Squared Exponential (IntSquaredExponential) kernel class for Gaussian Processes (GPs).
+
+    The `IntSquaredExponential` class defines a kernel that integrates the Squared Exponential kernel
+    along a specified axis. This kernel is useful for modeling processes with smooth variations along 
+    one dimension, starting from a given point.
+
+    Parameters:
+        axis (int):
+            The axis along which the integration is performed (e.g., 0 for x-axis, 1 for y-axis).
+        start (float):
+            The starting point of the integration along the specified axis.
+        range (float or tf.Variable):
+            The length scale parameter that controls how quickly the covariance decreases with distance.
+
+    Examples
+    --------
+    Creating and using an `IntSquaredExponential` kernel:
+
+    ```
+    from geostat.kernel import IntSquaredExponential
+
+    # Create an IntSquaredExponential kernel integrating along the x-axis starting from 0.0 with a range of 2.0
+    int_sq_exp_kernel = IntSquaredExponential(axis=0, start=0.0, range=2.0)
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = int_sq_exp_kernel({'locs1': locs1, 'locs2': locs2, 'range': 2.0})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the integrated squared exponential covariance matrix based on the 
+        specified axis, starting point, and range.
+    - The `vars` method returns the parameter dictionary for `range` using the `ppp` function.
+    - The `IntSquaredExponential` kernel is suitable for modeling smooth processes with integrated 
+        covariance structures along one dimension.
+    """
+
     def __init__(self, axis, start, range):
 
         self.axis = axis
@@ -616,6 +818,45 @@ class IntSquaredExponential(Kernel):
         return k
 
 class IntExponential(Kernel):
+    """
+    Integrated Exponential (IntExponential) kernel class for Gaussian Processes (GPs).
+
+    The `IntExponential` class defines a kernel that integrates the Exponential kernel
+    along a specified axis. This kernel is useful for modeling processes with exponential 
+    decay along one dimension, starting from a given point.
+
+    Parameters:
+        axis (int):
+            The axis along which the integration is performed (e.g., 0 for x-axis, 1 for y-axis).
+        start (float):
+            The starting point of the integration along the specified axis.
+        range (float or tf.Variable):
+            The length scale parameter that controls how quickly the covariance decreases with distance.
+
+    Examples
+    --------
+    Creating and using an `IntExponential` kernel:
+
+    ```
+    from geostat.kernel import IntExponential
+
+    # Create an IntExponential kernel integrating along the x-axis starting from 0.0 with a range of 2.0
+    int_exp_kernel = IntExponential(axis=0, start=0.0, range=2.0)
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = int_exp_kernel({'locs1': locs1, 'locs2': locs2, 'range': 2.0})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the integrated exponential covariance matrix based on the 
+        specified axis, starting point, and range.
+    - The `vars` method returns the parameter dictionary for `range` using the `ppp` function.
+    - The `IntExponential` kernel is suitable for modeling processes with exponential decay 
+        along one dimension with integrated covariance structures.
+    """
+
     def __init__(self, axis, start, range):
 
         self.axis = axis
@@ -645,6 +886,42 @@ class IntExponential(Kernel):
         return k
 
 class Noise(Kernel):
+    """
+    Noise kernel class for Gaussian Processes (GPs).
+
+    The `Noise` class defines a kernel that models the nugget effect, which represents uncorrelated noise
+    in the data. It produces a diagonal covariance matrix with the specified `nugget` value, indicating 
+    the presence of noise at each location.
+
+    Parameters:
+        nugget (float or tf.Variable):
+            The variance (nugget) representing the noise level. This value is added to the diagonal 
+            of the covariance matrix.
+
+    Examples
+    --------
+    Creating and using a `Noise` kernel:
+
+    ```
+    from geostat.kernel import Noise
+
+    # Create a Noise kernel with a nugget value of 0.1
+    noise_kernel = Noise(nugget=0.1)
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = noise_kernel({'locs1': locs1, 'locs2': locs2, 'nugget': 0.1})
+    ```
+
+    Notes
+    -----
+    - The `call` method computes a diagonal covariance matrix where the diagonal elements are equal 
+        to `nugget`, representing noise at each location. Off-diagonal elements are set to 0.
+    - The `vars` method returns the parameter dictionary for `nugget` using the `ppp` function.
+    - The `Noise` kernel is useful for modeling independent noise in the data, especially when the 
+        observations contain measurement error or variability that cannot be explained by the model.
+    """
+
     def __init__(self, nugget):
         fa = dict(nugget=nugget)
         super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
@@ -660,6 +937,51 @@ class Noise(Kernel):
         return C
 
 class Delta(Kernel):
+    """
+    Delta kernel class for Gaussian Processes (GPs).
+
+    The `Delta` class defines a kernel that models a Dirac delta function effect, where covariance
+    is non-zero only when the inputs are identical. This kernel is useful for capturing exact matches
+    between input points, weighted by the specified `sill` parameter.
+
+    Parameters:
+        sill (float or tf.Variable):
+            The variance (sill) representing the weight of the delta function. This value is applied 
+            when input locations match exactly.
+        axes (list or None, optional):
+            A list of axes over which to apply the delta function. If not specified, the delta function 
+            is applied across all axes.
+
+    Examples
+    --------
+    Creating and using a `Delta` kernel:
+
+    ```
+    from geostat.kernel import Delta
+
+    # Create a Delta kernel with a sill of 1.0, applied across all axes
+    delta_kernel = Delta(sill=1.0)
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = delta_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0})
+    ```
+
+    Using the `Delta` kernel with specified axes:
+
+    ```
+    delta_kernel_axes = Delta(sill=1.0, axes=[0])
+    ```
+
+    Notes
+    -----
+    - The `call` method computes a covariance matrix using a delta function, returning `sill` when the 
+        squared distances are zero along the specified axes, and 0 otherwise.
+    - The `vars` method returns the parameter dictionary for `sill` using the `ppp` function.
+    - The `Delta` kernel is useful for modeling processes that exhibit exact matches or sharp changes 
+        in covariance when inputs coincide, making it ideal for capturing discrete effects.
+    """
+
     def __init__(self, sill, axes=None):
         fa = dict(sill=sill)
         self.axes = axes
@@ -680,6 +1002,55 @@ class Delta(Kernel):
         return e['sill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
 
 class Mix(Kernel):
+    """
+    Mix kernel class for combining multiple Gaussian Process (GP) kernels.
+
+    The `Mix` class defines a kernel that allows combining multiple input kernels, either using 
+    specified weights or by directly mixing the component kernels. This provides a flexible way to 
+    create complex covariance structures by blending the properties of different kernels.
+
+    Parameters:
+        inputs (list of Kernel objects):
+            A list of kernel objects to be combined.
+        weights (matrix, optional):
+            A matrix specifying how the input kernels should be combined. If not provided, 
+            the kernels are combined without weighting.
+
+    Examples
+    --------
+    Combining multiple kernels with specified weights:
+
+    ```
+    from geostat.kernel import Mix, SquaredExponential, Noise
+
+    # Create individual kernels
+    kernel1 = SquaredExponential(sill=1.0, range=2.0)
+    kernel2 = Noise(nugget=0.1)
+
+    # Combine kernels using the Mix class
+    mixed_kernel = Mix(inputs=[kernel1, kernel2], weights=[[0.6, 0.4], [0.4, 0.6]])
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = mixed_kernel({'locs1': locs1, 'locs2': locs2, 'weights': [[0.6, 0.4], [0.4, 0.6]]})
+    ```
+
+    Using the `Mix` kernel without weights:
+
+    ```
+    mixed_kernel_no_weights = Mix(inputs=[kernel1, kernel2])
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the covariance matrix by either using the specified weights 
+        to combine the input kernels or directly combining them when weights are not provided.
+    - The `vars` method gathers the parameters from all input kernels, allowing for easy 
+        access and manipulation of their coefficients.
+    - The `Mix` kernel is useful for creating complex, multi-faceted covariance structures 
+        by blending different types of kernels, providing enhanced modeling flexibility.
+    """
+
     def __init__(self, inputs, weights=None):
         self.inputs = inputs
         fa = {}
@@ -749,6 +1120,51 @@ class Mix(Kernel):
             return block_diag(CC)
 
 class Stack(Kernel):
+    """
+    Stack kernel class for combining multiple Gaussian Process (GP) kernels additively.
+
+    The `Stack` class defines a kernel that combines multiple input kernels by stacking them together.
+    This additive combination allows for capturing a more complex covariance structure by summing the
+    contributions from each individual kernel.
+
+    Parameters:
+        parts (List[Kernel]):
+            A list of kernel objects to be combined additively.
+
+    Examples
+    --------
+    Creating and using a `Stack` kernel:
+
+    ```
+    from geostat.kernel import Stack, SquaredExponential, Noise
+
+    # Create individual kernels
+    kernel1 = SquaredExponential(sill=1.0, range=2.0)
+    kernel2 = Noise(nugget=0.1)
+
+    # Combine kernels using the Stack class
+    stacked_kernel = Stack(parts=[kernel1, kernel2])
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = stacked_kernel({'locs1': locs1, 'locs2': locs2})
+    ```
+
+    Adding another kernel to an existing `Stack`:
+
+    ```
+    kernel3 = SquaredExponential(sill=0.5, range=1.0)
+    combined_stack = stacked_kernel + kernel3
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the sum of all covariance matrices generated by the stacked kernels.
+    - The `vars` method gathers parameters from all input kernels, making them accessible for optimization.
+    - The `Stack` kernel is useful for building complex models where multiple covariance structures need to be 
+        combined additively, enabling richer and more flexible GP models.
+    """
+
     def __init__(self, parts: List[Kernel]):
         self.parts = parts
         super().__init__({}, dict(locs1='locs1', locs2='locs2', parts=parts))
@@ -767,6 +1183,51 @@ class Stack(Kernel):
         return ' '.join(part.report(p) for part in self.parts)
 
 class Product(Kernel):
+    """
+    Product kernel class for combining multiple Gaussian Process (GP) kernels multiplicatively.
+
+    The `Product` class defines a kernel that combines multiple input kernels by multiplying them together.
+    This multiplicative combination allows for capturing interactions between the individual kernels, resulting
+    in a more complex and flexible covariance structure.
+
+    Parameters:
+        parts (List[Kernel]):
+            A list of kernel objects to be combined multiplicatively.
+
+    Examples
+    --------
+    Creating and using a `Product` kernel:
+
+    ```
+    from geostat.kernel import Product, SquaredExponential, Noise
+
+    # Create individual kernels
+    kernel1 = SquaredExponential(sill=1.0, range=2.0)
+    kernel2 = Noise(nugget=0.1)
+
+    # Combine kernels using the Product class
+    product_kernel = Product(parts=[kernel1, kernel2])
+    
+    locs1 = np.array([[0.0], [1.0], [2.0]])
+    locs2 = np.array([[0.0], [1.0], [2.0]])
+    covariance_matrix = product_kernel({'locs1': locs1, 'locs2': locs2})
+    ```
+
+    Multiplying another kernel with an existing `Product` kernel:
+
+    ```
+    kernel3 = SquaredExponential(sill=0.5, range=1.0)
+    combined_product = product_kernel * kernel3
+    ```
+
+    Notes
+    -----
+    - The `call` method computes the product of all covariance matrices generated by the multiplied kernels.
+    - The `vars` method gathers parameters from all input kernels, making them accessible for optimization.
+    - The `Product` kernel is useful for building models where the covariance structure results from 
+        multiplicative interactions between different kernels, allowing for more complex GP models.
+    """
+
     def __init__(self, parts: List[Kernel]):
         self.parts = parts
         super().__init__({}, dict(locs1='locs1', locs2='locs2', parts=parts))
