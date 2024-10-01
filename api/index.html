@@ -3229,8 +3229,7 @@ covariance_matrix = sq_exp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0, 
 <h5 id="src.geostat.kernel.SquaredExponential--notes">Notes</h5>
 <ul>
 <li>The <code>call</code> method computes the covariance matrix using the squared exponential formula:
-    <span class="arithmatex">\( C(x, x') =   ext{sill} \cdot \exp\left(-0.5 rac{d^2}{       ext{range}^2}
-ight) \)</span>,
+    <span class="arithmatex">\( C(x, x') = \text{sill} \cdot \exp\left(-0.5 \frac{d^2}{\text{range}^2}\right) \)</span>,
     where <span class="arithmatex">\(d^2\)</span> is the squared distance between <code>locs1</code> and <code>locs2</code>.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for both <code>sill</code> and <code>range</code> using the <code>ppp</code> function.</li>
 <li>This kernel is appropriate for modeling smooth, continuous processes with no abrupt changes.</li>
@@ -3327,7 +3326,7 @@ ight) \)</span>,
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    - The `call` method computes the covariance matrix using the squared exponential formula:</span>
-<span class="sd">        \\( C(x, x&#39;) = \text{sill} \cdot \exp\left(-0.5 \frac{d^2}{\text{range}^2}\right) \\),</span>
+<span class="sd">        \\( C(x, x&#39;) = \\text{sill} \cdot \exp\left(-0.5 \\frac{d^2}{\\text{range}^2}\\right) \\),</span>
 <span class="sd">        where \\(d^2\\) is the squared distance between `locs1` and `locs2`.</span>
 <span class="sd">    - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp` function.</span>
 <span class="sd">    - This kernel is appropriate for modeling smooth, continuous processes with no abrupt changes.</span>
