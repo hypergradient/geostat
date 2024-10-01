@@ -14,7 +14,7 @@
 
     selection:
       filters:
-        - "!Kernel.__call__"
+        - "Kernel.__call__"
 
 ---
 
