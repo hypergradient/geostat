@@ -11,10 +11,9 @@ theme:
 
 plugins:
 - search
-- mkdocstrings
+- mkdocstrings:
     filters:
       - "!__call__"
-
 
 markdown_extensions:
   - pymdownx.arithmatex:
