@@ -1129,9 +1129,9 @@ class Model():
         # Run predictions
         locs2 = np.array([[1.5, 1.5], [2.5, 4.0]])
         mean, variance = model.predict(locs2)
-        print("Mean: ", mean)
+        print(mean)
         # [ 9.89839798 18.77077269]
-        print("Variance: ", variance)
+        print(variance)
         # [2.1572128  0.54444738]
         ```
 
