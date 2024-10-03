@@ -43,10 +43,17 @@ class Kernel(Op):
 
     ```
     from geostat.kernel import Kernel
-    kernel = Kernel(fa={'alpha': 1.0}, autoinputs={})
+    import numpy as np
+
+    # Construct kernel and call it on locations
     locs1 = np.array([[0.0, 0.0], [1.0, 1.0]])
     locs2 = np.array([[2.0, 2.0], [3.0, 3.0]])
+    kernel = Kernel(fa={'alpha': 1.0}, autoinputs={})
     covariance_matrix = kernel({'locs1': locs1, 'locs2': locs2})
+    print(covariance_matrix) # Covariance matrix only has zero entries as no kernel function was given
+    # tf.Tensor(
+    # [[0. 0.]
+    #  [0. 0.]], shape=(2, 2), dtype=float32)
     ```
 
     Combining two kernels using addition and multiplication:
@@ -159,6 +166,8 @@ class TrendPrior(Kernel):
     def call(self, e):
         F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
         F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
+        print(F1)
+        print(F2)
         return e['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
 
 def scale_to_metric(scale, metric):
@@ -187,14 +196,23 @@ class Constant(Kernel):
     Creating and using a `Constant` kernel:
 
     ```
+    from geostat import Parameters
     from geostat.kernel import Constant
+    import numpy as np
 
-    # Create a Constant kernel with a sill value of 2.0
-    constant_kernel = Constant(sill=2.0)
-    
+    # Create parameters.
+    p = Parameters(sill=2.0)
+
+    # Create a Constant kernel with a sill value of 2.0 and call it
     locs1 = np.array([[0.0], [1.0], [2.0]])
     locs2 = np.array([[0.0], [1.0], [2.0]])
+    constant_kernel = Constant(sill=p.sill)
     covariance_matrix = constant_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 2.0})
+    print(covariance_matrix)
+    # tf.Tensor(
+    # [[2. 2. 2.]
+    #  [2. 2. 2.]
+    #  [2. 2. 2.]], shape=(3, 3), dtype=float32)
     ```
 
     Notes
