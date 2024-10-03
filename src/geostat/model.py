@@ -62,10 +62,9 @@ class GP:
     The mean defaults to ZeroTrend if not provided.
 
     ```
-    gp.mean
+    print(gp.mean) # ZeroTrend(fa={}, autoinputs={'locs1': 'locs1'})
     ```
-    <ZeroTrend object>
-
+    
     Specifying both mean and kernel:
 
     ```
@@ -81,8 +80,8 @@ class GP:
     gp1 = GP(kernel=krn.Noise(p.nugget))
     gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))
     combined_gp = gp1 + gp2
-    combined_gp.mean  # <ZeroTrend + Trend object>
-    combined_gp.kernel  # <Noise + Delta object>
+    print("Combined Mean: ", combined_gp.mean)  # <Trend object>
+    print("Combined Kernel: ", combined_gp.kernel)  # <Stack object>
     ```
 
     Notes
