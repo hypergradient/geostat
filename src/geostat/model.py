@@ -695,11 +695,14 @@ class Model():
         Update parameter value using `set`:
 
         ```
-        from geostat import GP, Model
+        from geostat import GP, Model, Parameters
         from geostat.kernel import Noise
 
+        # Create parameters.
+        p = Parameters(nugget=1.)
+
         # Create model
-        kernel = Noise(nugget=1.0)
+        kernel = Noise(nugget=p.nugget)
         model = Model(GP(0, kernel))
 
         # Update parameters
@@ -751,17 +754,31 @@ class Model():
         Fitting a model using training data:
 
         ```
-        from geostat import GP, Model
+        from geostat import GP, Model, Parameters
         from geostat.kernel import Noise
+        import numpy as np
+
+        # Create parameters.
+        p = Parameters(nugget=1.)
 
         # Create model
-        kernel = Noise(nugget=1.0)
+        kernel = Noise(nugget=p.nugget)
         model = Model(GP(0, kernel))
 
         # Fit model
         locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])
         vals = np.array([10.0, 15.0, 20.0])
         model.fit(locs, vals, step_size=0.05, iters=500)
+        # [iter    50 ll -63.71 time  2.72 reg  0.00 nugget  6.37]
+        # [iter   100 ll -32.94 time  0.25 reg  0.00 nugget 13.97]
+        # [iter   150 ll -23.56 time  0.25 reg  0.00 nugget 22.65]
+        # [iter   200 ll -19.26 time  0.25 reg  0.00 nugget 32.27]
+        # [iter   250 ll -16.92 time  0.25 reg  0.00 nugget 42.63]
+        # [iter   300 ll -15.52 time  0.24 reg  0.00 nugget 53.50]
+        # [iter   350 ll -14.63 time  0.24 reg  0.00 nugget 64.71]
+        # [iter   400 ll -14.03 time  0.24 reg  0.00 nugget 76.10]
+        # [iter   450 ll -13.61 time  0.25 reg  0.00 nugget 87.52]
+        # [iter   500 ll -13.32 time  0.24 reg  0.00 nugget 98.85]
         ```
 
         Using categorical data for training:
@@ -769,6 +786,16 @@ class Model():
         ```
         cats = np.array([1, 1, 2])
         model.fit(locs, vals, cats=cats, step_size=0.01, iters=300)
+        # [iter    30 ll -12.84 time  0.25 reg  0.00 nugget 131.53]
+        # [iter    60 ll -12.62 time  0.15 reg  0.00 nugget 164.41]
+        # [iter    90 ll -12.53 time  0.16 reg  0.00 nugget 191.70]
+        # [iter   120 ll -12.50 time  0.16 reg  0.00 nugget 211.74]
+        # [iter   150 ll -12.49 time  0.15 reg  0.00 nugget 225.07]
+        # [iter   180 ll -12.49 time  0.16 reg  0.00 nugget 233.15]
+        # [iter   210 ll -12.49 time  0.15 reg  0.00 nugget 237.64]
+        # [iter   240 ll -12.49 time  0.15 reg  0.00 nugget 239.92]
+        # [iter   270 ll -12.49 time  0.15 reg  0.00 nugget 240.98]
+        # [iter   300 ll -12.49 time  0.15 reg  0.00 nugget 241.42]
         ```
 
         Notes
@@ -974,17 +1001,23 @@ class Model():
         Generating synthetic values for a set of locations:
 
         ```
-        from geostat import GP, Model
+        from geostat import GP, Model, Parameters
         from geostat.kernel import Noise
+        import numpy as np
+
+        # Create parameters.
+        p = Parameters(nugget=1.)
 
         # Create model
-        kernel = Noise(nugget=1.0)
+        kernel = Noise(nugget=p.nugget)
         model = Model(GP(0, kernel))
 
         # Generate values based on locs
         locs = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
         model.generate(locs)
         generated_vals = model.vals  # Access the generated values
+        print(generated_vals)
+        # [0.45151083 1.23276189 0.3822659 ] (Values are non-deterministic)
         ```
 
         Notes
