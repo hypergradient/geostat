@@ -62,7 +62,8 @@ class GP:
     The mean defaults to ZeroTrend if not provided.
 
     ```
-    print(gp.mean) # ZeroTrend(fa={}, autoinputs={'locs1': 'locs1'})
+    print(gp.mean)
+    # ZeroTrend(fa={}, autoinputs={'locs1': 'locs1'})
     ```
     
     Specifying both mean and kernel:
@@ -587,11 +588,15 @@ class Model():
     Initializing a `Model` with a Gaussian Process:
 
     ```
-    from geostat import GP, Model
+    from geostat import GP, Model, Parameters
     from geostat.kernel import Noise
     import numpy as np
 
-    gp = GP(kernel=Noise(1.0))
+    # Create parameters.
+    p = Parameters(nugget=1.)
+
+    # Define the Gaussian Process and the model
+    gp = GP(kernel=Noise(nugget=p.nugget))
     locs = np.array([[0.0, 1.0], [1.0, 2.0]])
     vals = np.array([1.0, 2.0])
     model = Model(gp=gp, locs=locs, vals=vals)
@@ -1095,21 +1100,39 @@ class Model():
         Making predictions for a set of locations:
 
         ```
-        from geostat import GP, Model
-        from geostat.kernel import Noise
+        from geostat import GP, Model, Parameters
+        from geostat.kernel import SquaredExponential
+        import numpy as np
+
+        # Create parameters.
+        p = Parameters(sill=1.0, range=2.0)
 
         # Create model
-        kernel = Noise(nugget=1.0)
+        kernel = SquaredExponential(sill=p.sill, range=p.range)
         model = Model(GP(0, kernel))
-        locs2 = np.array([[7.0, 8.0], [9.0, 10.0]])
+
+        # Fit model
+        locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])
+        vals = np.array([10.0, 15.0, 20.0])
+        model.fit(locs, vals, step_size=0.05, iters=500)
+        # [iter    50 ll -40.27 time  2.29 reg  0.00 sill  6.35 range  1.96]
+        # [iter   100 ll -21.79 time  0.40 reg  0.00 sill 13.84 range  2.18]
+        # [iter   150 ll -16.17 time  0.39 reg  0.00 sill 22.31 range  2.44]
+        # [iter   200 ll -13.55 time  0.39 reg  0.00 sill 31.75 range  2.76]
+        # [iter   250 ll -12.08 time  0.38 reg  0.00 sill 42.08 range  3.12]
+        # [iter   300 ll -11.14 time  0.38 reg  0.00 sill 53.29 range  3.48]
+        # [iter   350 ll -10.50 time  0.38 reg  0.00 sill 65.36 range  3.85]
+        # [iter   400 ll -10.05 time  0.39 reg  0.00 sill 78.29 range  4.22]
+        # [iter   450 ll -9.70 time  0.39 reg  0.00 sill 92.07 range  4.59]
+        # [iter   500 ll -9.43 time  0.39 reg  0.00 sill 106.70 range  4.95]
+
+        # Run predictions
+        locs2 = np.array([[1.5, 1.5], [2.5, 4.0]])
         mean, variance = model.predict(locs2)
-        ```
-
-        Making predictions with categorical data:
-
-        ```
-        cats2 = np.array([1, 2])
-        mean, variance = model.predict(locs2, cats2=cats2)
+        print("Mean: ", mean)
+        # [ 9.89839798 18.77077269]
+        print("Variance: ", variance)
+        # [2.1572128  0.54444738]
         ```
 
         Notes
