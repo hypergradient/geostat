@@ -722,7 +722,7 @@ class Model():
                 parameters[name].value = v
                 parameters[name].create_tf_variable()
             else:
-                raise ValueError(f"{k} is not a parameter")
+                raise ValueError(f"{name} is not a parameter")
         return self
 
     def fit(self, locs, vals, cats=None, step_size=0.01, iters=100, reg=None):
