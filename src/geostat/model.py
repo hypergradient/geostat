@@ -375,7 +375,10 @@ class NormalizingFeaturizer:
     ```
     new_locs = tf.constant([[7.0, 8.0], [9.0, 10.0]])
     F_matrix = norm_featurizer(new_locs)
-    # F_matrix will contain normalized features with an additional intercept column
+    print(F_matrix) # F_matrix will contain normalized features with an additional intercept column
+    # tf.Tensor(
+    # [[1.        2.4494898 2.4494898 3.5676992]
+    #  [1.        3.6742349 3.6742349 6.50242  ]], shape=(2, 4), dtype=float32)
     ```
 
     Notes
@@ -432,7 +435,11 @@ class Featurizer:
     ```
     locs = tf.constant([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
     F_matrix = featurizer(locs)
-    # F_matrix will contain the features: (x, y, x*y) for each location
+    print(F_matrix) # F_matrix will contain the features: (x, y, x*y) for each location
+    # tf.Tensor(
+    # [[ 1.  2.  2.]
+    #  [ 3.  4. 12.]
+    #  [ 5.  6. 30.]], shape=(3, 3), dtype=float32)
     ```
 
     Handling the case where no featurization is provided:
@@ -440,7 +447,8 @@ class Featurizer:
     ```
     featurizer_no_feat = Featurizer(None)
     F_matrix = featurizer_no_feat(locs)
-    # Since no featurization function is provided, F_matrix will have shape (3, 0)
+    print(F_matrix) # Since no featurization function is provided, F_matrix will have shape (3, 0)
+    # tf.Tensor([], shape=(3, 0), dtype=float32)
     ```
 
     Notes
