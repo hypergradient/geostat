@@ -6438,8 +6438,7 @@ print(F_matrix) # Since no featurization function is provided, F_matrix will hav
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">403</span>
-<span class="normal">404</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">404</span>
 <span class="normal">405</span>
 <span class="normal">406</span>
 <span class="normal">407</span>
@@ -6512,7 +6511,8 @@ print(F_matrix) # Since no featurization function is provided, F_matrix will hav
 <span class="normal">474</span>
 <span class="normal">475</span>
 <span class="normal">476</span>
-<span class="normal">477</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Featurizer</span><span class="p">:</span>
+<span class="normal">477</span>
+<span class="normal">478</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Featurizer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Featurizer class for producing feature matrices (F matrix) from location data.</span>
 
@@ -6687,7 +6687,8 @@ kernel = krn.Noise(p.nugget)
 gp = GP(kernel=kernel)
 </code></pre>
 <p>The mean defaults to ZeroTrend if not provided.</p>
-<pre><code>print(gp.mean) # ZeroTrend(fa={}, autoinputs={'locs1': 'locs1'})
+<pre><code>print(gp.mean)
+# ZeroTrend(fa={}, autoinputs={'locs1': 'locs1'})
 </code></pre>
 <p>Specifying both mean and kernel:</p>
 <pre><code>@geostat.featurizer()
@@ -6787,7 +6788,8 @@ print(&quot;Combined Kernel: &quot;, combined_gp.kernel)  # &lt;Stack object&gt;
 <span class="normal">105</span>
 <span class="normal">106</span>
 <span class="normal">107</span>
-<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">108</span>
+<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">GP</span><span class="p">:</span>    
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Gaussian Process (GP) model class with a mean function and a kernel.</span>
@@ -6821,7 +6823,8 @@ print(&quot;Combined Kernel: &quot;, combined_gp.kernel)  # &lt;Stack object&gt;
 <span class="sd">    The mean defaults to ZeroTrend if not provided.</span>
 
 <span class="sd">    ```</span>
-<span class="sd">    print(gp.mean) # ZeroTrend(fa={}, autoinputs={&#39;locs1&#39;: &#39;locs1&#39;})</span>
+<span class="sd">    print(gp.mean)</span>
+<span class="sd">    # ZeroTrend(fa={}, autoinputs={&#39;locs1&#39;: &#39;locs1&#39;})</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Specifying both mean and kernel:</span>
@@ -7040,11 +7043,15 @@ reporting function is used.</p>
     </table>
         <h5 id="src.geostat.model.Model--examples">Examples</h5>
 <p>Initializing a <code>Model</code> with a Gaussian Process:</p>
-<pre><code>from geostat import GP, Model
+<pre><code>from geostat import GP, Model, Parameters
 from geostat.kernel import Noise
 import numpy as np
 
-gp = GP(kernel=Noise(1.0))
+# Create parameters.
+p = Parameters(nugget=1.)
+
+# Define the Gaussian Process and the model
+gp = GP(kernel=Noise(nugget=p.nugget))
 locs = np.array([[0.0, 1.0], [1.0, 2.0]])
 vals = np.array([1.0, 2.0])
 model = Model(gp=gp, locs=locs, vals=vals)
@@ -7057,8 +7064,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 557</span>
-<span class="normal"> 558</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 558</span>
 <span class="normal"> 559</span>
 <span class="normal"> 560</span>
 <span class="normal"> 561</span>
@@ -7815,7 +7821,63 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="normal">1312</span>
 <span class="normal">1313</span>
 <span class="normal">1314</span>
-<span class="normal">1315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="normal">1315</span>
+<span class="normal">1316</span>
+<span class="normal">1317</span>
+<span class="normal">1318</span>
+<span class="normal">1319</span>
+<span class="normal">1320</span>
+<span class="normal">1321</span>
+<span class="normal">1322</span>
+<span class="normal">1323</span>
+<span class="normal">1324</span>
+<span class="normal">1325</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span>
+<span class="normal">1328</span>
+<span class="normal">1329</span>
+<span class="normal">1330</span>
+<span class="normal">1331</span>
+<span class="normal">1332</span>
+<span class="normal">1333</span>
+<span class="normal">1334</span>
+<span class="normal">1335</span>
+<span class="normal">1336</span>
+<span class="normal">1337</span>
+<span class="normal">1338</span>
+<span class="normal">1339</span>
+<span class="normal">1340</span>
+<span class="normal">1341</span>
+<span class="normal">1342</span>
+<span class="normal">1343</span>
+<span class="normal">1344</span>
+<span class="normal">1345</span>
+<span class="normal">1346</span>
+<span class="normal">1347</span>
+<span class="normal">1348</span>
+<span class="normal">1349</span>
+<span class="normal">1350</span>
+<span class="normal">1351</span>
+<span class="normal">1352</span>
+<span class="normal">1353</span>
+<span class="normal">1354</span>
+<span class="normal">1355</span>
+<span class="normal">1356</span>
+<span class="normal">1357</span>
+<span class="normal">1358</span>
+<span class="normal">1359</span>
+<span class="normal">1360</span>
+<span class="normal">1361</span>
+<span class="normal">1362</span>
+<span class="normal">1363</span>
+<span class="normal">1364</span>
+<span class="normal">1365</span>
+<span class="normal">1366</span>
+<span class="normal">1367</span>
+<span class="normal">1368</span>
+<span class="normal">1369</span>
+<span class="normal">1370</span>
+<span class="normal">1371</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">Model</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Model class for performing Gaussian Process (GP) training and prediction with optional warping.</span>
@@ -7848,11 +7910,15 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">    Initializing a `Model` with a Gaussian Process:</span>
 
 <span class="sd">    ```</span>
-<span class="sd">    from geostat import GP, Model</span>
+<span class="sd">    from geostat import GP, Model, Parameters</span>
 <span class="sd">    from geostat.kernel import Noise</span>
 <span class="sd">    import numpy as np</span>
 
-<span class="sd">    gp = GP(kernel=Noise(1.0))</span>
+<span class="sd">    # Create parameters.</span>
+<span class="sd">    p = Parameters(nugget=1.)</span>
+
+<span class="sd">    # Define the Gaussian Process and the model</span>
+<span class="sd">    gp = GP(kernel=Noise(nugget=p.nugget))</span>
 <span class="sd">    locs = np.array([[0.0, 1.0], [1.0, 2.0]])</span>
 <span class="sd">    vals = np.array([1.0, 2.0])</span>
 <span class="sd">    model = Model(gp=gp, locs=locs, vals=vals)</span>
@@ -7956,11 +8022,14 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">        Update parameter value using `set`:</span>
 
 <span class="sd">        ```</span>
-<span class="sd">        from geostat import GP, Model</span>
+<span class="sd">        from geostat import GP, Model, Parameters</span>
 <span class="sd">        from geostat.kernel import Noise</span>
 
+<span class="sd">        # Create parameters.</span>
+<span class="sd">        p = Parameters(nugget=1.)</span>
+
 <span class="sd">        # Create model</span>
-<span class="sd">        kernel = Noise(nugget=1.0)</span>
+<span class="sd">        kernel = Noise(nugget=p.nugget)</span>
 <span class="sd">        model = Model(GP(0, kernel))</span>
 
 <span class="sd">        # Update parameters</span>
@@ -7980,7 +8049,7 @@ model = Model(gp=gp, locs=locs, vals=vals)
                 <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">v</span>
                 <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">create_tf_variable</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> is not a parameter&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is not a parameter&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -8012,17 +8081,31 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">        Fitting a model using training data:</span>
 
 <span class="sd">        ```</span>
-<span class="sd">        from geostat import GP, Model</span>
+<span class="sd">        from geostat import GP, Model, Parameters</span>
 <span class="sd">        from geostat.kernel import Noise</span>
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        # Create parameters.</span>
+<span class="sd">        p = Parameters(nugget=1.)</span>
 
 <span class="sd">        # Create model</span>
-<span class="sd">        kernel = Noise(nugget=1.0)</span>
+<span class="sd">        kernel = Noise(nugget=p.nugget)</span>
 <span class="sd">        model = Model(GP(0, kernel))</span>
 
 <span class="sd">        # Fit model</span>
 <span class="sd">        locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])</span>
 <span class="sd">        vals = np.array([10.0, 15.0, 20.0])</span>
 <span class="sd">        model.fit(locs, vals, step_size=0.05, iters=500)</span>
+<span class="sd">        # [iter    50 ll -63.71 time  2.72 reg  0.00 nugget  6.37]</span>
+<span class="sd">        # [iter   100 ll -32.94 time  0.25 reg  0.00 nugget 13.97]</span>
+<span class="sd">        # [iter   150 ll -23.56 time  0.25 reg  0.00 nugget 22.65]</span>
+<span class="sd">        # [iter   200 ll -19.26 time  0.25 reg  0.00 nugget 32.27]</span>
+<span class="sd">        # [iter   250 ll -16.92 time  0.25 reg  0.00 nugget 42.63]</span>
+<span class="sd">        # [iter   300 ll -15.52 time  0.24 reg  0.00 nugget 53.50]</span>
+<span class="sd">        # [iter   350 ll -14.63 time  0.24 reg  0.00 nugget 64.71]</span>
+<span class="sd">        # [iter   400 ll -14.03 time  0.24 reg  0.00 nugget 76.10]</span>
+<span class="sd">        # [iter   450 ll -13.61 time  0.25 reg  0.00 nugget 87.52]</span>
+<span class="sd">        # [iter   500 ll -13.32 time  0.24 reg  0.00 nugget 98.85]</span>
 <span class="sd">        ```</span>
 
 <span class="sd">        Using categorical data for training:</span>
@@ -8030,6 +8113,16 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">        ```</span>
 <span class="sd">        cats = np.array([1, 1, 2])</span>
 <span class="sd">        model.fit(locs, vals, cats=cats, step_size=0.01, iters=300)</span>
+<span class="sd">        # [iter    30 ll -12.84 time  0.25 reg  0.00 nugget 131.53]</span>
+<span class="sd">        # [iter    60 ll -12.62 time  0.15 reg  0.00 nugget 164.41]</span>
+<span class="sd">        # [iter    90 ll -12.53 time  0.16 reg  0.00 nugget 191.70]</span>
+<span class="sd">        # [iter   120 ll -12.50 time  0.16 reg  0.00 nugget 211.74]</span>
+<span class="sd">        # [iter   150 ll -12.49 time  0.15 reg  0.00 nugget 225.07]</span>
+<span class="sd">        # [iter   180 ll -12.49 time  0.16 reg  0.00 nugget 233.15]</span>
+<span class="sd">        # [iter   210 ll -12.49 time  0.15 reg  0.00 nugget 237.64]</span>
+<span class="sd">        # [iter   240 ll -12.49 time  0.15 reg  0.00 nugget 239.92]</span>
+<span class="sd">        # [iter   270 ll -12.49 time  0.15 reg  0.00 nugget 240.98]</span>
+<span class="sd">        # [iter   300 ll -12.49 time  0.15 reg  0.00 nugget 241.42]</span>
 <span class="sd">        ```</span>
 
 <span class="sd">        Notes</span>
@@ -8235,17 +8328,23 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">        Generating synthetic values for a set of locations:</span>
 
 <span class="sd">        ```</span>
-<span class="sd">        from geostat import GP, Model</span>
+<span class="sd">        from geostat import GP, Model, Parameters</span>
 <span class="sd">        from geostat.kernel import Noise</span>
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        # Create parameters.</span>
+<span class="sd">        p = Parameters(nugget=1.)</span>
 
 <span class="sd">        # Create model</span>
-<span class="sd">        kernel = Noise(nugget=1.0)</span>
+<span class="sd">        kernel = Noise(nugget=p.nugget)</span>
 <span class="sd">        model = Model(GP(0, kernel))</span>
 
 <span class="sd">        # Generate values based on locs</span>
 <span class="sd">        locs = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])</span>
 <span class="sd">        model.generate(locs)</span>
 <span class="sd">        generated_vals = model.vals  # Access the generated values</span>
+<span class="sd">        print(generated_vals)</span>
+<span class="sd">        # [0.45151083 1.23276189 0.3822659 ] (Values are non-deterministic)</span>
 <span class="sd">        ```</span>
 
 <span class="sd">        Notes</span>
@@ -8323,21 +8422,39 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">        Making predictions for a set of locations:</span>
 
 <span class="sd">        ```</span>
-<span class="sd">        from geostat import GP, Model</span>
-<span class="sd">        from geostat.kernel import Noise</span>
+<span class="sd">        from geostat import GP, Model, Parameters</span>
+<span class="sd">        from geostat.kernel import SquaredExponential</span>
+<span class="sd">        import numpy as np</span>
+
+<span class="sd">        # Create parameters.</span>
+<span class="sd">        p = Parameters(sill=1.0, range=2.0)</span>
 
 <span class="sd">        # Create model</span>
-<span class="sd">        kernel = Noise(nugget=1.0)</span>
+<span class="sd">        kernel = SquaredExponential(sill=p.sill, range=p.range)</span>
 <span class="sd">        model = Model(GP(0, kernel))</span>
-<span class="sd">        locs2 = np.array([[7.0, 8.0], [9.0, 10.0]])</span>
+
+<span class="sd">        # Fit model</span>
+<span class="sd">        locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])</span>
+<span class="sd">        vals = np.array([10.0, 15.0, 20.0])</span>
+<span class="sd">        model.fit(locs, vals, step_size=0.05, iters=500)</span>
+<span class="sd">        # [iter    50 ll -40.27 time  2.29 reg  0.00 sill  6.35 range  1.96]</span>
+<span class="sd">        # [iter   100 ll -21.79 time  0.40 reg  0.00 sill 13.84 range  2.18]</span>
+<span class="sd">        # [iter   150 ll -16.17 time  0.39 reg  0.00 sill 22.31 range  2.44]</span>
+<span class="sd">        # [iter   200 ll -13.55 time  0.39 reg  0.00 sill 31.75 range  2.76]</span>
+<span class="sd">        # [iter   250 ll -12.08 time  0.38 reg  0.00 sill 42.08 range  3.12]</span>
+<span class="sd">        # [iter   300 ll -11.14 time  0.38 reg  0.00 sill 53.29 range  3.48]</span>
+<span class="sd">        # [iter   350 ll -10.50 time  0.38 reg  0.00 sill 65.36 range  3.85]</span>
+<span class="sd">        # [iter   400 ll -10.05 time  0.39 reg  0.00 sill 78.29 range  4.22]</span>
+<span class="sd">        # [iter   450 ll -9.70 time  0.39 reg  0.00 sill 92.07 range  4.59]</span>
+<span class="sd">        # [iter   500 ll -9.43 time  0.39 reg  0.00 sill 106.70 range  4.95]</span>
+
+<span class="sd">        # Run predictions</span>
+<span class="sd">        locs2 = np.array([[1.5, 1.5], [2.5, 4.0]])</span>
 <span class="sd">        mean, variance = model.predict(locs2)</span>
-<span class="sd">        ```</span>
-
-<span class="sd">        Making predictions with categorical data:</span>
-
-<span class="sd">        ```</span>
-<span class="sd">        cats2 = np.array([1, 2])</span>
-<span class="sd">        mean, variance = model.predict(locs2, cats2=cats2)</span>
+<span class="sd">        print(&quot;Mean: &quot;, mean)</span>
+<span class="sd">        # [ 9.89839798 18.77077269]</span>
+<span class="sd">        print(&quot;Variance: &quot;, variance)</span>
+<span class="sd">        # [2.1572128  0.54444738]</span>
 <span class="sd">        ```</span>
 
 <span class="sd">        Notes</span>
@@ -8727,21 +8844,45 @@ the data is sorted according to <code>cats</code> to enable stratified training.
     </table>
         <h6 id="src.geostat.model.Model.fit--examples">Examples</h6>
 <p>Fitting a model using training data:</p>
-<pre><code>from geostat import GP, Model
+<pre><code>from geostat import GP, Model, Parameters
 from geostat.kernel import Noise
+import numpy as np
+
+# Create parameters.
+p = Parameters(nugget=1.)
 
 # Create model
-kernel = Noise(nugget=1.0)
+kernel = Noise(nugget=p.nugget)
 model = Model(GP(0, kernel))
 
 # Fit model
 locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])
 vals = np.array([10.0, 15.0, 20.0])
 model.fit(locs, vals, step_size=0.05, iters=500)
+# [iter    50 ll -63.71 time  2.72 reg  0.00 nugget  6.37]
+# [iter   100 ll -32.94 time  0.25 reg  0.00 nugget 13.97]
+# [iter   150 ll -23.56 time  0.25 reg  0.00 nugget 22.65]
+# [iter   200 ll -19.26 time  0.25 reg  0.00 nugget 32.27]
+# [iter   250 ll -16.92 time  0.25 reg  0.00 nugget 42.63]
+# [iter   300 ll -15.52 time  0.24 reg  0.00 nugget 53.50]
+# [iter   350 ll -14.63 time  0.24 reg  0.00 nugget 64.71]
+# [iter   400 ll -14.03 time  0.24 reg  0.00 nugget 76.10]
+# [iter   450 ll -13.61 time  0.25 reg  0.00 nugget 87.52]
+# [iter   500 ll -13.32 time  0.24 reg  0.00 nugget 98.85]
 </code></pre>
 <p>Using categorical data for training:</p>
 <pre><code>cats = np.array([1, 1, 2])
 model.fit(locs, vals, cats=cats, step_size=0.01, iters=300)
+# [iter    30 ll -12.84 time  0.25 reg  0.00 nugget 131.53]
+# [iter    60 ll -12.62 time  0.15 reg  0.00 nugget 164.41]
+# [iter    90 ll -12.53 time  0.16 reg  0.00 nugget 191.70]
+# [iter   120 ll -12.50 time  0.16 reg  0.00 nugget 211.74]
+# [iter   150 ll -12.49 time  0.15 reg  0.00 nugget 225.07]
+# [iter   180 ll -12.49 time  0.16 reg  0.00 nugget 233.15]
+# [iter   210 ll -12.49 time  0.15 reg  0.00 nugget 237.64]
+# [iter   240 ll -12.49 time  0.15 reg  0.00 nugget 239.92]
+# [iter   270 ll -12.49 time  0.15 reg  0.00 nugget 240.98]
+# [iter   300 ll -12.49 time  0.15 reg  0.00 nugget 241.42]
 </code></pre>
 <h6 id="src.geostat.model.Model.fit--notes">Notes</h6>
 <ul>
@@ -8754,15 +8895,7 @@ penalties specified by <code>reg</code>.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">725</span>
-<span class="normal">726</span>
-<span class="normal">727</span>
-<span class="normal">728</span>
-<span class="normal">729</span>
-<span class="normal">730</span>
-<span class="normal">731</span>
-<span class="normal">732</span>
-<span class="normal">733</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">733</span>
 <span class="normal">734</span>
 <span class="normal">735</span>
 <span class="normal">736</span>
@@ -8859,7 +8992,39 @@ penalties specified by <code>reg</code>.</li>
 <span class="normal">827</span>
 <span class="normal">828</span>
 <span class="normal">829</span>
-<span class="normal">830</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span>
+<span class="normal">849</span>
+<span class="normal">850</span>
+<span class="normal">851</span>
+<span class="normal">852</span>
+<span class="normal">853</span>
+<span class="normal">854</span>
+<span class="normal">855</span>
+<span class="normal">856</span>
+<span class="normal">857</span>
+<span class="normal">858</span>
+<span class="normal">859</span>
+<span class="normal">860</span>
+<span class="normal">861</span>
+<span class="normal">862</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)</span>
 <span class="sd">    using the Adam optimizer. Optionally performs regularization and can handle categorical data.</span>
@@ -8888,17 +9053,31 @@ penalties specified by <code>reg</code>.</li>
 <span class="sd">    Fitting a model using training data:</span>
 
 <span class="sd">    ```</span>
-<span class="sd">    from geostat import GP, Model</span>
+<span class="sd">    from geostat import GP, Model, Parameters</span>
 <span class="sd">    from geostat.kernel import Noise</span>
+<span class="sd">    import numpy as np</span>
+
+<span class="sd">    # Create parameters.</span>
+<span class="sd">    p = Parameters(nugget=1.)</span>
 
 <span class="sd">    # Create model</span>
-<span class="sd">    kernel = Noise(nugget=1.0)</span>
+<span class="sd">    kernel = Noise(nugget=p.nugget)</span>
 <span class="sd">    model = Model(GP(0, kernel))</span>
 
 <span class="sd">    # Fit model</span>
 <span class="sd">    locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])</span>
 <span class="sd">    vals = np.array([10.0, 15.0, 20.0])</span>
 <span class="sd">    model.fit(locs, vals, step_size=0.05, iters=500)</span>
+<span class="sd">    # [iter    50 ll -63.71 time  2.72 reg  0.00 nugget  6.37]</span>
+<span class="sd">    # [iter   100 ll -32.94 time  0.25 reg  0.00 nugget 13.97]</span>
+<span class="sd">    # [iter   150 ll -23.56 time  0.25 reg  0.00 nugget 22.65]</span>
+<span class="sd">    # [iter   200 ll -19.26 time  0.25 reg  0.00 nugget 32.27]</span>
+<span class="sd">    # [iter   250 ll -16.92 time  0.25 reg  0.00 nugget 42.63]</span>
+<span class="sd">    # [iter   300 ll -15.52 time  0.24 reg  0.00 nugget 53.50]</span>
+<span class="sd">    # [iter   350 ll -14.63 time  0.24 reg  0.00 nugget 64.71]</span>
+<span class="sd">    # [iter   400 ll -14.03 time  0.24 reg  0.00 nugget 76.10]</span>
+<span class="sd">    # [iter   450 ll -13.61 time  0.25 reg  0.00 nugget 87.52]</span>
+<span class="sd">    # [iter   500 ll -13.32 time  0.24 reg  0.00 nugget 98.85]</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Using categorical data for training:</span>
@@ -8906,6 +9085,16 @@ penalties specified by <code>reg</code>.</li>
 <span class="sd">    ```</span>
 <span class="sd">    cats = np.array([1, 1, 2])</span>
 <span class="sd">    model.fit(locs, vals, cats=cats, step_size=0.01, iters=300)</span>
+<span class="sd">    # [iter    30 ll -12.84 time  0.25 reg  0.00 nugget 131.53]</span>
+<span class="sd">    # [iter    60 ll -12.62 time  0.15 reg  0.00 nugget 164.41]</span>
+<span class="sd">    # [iter    90 ll -12.53 time  0.16 reg  0.00 nugget 191.70]</span>
+<span class="sd">    # [iter   120 ll -12.50 time  0.16 reg  0.00 nugget 211.74]</span>
+<span class="sd">    # [iter   150 ll -12.49 time  0.15 reg  0.00 nugget 225.07]</span>
+<span class="sd">    # [iter   180 ll -12.49 time  0.16 reg  0.00 nugget 233.15]</span>
+<span class="sd">    # [iter   210 ll -12.49 time  0.15 reg  0.00 nugget 237.64]</span>
+<span class="sd">    # [iter   240 ll -12.49 time  0.15 reg  0.00 nugget 239.92]</span>
+<span class="sd">    # [iter   270 ll -12.49 time  0.15 reg  0.00 nugget 240.98]</span>
+<span class="sd">    # [iter   300 ll -12.49 time  0.15 reg  0.00 nugget 241.42]</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Notes</span>
@@ -9054,17 +9243,23 @@ in <code>self.locs</code>. This enables method chaining.</p>
     </table>
         <h6 id="src.geostat.model.Model.generate--examples">Examples</h6>
 <p>Generating synthetic values for a set of locations:</p>
-<pre><code>from geostat import GP, Model
+<pre><code>from geostat import GP, Model, Parameters
 from geostat.kernel import Noise
+import numpy as np
+
+# Create parameters.
+p = Parameters(nugget=1.)
 
 # Create model
-kernel = Noise(nugget=1.0)
+kernel = Noise(nugget=p.nugget)
 model = Model(GP(0, kernel))
 
 # Generate values based on locs
 locs = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
 model.generate(locs)
 generated_vals = model.vals  # Access the generated values
+print(generated_vals)
+# [0.45151083 1.23276189 0.3822659 ] (Values are non-deterministic)
 </code></pre>
 <h6 id="src.geostat.model.Model.generate--notes">Notes</h6>
 <ul>
@@ -9078,39 +9273,7 @@ the original order is restored before returning.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 955</span>
-<span class="normal"> 956</span>
-<span class="normal"> 957</span>
-<span class="normal"> 958</span>
-<span class="normal"> 959</span>
-<span class="normal"> 960</span>
-<span class="normal"> 961</span>
-<span class="normal"> 962</span>
-<span class="normal"> 963</span>
-<span class="normal"> 964</span>
-<span class="normal"> 965</span>
-<span class="normal"> 966</span>
-<span class="normal"> 967</span>
-<span class="normal"> 968</span>
-<span class="normal"> 969</span>
-<span class="normal"> 970</span>
-<span class="normal"> 971</span>
-<span class="normal"> 972</span>
-<span class="normal"> 973</span>
-<span class="normal"> 974</span>
-<span class="normal"> 975</span>
-<span class="normal"> 976</span>
-<span class="normal"> 977</span>
-<span class="normal"> 978</span>
-<span class="normal"> 979</span>
-<span class="normal"> 980</span>
-<span class="normal"> 981</span>
-<span class="normal"> 982</span>
-<span class="normal"> 983</span>
-<span class="normal"> 984</span>
-<span class="normal"> 985</span>
-<span class="normal"> 986</span>
-<span class="normal"> 987</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 987</span>
 <span class="normal"> 988</span>
 <span class="normal"> 989</span>
 <span class="normal"> 990</span>
@@ -9153,7 +9316,45 @@ the original order is restored before returning.</li>
 <span class="normal">1027</span>
 <span class="normal">1028</span>
 <span class="normal">1029</span>
-<span class="normal">1030</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span>
+<span class="normal">1045</span>
+<span class="normal">1046</span>
+<span class="normal">1047</span>
+<span class="normal">1048</span>
+<span class="normal">1049</span>
+<span class="normal">1050</span>
+<span class="normal">1051</span>
+<span class="normal">1052</span>
+<span class="normal">1053</span>
+<span class="normal">1054</span>
+<span class="normal">1055</span>
+<span class="normal">1056</span>
+<span class="normal">1057</span>
+<span class="normal">1058</span>
+<span class="normal">1059</span>
+<span class="normal">1060</span>
+<span class="normal">1061</span>
+<span class="normal">1062</span>
+<span class="normal">1063</span>
+<span class="normal">1064</span>
+<span class="normal">1065</span>
+<span class="normal">1066</span>
+<span class="normal">1067</span>
+<span class="normal">1068</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">cats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.</span>
 <span class="sd">    This method simulates values based on the GP&#39;s covariance structure, allowing for random sample generation.</span>
@@ -9175,17 +9376,23 @@ the original order is restored before returning.</li>
 <span class="sd">    Generating synthetic values for a set of locations:</span>
 
 <span class="sd">    ```</span>
-<span class="sd">    from geostat import GP, Model</span>
+<span class="sd">    from geostat import GP, Model, Parameters</span>
 <span class="sd">    from geostat.kernel import Noise</span>
+<span class="sd">    import numpy as np</span>
+
+<span class="sd">    # Create parameters.</span>
+<span class="sd">    p = Parameters(nugget=1.)</span>
 
 <span class="sd">    # Create model</span>
-<span class="sd">    kernel = Noise(nugget=1.0)</span>
+<span class="sd">    kernel = Noise(nugget=p.nugget)</span>
 <span class="sd">    model = Model(GP(0, kernel))</span>
 
 <span class="sd">    # Generate values based on locs</span>
 <span class="sd">    locs = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])</span>
 <span class="sd">    model.generate(locs)</span>
 <span class="sd">    generated_vals = model.vals  # Access the generated values</span>
+<span class="sd">    print(generated_vals)</span>
+<span class="sd">    # [0.45151083 1.23276189 0.3822659 ] (Values are non-deterministic)</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Notes</span>
@@ -9385,18 +9592,39 @@ Only valid if parameters are sampled. Default is None.</p>
     </table>
         <h6 id="src.geostat.model.Model.predict--examples">Examples</h6>
 <p>Making predictions for a set of locations:</p>
-<pre><code>from geostat import GP, Model
-from geostat.kernel import Noise
+<pre><code>from geostat import GP, Model, Parameters
+from geostat.kernel import SquaredExponential
+import numpy as np
+
+# Create parameters.
+p = Parameters(sill=1.0, range=2.0)
 
 # Create model
-kernel = Noise(nugget=1.0)
+kernel = SquaredExponential(sill=p.sill, range=p.range)
 model = Model(GP(0, kernel))
-locs2 = np.array([[7.0, 8.0], [9.0, 10.0]])
+
+# Fit model
+locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])
+vals = np.array([10.0, 15.0, 20.0])
+model.fit(locs, vals, step_size=0.05, iters=500)
+# [iter    50 ll -40.27 time  2.29 reg  0.00 sill  6.35 range  1.96]
+# [iter   100 ll -21.79 time  0.40 reg  0.00 sill 13.84 range  2.18]
+# [iter   150 ll -16.17 time  0.39 reg  0.00 sill 22.31 range  2.44]
+# [iter   200 ll -13.55 time  0.39 reg  0.00 sill 31.75 range  2.76]
+# [iter   250 ll -12.08 time  0.38 reg  0.00 sill 42.08 range  3.12]
+# [iter   300 ll -11.14 time  0.38 reg  0.00 sill 53.29 range  3.48]
+# [iter   350 ll -10.50 time  0.38 reg  0.00 sill 65.36 range  3.85]
+# [iter   400 ll -10.05 time  0.39 reg  0.00 sill 78.29 range  4.22]
+# [iter   450 ll -9.70 time  0.39 reg  0.00 sill 92.07 range  4.59]
+# [iter   500 ll -9.43 time  0.39 reg  0.00 sill 106.70 range  4.95]
+
+# Run predictions
+locs2 = np.array([[1.5, 1.5], [2.5, 4.0]])
 mean, variance = model.predict(locs2)
-</code></pre>
-<p>Making predictions with categorical data:</p>
-<pre><code>cats2 = np.array([1, 2])
-mean, variance = model.predict(locs2, cats2=cats2)
+print(&quot;Mean: &quot;, mean)
+# [ 9.89839798 18.77077269]
+print(&quot;Variance: &quot;, variance)
+# [2.1572128  0.54444738]
 </code></pre>
 <h6 id="src.geostat.model.Model.predict--notes">Notes</h6>
 <ul>
@@ -9410,45 +9638,7 @@ in a batched manner to support large datasets efficiently.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1032</span>
-<span class="normal">1033</span>
-<span class="normal">1034</span>
-<span class="normal">1035</span>
-<span class="normal">1036</span>
-<span class="normal">1037</span>
-<span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span>
-<span class="normal">1043</span>
-<span class="normal">1044</span>
-<span class="normal">1045</span>
-<span class="normal">1046</span>
-<span class="normal">1047</span>
-<span class="normal">1048</span>
-<span class="normal">1049</span>
-<span class="normal">1050</span>
-<span class="normal">1051</span>
-<span class="normal">1052</span>
-<span class="normal">1053</span>
-<span class="normal">1054</span>
-<span class="normal">1055</span>
-<span class="normal">1056</span>
-<span class="normal">1057</span>
-<span class="normal">1058</span>
-<span class="normal">1059</span>
-<span class="normal">1060</span>
-<span class="normal">1061</span>
-<span class="normal">1062</span>
-<span class="normal">1063</span>
-<span class="normal">1064</span>
-<span class="normal">1065</span>
-<span class="normal">1066</span>
-<span class="normal">1067</span>
-<span class="normal">1068</span>
-<span class="normal">1069</span>
-<span class="normal">1070</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1070</span>
 <span class="normal">1071</span>
 <span class="normal">1072</span>
 <span class="normal">1073</span>
@@ -9693,7 +9883,63 @@ in a batched manner to support large datasets efficiently.</li>
 <span class="normal">1312</span>
 <span class="normal">1313</span>
 <span class="normal">1314</span>
-<span class="normal">1315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">1315</span>
+<span class="normal">1316</span>
+<span class="normal">1317</span>
+<span class="normal">1318</span>
+<span class="normal">1319</span>
+<span class="normal">1320</span>
+<span class="normal">1321</span>
+<span class="normal">1322</span>
+<span class="normal">1323</span>
+<span class="normal">1324</span>
+<span class="normal">1325</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span>
+<span class="normal">1328</span>
+<span class="normal">1329</span>
+<span class="normal">1330</span>
+<span class="normal">1331</span>
+<span class="normal">1332</span>
+<span class="normal">1333</span>
+<span class="normal">1334</span>
+<span class="normal">1335</span>
+<span class="normal">1336</span>
+<span class="normal">1337</span>
+<span class="normal">1338</span>
+<span class="normal">1339</span>
+<span class="normal">1340</span>
+<span class="normal">1341</span>
+<span class="normal">1342</span>
+<span class="normal">1343</span>
+<span class="normal">1344</span>
+<span class="normal">1345</span>
+<span class="normal">1346</span>
+<span class="normal">1347</span>
+<span class="normal">1348</span>
+<span class="normal">1349</span>
+<span class="normal">1350</span>
+<span class="normal">1351</span>
+<span class="normal">1352</span>
+<span class="normal">1353</span>
+<span class="normal">1354</span>
+<span class="normal">1355</span>
+<span class="normal">1356</span>
+<span class="normal">1357</span>
+<span class="normal">1358</span>
+<span class="normal">1359</span>
+<span class="normal">1360</span>
+<span class="normal">1361</span>
+<span class="normal">1362</span>
+<span class="normal">1363</span>
+<span class="normal">1364</span>
+<span class="normal">1365</span>
+<span class="normal">1366</span>
+<span class="normal">1367</span>
+<span class="normal">1368</span>
+<span class="normal">1369</span>
+<span class="normal">1370</span>
+<span class="normal">1371</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs2</span><span class="p">,</span> <span class="n">cats2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subsample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tracker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pair</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs Gaussian Process (GP) predictions of the mean and variance for the given location data.</span>
 <span class="sd">    Supports batch predictions for large datasets and can handle categorical data.</span>
@@ -9726,21 +9972,39 @@ in a batched manner to support large datasets efficiently.</li>
 <span class="sd">    Making predictions for a set of locations:</span>
 
 <span class="sd">    ```</span>
-<span class="sd">    from geostat import GP, Model</span>
-<span class="sd">    from geostat.kernel import Noise</span>
+<span class="sd">    from geostat import GP, Model, Parameters</span>
+<span class="sd">    from geostat.kernel import SquaredExponential</span>
+<span class="sd">    import numpy as np</span>
+
+<span class="sd">    # Create parameters.</span>
+<span class="sd">    p = Parameters(sill=1.0, range=2.0)</span>
 
 <span class="sd">    # Create model</span>
-<span class="sd">    kernel = Noise(nugget=1.0)</span>
+<span class="sd">    kernel = SquaredExponential(sill=p.sill, range=p.range)</span>
 <span class="sd">    model = Model(GP(0, kernel))</span>
-<span class="sd">    locs2 = np.array([[7.0, 8.0], [9.0, 10.0]])</span>
+
+<span class="sd">    # Fit model</span>
+<span class="sd">    locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])</span>
+<span class="sd">    vals = np.array([10.0, 15.0, 20.0])</span>
+<span class="sd">    model.fit(locs, vals, step_size=0.05, iters=500)</span>
+<span class="sd">    # [iter    50 ll -40.27 time  2.29 reg  0.00 sill  6.35 range  1.96]</span>
+<span class="sd">    # [iter   100 ll -21.79 time  0.40 reg  0.00 sill 13.84 range  2.18]</span>
+<span class="sd">    # [iter   150 ll -16.17 time  0.39 reg  0.00 sill 22.31 range  2.44]</span>
+<span class="sd">    # [iter   200 ll -13.55 time  0.39 reg  0.00 sill 31.75 range  2.76]</span>
+<span class="sd">    # [iter   250 ll -12.08 time  0.38 reg  0.00 sill 42.08 range  3.12]</span>
+<span class="sd">    # [iter   300 ll -11.14 time  0.38 reg  0.00 sill 53.29 range  3.48]</span>
+<span class="sd">    # [iter   350 ll -10.50 time  0.38 reg  0.00 sill 65.36 range  3.85]</span>
+<span class="sd">    # [iter   400 ll -10.05 time  0.39 reg  0.00 sill 78.29 range  4.22]</span>
+<span class="sd">    # [iter   450 ll -9.70 time  0.39 reg  0.00 sill 92.07 range  4.59]</span>
+<span class="sd">    # [iter   500 ll -9.43 time  0.39 reg  0.00 sill 106.70 range  4.95]</span>
+
+<span class="sd">    # Run predictions</span>
+<span class="sd">    locs2 = np.array([[1.5, 1.5], [2.5, 4.0]])</span>
 <span class="sd">    mean, variance = model.predict(locs2)</span>
-<span class="sd">    ```</span>
-
-<span class="sd">    Making predictions with categorical data:</span>
-
-<span class="sd">    ```</span>
-<span class="sd">    cats2 = np.array([1, 2])</span>
-<span class="sd">    mean, variance = model.predict(locs2, cats2=cats2)</span>
+<span class="sd">    print(&quot;Mean: &quot;, mean)</span>
+<span class="sd">    # [ 9.89839798 18.77077269]</span>
+<span class="sd">    print(&quot;Variance: &quot;, variance)</span>
+<span class="sd">    # [2.1572128  0.54444738]</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Notes</span>
@@ -10075,11 +10339,14 @@ the value to be assigned to that parameter.</p>
     </table>
         <h6 id="src.geostat.model.Model.set--examples">Examples</h6>
 <p>Update parameter value using <code>set</code>:</p>
-<pre><code>from geostat import GP, Model
+<pre><code>from geostat import GP, Model, Parameters
 from geostat.kernel import Noise
 
+# Create parameters.
+p = Parameters(nugget=1.)
+
 # Create model
-kernel = Noise(nugget=1.0)
+kernel = Noise(nugget=p.nugget)
 model = Model(GP(0, kernel))
 
 # Update parameters
@@ -10094,12 +10361,7 @@ their values. The associated TensorFlow variables are also recreated.</li>
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">674</span>
-<span class="normal">675</span>
-<span class="normal">676</span>
-<span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">679</span>
 <span class="normal">680</span>
 <span class="normal">681</span>
 <span class="normal">682</span>
@@ -10143,7 +10405,15 @@ their values. The associated TensorFlow variables are also recreated.</li>
 <span class="normal">720</span>
 <span class="normal">721</span>
 <span class="normal">722</span>
-<span class="normal">723</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
+<span class="normal">723</span>
+<span class="normal">724</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sets the values of the model&#39;s parameters based on the provided keyword arguments.</span>
 <span class="sd">    Each parameter specified must exist in the model; otherwise, a `ValueError` is raised.</span>
@@ -10167,11 +10437,14 @@ their values. The associated TensorFlow variables are also recreated.</li>
 <span class="sd">    Update parameter value using `set`:</span>
 
 <span class="sd">    ```</span>
-<span class="sd">    from geostat import GP, Model</span>
+<span class="sd">    from geostat import GP, Model, Parameters</span>
 <span class="sd">    from geostat.kernel import Noise</span>
 
+<span class="sd">    # Create parameters.</span>
+<span class="sd">    p = Parameters(nugget=1.)</span>
+
 <span class="sd">    # Create model</span>
-<span class="sd">    kernel = Noise(nugget=1.0)</span>
+<span class="sd">    kernel = Noise(nugget=p.nugget)</span>
 <span class="sd">    model = Model(GP(0, kernel))</span>
 
 <span class="sd">    # Update parameters</span>
@@ -10191,7 +10464,7 @@ their values. The associated TensorFlow variables are also recreated.</li>
             <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">v</span>
             <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">create_tf_variable</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> is not a parameter&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is not a parameter&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -10302,8 +10575,7 @@ print(F_matrix) # F_matrix will contain normalized features with an additional i
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">338</span>
-<span class="normal">339</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">339</span>
 <span class="normal">340</span>
 <span class="normal">341</span>
 <span class="normal">342</span>
@@ -10365,7 +10637,8 @@ print(F_matrix) # F_matrix will contain normalized features with an additional i
 <span class="normal">398</span>
 <span class="normal">399</span>
 <span class="normal">400</span>
-<span class="normal">401</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">NormalizingFeaturizer</span><span class="p">:</span>
+<span class="normal">401</span>
+<span class="normal">402</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">NormalizingFeaturizer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    NormalizingFeaturizer class for producing normalized feature matrices (F matrix) with an intercept.</span>
 
@@ -10561,8 +10834,7 @@ with methods such as <code>g.fit()</code>, <code>g.generate()</code>, or <code>g
 
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">110</span>
-<span class="normal">111</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">111</span>
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
@@ -10615,7 +10887,8 @@ with methods such as <code>g.fit()</code>, <code>g.generate()</code>, or <code>g
 <span class="normal">161</span>
 <span class="normal">162</span>
 <span class="normal">163</span>
-<span class="normal">164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Mix</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">164</span>
+<span class="normal">165</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Mix</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Linearly combines multiple Gaussian Processes (GPs) into a single GP using specified weights.</span>
 
