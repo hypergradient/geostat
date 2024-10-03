@@ -90,14 +90,14 @@ class Kernel(Op):
 
     def call(self, e):
         """
-        Returns tuple `(mean, covariance)` for locations.
+        Returns covariance for locations.
         Return values may be unbroadcasted.
         """
         pass
 
     def __call__(self, e):
         """
-        Returns tuple `(mean, covariance)` for locations.
+        Returns covariance for locations.
         Return values have correct shapes.
         """
         C = self.call(e)
