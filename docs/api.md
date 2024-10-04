@@ -86,7 +86,7 @@
 
 --- -->
 
-::: src.geostat.model
+<!-- ::: src.geostat.model
     options:
         show_root_heading: True
         show_source: True
@@ -94,7 +94,7 @@
           - "!Warp"
           - "!gp_covariance2"
           - "!interpolate_1d_tf"
-          - "!mvn_log_pdf"
+          - "!mvn_log_pdf" -->
 
 <!-- ---
 
