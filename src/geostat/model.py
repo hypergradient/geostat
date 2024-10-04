@@ -47,42 +47,42 @@ class GP:
             The kernel function of the Gaussian Process. This parameter is required.
 
     Examples:
-    Creating a simple Gaussian Process with default mean and a Noise kernel:
+        Creating a simple Gaussian Process with default mean and a Noise kernel:
 
-    ```
-    import geostat.mean as mn
-    import geostat.kernel as krn
-    from geostat import Parameters, GP
-    p = Parameters(nugget=1., sill=1., beta=[4., 3., 2., 1.])
-    kernel = krn.Noise(p.nugget)
-    gp = GP(kernel=kernel)
-    ```
-    
-    The mean defaults to ZeroTrend if not provided.
+        ```
+        import geostat.mean as mn
+        import geostat.kernel as krn
+        from geostat import Parameters, GP
+        p = Parameters(nugget=1., sill=1., beta=[4., 3., 2., 1.])
+        kernel = krn.Noise(p.nugget)
+        gp = GP(kernel=kernel)
+        ```
+        
+        The mean defaults to ZeroTrend if not provided.
 
-    ```
-    print(gp.mean)
-    # ZeroTrend(fa={}, autoinputs={'locs1': 'locs1'})
-    ```
-    
-    Specifying both mean and kernel:
+        ```
+        print(gp.mean)
+        # ZeroTrend(fa={}, autoinputs={'locs1': 'locs1'})
+        ```
+        
+        Specifying both mean and kernel:
 
-    ```
-    @geostat.featurizer()
-    def trend_featurizer(x, y): return 1., x, y, x*y
-    mean_function = mn.Trend(trend_featurizer, beta=p.beta)
-    gp = GP(mean=mean_function, kernel=kernel)
-    ```
+        ```
+        @geostat.featurizer()
+        def trend_featurizer(x, y): return 1., x, y, x*y
+        mean_function = mn.Trend(trend_featurizer, beta=p.beta)
+        gp = GP(mean=mean_function, kernel=kernel)
+        ```
 
-    Adding two GP objects:
+        Adding two GP objects:
 
-    ```
-    gp1 = GP(kernel=krn.Noise(p.nugget))
-    gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))
-    combined_gp = gp1 + gp2
-    print("Combined Mean: ", combined_gp.mean)  # <Trend object>
-    print("Combined Kernel: ", combined_gp.kernel)  # <Stack object>
-    ```
+        ```
+        gp1 = GP(kernel=krn.Noise(p.nugget))
+        gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))
+        combined_gp = gp1 + gp2
+        print("Combined Mean: ", combined_gp.mean)  # <Trend object>
+        print("Combined Kernel: ", combined_gp.kernel)  # <Stack object>
+        ```
 
     Notes:
     - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.
