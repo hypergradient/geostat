@@ -85,8 +85,8 @@ class GP:
         ```
 
     Notes:
-    - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.
-    - Ensure that the kernel is always provided upon initialization.
+        - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.
+        - Ensure that the kernel is always provided upon initialization.
     """
 
     mean: mn.Trend = None
