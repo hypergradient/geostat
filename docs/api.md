@@ -14,6 +14,34 @@
 
 ---
 
+::: src.geostat.model.NormalizingFeaturizer
+    options:
+        show_root_heading: True
+        show_source: True
+
+---
+
+::: src.geostat.model.GP
+    options:
+        show_root_heading: True
+        show_source: True
+
+---
+
+::: src.geostat.model.Mix
+    options:
+        show_root_heading: True
+        show_source: True
+
+---
+
+::: src.geostat.model.Model
+    options:
+        show_root_heading: True
+        show_source: True
+
+---
+
 ::: src.geostat.kernel
     options:
         show_root_heading: True
