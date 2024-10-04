@@ -6705,10 +6705,15 @@ combined_gp = gp1 + gp2
 print(&quot;Combined Mean: &quot;, combined_gp.mean)  # &lt;Trend object&gt;
 print(&quot;Combined Kernel: &quot;, combined_gp.kernel)  # &lt;Stack object&gt;
 </code></pre>
-        <p>Notes:
-- The <code>__tf_tracing_type__</code> method is used for TensorFlow tracing purposes and typically not called directly.
-- Ensure that the kernel is always provided upon initialization.</p>
 
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>The <code>__tf_tracing_type__</code> method is used for TensorFlow tracing purposes and typically not called directly.</li>
+<li>Ensure that the kernel is always provided upon initialization.</li>
+</ul>
+</details>
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
                 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 31</span>
@@ -6844,8 +6849,8 @@ print(&quot;Combined Kernel: &quot;, combined_gp.kernel)  # &lt;Stack object&gt;
 <span class="sd">        ```</span>
 
 <span class="sd">    Notes:</span>
-<span class="sd">    - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.</span>
-<span class="sd">    - Ensure that the kernel is always provided upon initialization.</span>
+<span class="sd">        - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.</span>
+<span class="sd">        - Ensure that the kernel is always provided upon initialization.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">mean</span><span class="p">:</span> <span class="n">mn</span><span class="o">.</span><span class="n">Trend</span> <span class="o">=</span> <span class="kc">None</span>
