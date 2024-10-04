@@ -2207,14 +2207,23 @@ variance (sill) in the GP model.</p>
     </table>
         <h5 id="src.geostat.kernel.Constant--examples">Examples</h5>
 <p>Creating and using a <code>Constant</code> kernel:</p>
-<pre><code>from geostat.kernel import Constant
+<pre><code>from geostat import Parameters
+from geostat.kernel import Constant
+import numpy as np
 
-# Create a Constant kernel with a sill value of 2.0
-constant_kernel = Constant(sill=2.0)
+# Create parameters.
+p = Parameters(sill=2.0)
 
+# Create a Constant kernel with a sill value of 2.0 and call it
 locs1 = np.array([[0.0], [1.0], [2.0]])
 locs2 = np.array([[0.0], [1.0], [2.0]])
+constant_kernel = Constant(sill=p.sill)
 covariance_matrix = constant_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 2.0})
+print(covariance_matrix)
+# tf.Tensor(
+# [[2. 2. 2.]
+#  [2. 2. 2.]
+#  [2. 2. 2.]], shape=(3, 3), dtype=float32)
 </code></pre>
 <h5 id="src.geostat.kernel.Constant--notes">Notes</h5>
 <ul>
@@ -2225,14 +2234,7 @@ covariance_matrix = constant_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 2.0
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">180</span>
 <span class="normal">181</span>
 <span class="normal">182</span>
 <span class="normal">183</span>
@@ -2267,7 +2269,23 @@ covariance_matrix = constant_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 2.0
 <span class="normal">212</span>
 <span class="normal">213</span>
 <span class="normal">214</span>
-<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Constant</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Constant</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constant kernel class for Gaussian Processes (GPs).</span>
 
@@ -2284,14 +2302,23 @@ covariance_matrix = constant_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 2.0
 <span class="sd">    Creating and using a `Constant` kernel:</span>
 
 <span class="sd">    ```</span>
+<span class="sd">    from geostat import Parameters</span>
 <span class="sd">    from geostat.kernel import Constant</span>
+<span class="sd">    import numpy as np</span>
 
-<span class="sd">    # Create a Constant kernel with a sill value of 2.0</span>
-<span class="sd">    constant_kernel = Constant(sill=2.0)</span>
+<span class="sd">    # Create parameters.</span>
+<span class="sd">    p = Parameters(sill=2.0)</span>
 
+<span class="sd">    # Create a Constant kernel with a sill value of 2.0 and call it</span>
 <span class="sd">    locs1 = np.array([[0.0], [1.0], [2.0]])</span>
 <span class="sd">    locs2 = np.array([[0.0], [1.0], [2.0]])</span>
+<span class="sd">    constant_kernel = Constant(sill=p.sill)</span>
 <span class="sd">    covariance_matrix = constant_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;sill&#39;: 2.0})</span>
+<span class="sd">    print(covariance_matrix)</span>
+<span class="sd">    # tf.Tensor(</span>
+<span class="sd">    # [[2. 2. 2.]</span>
+<span class="sd">    #  [2. 2. 2.]</span>
+<span class="sd">    #  [2. 2. 2.]], shape=(3, 3), dtype=float32)</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Notes</span>
@@ -2423,23 +2450,7 @@ covariance_matrix = delta_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0})
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 939</span>
-<span class="normal"> 940</span>
-<span class="normal"> 941</span>
-<span class="normal"> 942</span>
-<span class="normal"> 943</span>
-<span class="normal"> 944</span>
-<span class="normal"> 945</span>
-<span class="normal"> 946</span>
-<span class="normal"> 947</span>
-<span class="normal"> 948</span>
-<span class="normal"> 949</span>
-<span class="normal"> 950</span>
-<span class="normal"> 951</span>
-<span class="normal"> 952</span>
-<span class="normal"> 953</span>
-<span class="normal"> 954</span>
-<span class="normal"> 955</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 955</span>
 <span class="normal"> 956</span>
 <span class="normal"> 957</span>
 <span class="normal"> 958</span>
@@ -2486,7 +2497,23 @@ covariance_matrix = delta_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0})
 <span class="normal"> 999</span>
 <span class="normal">1000</span>
 <span class="normal">1001</span>
-<span class="normal">1002</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Delta</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span>
+<span class="normal">1018</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Delta</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Delta kernel class for Gaussian Processes (GPs).</span>
 
@@ -2702,23 +2729,7 @@ covariance_matrix = gamma_exp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">287</span>
 <span class="normal">288</span>
 <span class="normal">289</span>
 <span class="normal">290</span>
@@ -2757,7 +2768,23 @@ covariance_matrix = gamma_exp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.
 <span class="normal">323</span>
 <span class="normal">324</span>
 <span class="normal">325</span>
-<span class="normal">326</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GammaExponential</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GammaExponential</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    GammaExponential kernel class for Gaussian Processes (GPs).</span>
 
@@ -2935,23 +2962,7 @@ covariance_matrix = int_exp_kernel({'locs1': locs1, 'locs2': locs2, 'range': 2.0
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">820</span>
-<span class="normal">821</span>
-<span class="normal">822</span>
-<span class="normal">823</span>
-<span class="normal">824</span>
-<span class="normal">825</span>
-<span class="normal">826</span>
-<span class="normal">827</span>
-<span class="normal">828</span>
-<span class="normal">829</span>
-<span class="normal">830</span>
-<span class="normal">831</span>
-<span class="normal">832</span>
-<span class="normal">833</span>
-<span class="normal">834</span>
-<span class="normal">835</span>
-<span class="normal">836</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">836</span>
 <span class="normal">837</span>
 <span class="normal">838</span>
 <span class="normal">839</span>
@@ -3001,7 +3012,23 @@ covariance_matrix = int_exp_kernel({'locs1': locs1, 'locs2': locs2, 'range': 2.0
 <span class="normal">883</span>
 <span class="normal">884</span>
 <span class="normal">885</span>
-<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">IntExponential</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">886</span>
+<span class="normal">887</span>
+<span class="normal">888</span>
+<span class="normal">889</span>
+<span class="normal">890</span>
+<span class="normal">891</span>
+<span class="normal">892</span>
+<span class="normal">893</span>
+<span class="normal">894</span>
+<span class="normal">895</span>
+<span class="normal">896</span>
+<span class="normal">897</span>
+<span class="normal">898</span>
+<span class="normal">899</span>
+<span class="normal">900</span>
+<span class="normal">901</span>
+<span class="normal">902</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">IntExponential</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Integrated Exponential (IntExponential) kernel class for Gaussian Processes (GPs).</span>
 
@@ -3190,23 +3217,7 @@ covariance_matrix = int_sq_exp_kernel({'locs1': locs1, 'locs2': locs2, 'range': 
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">752</span>
-<span class="normal">753</span>
-<span class="normal">754</span>
-<span class="normal">755</span>
-<span class="normal">756</span>
-<span class="normal">757</span>
-<span class="normal">758</span>
-<span class="normal">759</span>
-<span class="normal">760</span>
-<span class="normal">761</span>
-<span class="normal">762</span>
-<span class="normal">763</span>
-<span class="normal">764</span>
-<span class="normal">765</span>
-<span class="normal">766</span>
-<span class="normal">767</span>
-<span class="normal">768</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">768</span>
 <span class="normal">769</span>
 <span class="normal">770</span>
 <span class="normal">771</span>
@@ -3256,7 +3267,23 @@ covariance_matrix = int_sq_exp_kernel({'locs1': locs1, 'locs2': locs2, 'range': 
 <span class="normal">815</span>
 <span class="normal">816</span>
 <span class="normal">817</span>
-<span class="normal">818</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">IntSquaredExponential</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">818</span>
+<span class="normal">819</span>
+<span class="normal">820</span>
+<span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">IntSquaredExponential</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Integrated Squared Exponential (IntSquaredExponential) kernel class for Gaussian Processes (GPs).</span>
 
@@ -3414,10 +3441,17 @@ covariance matrix between sets of locations.</p>
         <h5 id="src.geostat.kernel.Kernel--examples">Examples</h5>
 <p>Creating and using a <code>Kernel</code> object:</p>
 <pre><code>from geostat.kernel import Kernel
-kernel = Kernel(fa={'alpha': 1.0}, autoinputs={})
+import numpy as np
+
+# Construct kernel and call it on locations
 locs1 = np.array([[0.0, 0.0], [1.0, 1.0]])
 locs2 = np.array([[2.0, 2.0], [3.0, 3.0]])
+kernel = Kernel(fa={'alpha': 1.0}, autoinputs={})
 covariance_matrix = kernel({'locs1': locs1, 'locs2': locs2})
+print(covariance_matrix) # Covariance matrix only has zero entries as no kernel function was given
+# tf.Tensor(
+# [[0. 0.]
+#  [0. 0.]], shape=(2, 2), dtype=float32)
 </code></pre>
 <p>Combining two kernels using addition and multiplication:</p>
 <pre><code>kernel1 = Kernel(fa={'alpha': 1.0}, autoinputs={})
@@ -3516,7 +3550,14 @@ product_kernel = kernel1 * kernel2   # Multiplying kernels
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Kernel</span><span class="p">(</span><span class="n">Op</span><span class="p">):</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Kernel</span><span class="p">(</span><span class="n">Op</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Kernel class representing a covariance function for Gaussian Processes (GPs).</span>
 
@@ -3538,10 +3579,17 @@ product_kernel = kernel1 * kernel2   # Multiplying kernels
 
 <span class="sd">    ```</span>
 <span class="sd">    from geostat.kernel import Kernel</span>
-<span class="sd">    kernel = Kernel(fa={&#39;alpha&#39;: 1.0}, autoinputs={})</span>
+<span class="sd">    import numpy as np</span>
+
+<span class="sd">    # Construct kernel and call it on locations</span>
 <span class="sd">    locs1 = np.array([[0.0, 0.0], [1.0, 1.0]])</span>
 <span class="sd">    locs2 = np.array([[2.0, 2.0], [3.0, 3.0]])</span>
+<span class="sd">    kernel = Kernel(fa={&#39;alpha&#39;: 1.0}, autoinputs={})</span>
 <span class="sd">    covariance_matrix = kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2})</span>
+<span class="sd">    print(covariance_matrix) # Covariance matrix only has zero entries as no kernel function was given</span>
+<span class="sd">    # tf.Tensor(</span>
+<span class="sd">    # [[0. 0.]</span>
+<span class="sd">    #  [0. 0.]], shape=(2, 2), dtype=float32)</span>
 <span class="sd">    ```</span>
 
 <span class="sd">    Combining two kernels using addition and multiplication:</span>
@@ -3578,14 +3626,14 @@ product_kernel = kernel1 * kernel2   # Multiplying kernels
 
     <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns tuple `(mean, covariance)` for locations.</span>
+<span class="sd">        Returns covariance for locations.</span>
 <span class="sd">        Return values may be unbroadcasted.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns tuple `(mean, covariance)` for locations.</span>
+<span class="sd">        Returns covariance for locations.</span>
 <span class="sd">        Return values have correct shapes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
@@ -3715,23 +3763,7 @@ covariance_matrix = mixed_kernel({'locs1': locs1, 'locs2': locs2, 'weights': [[0
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1004</span>
-<span class="normal">1005</span>
-<span class="normal">1006</span>
-<span class="normal">1007</span>
-<span class="normal">1008</span>
-<span class="normal">1009</span>
-<span class="normal">1010</span>
-<span class="normal">1011</span>
-<span class="normal">1012</span>
-<span class="normal">1013</span>
-<span class="normal">1014</span>
-<span class="normal">1015</span>
-<span class="normal">1016</span>
-<span class="normal">1017</span>
-<span class="normal">1018</span>
-<span class="normal">1019</span>
-<span class="normal">1020</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1020</span>
 <span class="normal">1021</span>
 <span class="normal">1022</span>
 <span class="normal">1023</span>
@@ -3831,7 +3863,23 @@ covariance_matrix = mixed_kernel({'locs1': locs1, 'locs2': locs2, 'weights': [[0
 <span class="normal">1117</span>
 <span class="normal">1118</span>
 <span class="normal">1119</span>
-<span class="normal">1120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Mix</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">1120</span>
+<span class="normal">1121</span>
+<span class="normal">1122</span>
+<span class="normal">1123</span>
+<span class="normal">1124</span>
+<span class="normal">1125</span>
+<span class="normal">1126</span>
+<span class="normal">1127</span>
+<span class="normal">1128</span>
+<span class="normal">1129</span>
+<span class="normal">1130</span>
+<span class="normal">1131</span>
+<span class="normal">1132</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Mix</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Mix kernel class for combining multiple Gaussian Process (GP) kernels.</span>
 
@@ -4043,23 +4091,7 @@ covariance_matrix = noise_kernel({'locs1': locs1, 'locs2': locs2, 'nugget': 0.1}
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">888</span>
-<span class="normal">889</span>
-<span class="normal">890</span>
-<span class="normal">891</span>
-<span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
-<span class="normal">895</span>
-<span class="normal">896</span>
-<span class="normal">897</span>
-<span class="normal">898</span>
-<span class="normal">899</span>
-<span class="normal">900</span>
-<span class="normal">901</span>
-<span class="normal">902</span>
-<span class="normal">903</span>
-<span class="normal">904</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">904</span>
 <span class="normal">905</span>
 <span class="normal">906</span>
 <span class="normal">907</span>
@@ -4092,7 +4124,23 @@ covariance_matrix = noise_kernel({'locs1': locs1, 'locs2': locs2, 'nugget': 0.1}
 <span class="normal">934</span>
 <span class="normal">935</span>
 <span class="normal">936</span>
-<span class="normal">937</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Noise</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">937</span>
+<span class="normal">938</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span>
+<span class="normal">945</span>
+<span class="normal">946</span>
+<span class="normal">947</span>
+<span class="normal">948</span>
+<span class="normal">949</span>
+<span class="normal">950</span>
+<span class="normal">951</span>
+<span class="normal">952</span>
+<span class="normal">953</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Noise</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Noise kernel class for Gaussian Processes (GPs).</span>
 
@@ -4243,23 +4291,7 @@ combined_product = product_kernel * kernel3
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1185</span>
-<span class="normal">1186</span>
-<span class="normal">1187</span>
-<span class="normal">1188</span>
-<span class="normal">1189</span>
-<span class="normal">1190</span>
-<span class="normal">1191</span>
-<span class="normal">1192</span>
-<span class="normal">1193</span>
-<span class="normal">1194</span>
-<span class="normal">1195</span>
-<span class="normal">1196</span>
-<span class="normal">1197</span>
-<span class="normal">1198</span>
-<span class="normal">1199</span>
-<span class="normal">1200</span>
-<span class="normal">1201</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1201</span>
 <span class="normal">1202</span>
 <span class="normal">1203</span>
 <span class="normal">1204</span>
@@ -4304,7 +4336,23 @@ combined_product = product_kernel * kernel3
 <span class="normal">1243</span>
 <span class="normal">1244</span>
 <span class="normal">1245</span>
-<span class="normal">1246</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Product</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">1246</span>
+<span class="normal">1247</span>
+<span class="normal">1248</span>
+<span class="normal">1249</span>
+<span class="normal">1250</span>
+<span class="normal">1251</span>
+<span class="normal">1252</span>
+<span class="normal">1253</span>
+<span class="normal">1254</span>
+<span class="normal">1255</span>
+<span class="normal">1256</span>
+<span class="normal">1257</span>
+<span class="normal">1258</span>
+<span class="normal">1259</span>
+<span class="normal">1260</span>
+<span class="normal">1261</span>
+<span class="normal">1262</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Product</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Product kernel class for combining multiple Gaussian Process (GP) kernels multiplicatively.</span>
 
@@ -4503,23 +4551,7 @@ covariance_matrix = quad_stack_kernel({'locs1': locs1, 'locs2': locs2, 'sill': [
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">635</span>
-<span class="normal">636</span>
-<span class="normal">637</span>
-<span class="normal">638</span>
-<span class="normal">639</span>
-<span class="normal">640</span>
-<span class="normal">641</span>
-<span class="normal">642</span>
-<span class="normal">643</span>
-<span class="normal">644</span>
-<span class="normal">645</span>
-<span class="normal">646</span>
-<span class="normal">647</span>
-<span class="normal">648</span>
-<span class="normal">649</span>
-<span class="normal">650</span>
-<span class="normal">651</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">651</span>
 <span class="normal">652</span>
 <span class="normal">653</span>
 <span class="normal">654</span>
@@ -4560,7 +4592,23 @@ covariance_matrix = quad_stack_kernel({'locs1': locs1, 'locs2': locs2, 'sill': [
 <span class="normal">689</span>
 <span class="normal">690</span>
 <span class="normal">691</span>
-<span class="normal">692</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">QuadStack</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span>
+<span class="normal">708</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">QuadStack</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    QuadStack kernel class for Gaussian Processes (GPs).</span>
 
@@ -4753,23 +4801,7 @@ covariance_matrix = ramp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0, 'r
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">335</span>
-<span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
-<span class="normal">339</span>
-<span class="normal">340</span>
-<span class="normal">341</span>
-<span class="normal">342</span>
-<span class="normal">343</span>
-<span class="normal">344</span>
-<span class="normal">345</span>
-<span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span>
-<span class="normal">351</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">351</span>
 <span class="normal">352</span>
 <span class="normal">353</span>
 <span class="normal">354</span>
@@ -4803,7 +4835,23 @@ covariance_matrix = ramp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0, 'r
 <span class="normal">382</span>
 <span class="normal">383</span>
 <span class="normal">384</span>
-<span class="normal">385</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Ramp</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Ramp</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Ramp kernel class for Gaussian Processes (GPs).</span>
 
@@ -4991,23 +5039,7 @@ covariance_matrix = ramp_stack_kernel({'locs1': locs1, 'locs2': locs2, 'sill': [
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">426</span>
-<span class="normal">427</span>
-<span class="normal">428</span>
-<span class="normal">429</span>
-<span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
-<span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
-<span class="normal">442</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">442</span>
 <span class="normal">443</span>
 <span class="normal">444</span>
 <span class="normal">445</span>
@@ -5048,7 +5080,23 @@ covariance_matrix = ramp_stack_kernel({'locs1': locs1, 'locs2': locs2, 'sill': [
 <span class="normal">480</span>
 <span class="normal">481</span>
 <span class="normal">482</span>
-<span class="normal">483</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">RampStack</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">RampStack</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    RampStack kernel class for Gaussian Processes (GPs).</span>
 
@@ -5243,23 +5291,7 @@ covariance_matrix = smooth_convex_kernel({'locs1': locs1, 'locs2': locs2, 'sill'
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">565</span>
-<span class="normal">566</span>
-<span class="normal">567</span>
-<span class="normal">568</span>
-<span class="normal">569</span>
-<span class="normal">570</span>
-<span class="normal">571</span>
-<span class="normal">572</span>
-<span class="normal">573</span>
-<span class="normal">574</span>
-<span class="normal">575</span>
-<span class="normal">576</span>
-<span class="normal">577</span>
-<span class="normal">578</span>
-<span class="normal">579</span>
-<span class="normal">580</span>
-<span class="normal">581</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">581</span>
 <span class="normal">582</span>
 <span class="normal">583</span>
 <span class="normal">584</span>
@@ -5300,7 +5332,23 @@ covariance_matrix = smooth_convex_kernel({'locs1': locs1, 'locs2': locs2, 'sill'
 <span class="normal">619</span>
 <span class="normal">620</span>
 <span class="normal">621</span>
-<span class="normal">622</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SmoothConvex</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SmoothConvex</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SmoothConvex kernel class for Gaussian Processes (GPs).</span>
 
@@ -5495,23 +5543,7 @@ covariance_matrix = sq_exp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0, 
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">233</span>
 <span class="normal">234</span>
 <span class="normal">235</span>
 <span class="normal">236</span>
@@ -5547,7 +5579,23 @@ covariance_matrix = sq_exp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0, 
 <span class="normal">266</span>
 <span class="normal">267</span>
 <span class="normal">268</span>
-<span class="normal">269</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SquaredExponential</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SquaredExponential</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SquaredExponential kernel class for Gaussian Processes (GPs).</span>
 
@@ -5701,23 +5749,7 @@ combined_stack = stacked_kernel + kernel3
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1122</span>
-<span class="normal">1123</span>
-<span class="normal">1124</span>
-<span class="normal">1125</span>
-<span class="normal">1126</span>
-<span class="normal">1127</span>
-<span class="normal">1128</span>
-<span class="normal">1129</span>
-<span class="normal">1130</span>
-<span class="normal">1131</span>
-<span class="normal">1132</span>
-<span class="normal">1133</span>
-<span class="normal">1134</span>
-<span class="normal">1135</span>
-<span class="normal">1136</span>
-<span class="normal">1137</span>
-<span class="normal">1138</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1138</span>
 <span class="normal">1139</span>
 <span class="normal">1140</span>
 <span class="normal">1141</span>
@@ -5762,7 +5794,23 @@ combined_stack = stacked_kernel + kernel3
 <span class="normal">1180</span>
 <span class="normal">1181</span>
 <span class="normal">1182</span>
-<span class="normal">1183</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Stack</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span>
+<span class="normal">1191</span>
+<span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span>
+<span class="normal">1199</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Stack</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Stack kernel class for combining multiple Gaussian Process (GP) kernels additively.</span>
 
@@ -5938,14 +5986,7 @@ covariance_matrix = trend_prior_kernel({'locs1': locs1, 'locs2': locs2, 'alpha':
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
 <span class="normal">117</span>
@@ -5993,7 +6034,14 @@ covariance_matrix = trend_prior_kernel({'locs1': locs1, 'locs2': locs2, 'alpha':
 <span class="normal">159</span>
 <span class="normal">160</span>
 <span class="normal">161</span>
-<span class="normal">162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TrendPrior</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TrendPrior</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    TrendPrior class representing a kernel with a linear trend prior for Gaussian Processes (GPs).</span>
 
@@ -6157,23 +6205,7 @@ covariance_matrix = wiener_kernel({'locs1': locs1, 'locs2': locs2})
 
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">694</span>
-<span class="normal">695</span>
-<span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span>
-<span class="normal">699</span>
-<span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span>
-<span class="normal">708</span>
-<span class="normal">709</span>
-<span class="normal">710</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">710</span>
 <span class="normal">711</span>
 <span class="normal">712</span>
 <span class="normal">713</span>
@@ -6213,7 +6245,23 @@ covariance_matrix = wiener_kernel({'locs1': locs1, 'locs2': locs2})
 <span class="normal">747</span>
 <span class="normal">748</span>
 <span class="normal">749</span>
-<span class="normal">750</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Wiener</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
+<span class="normal">750</span>
+<span class="normal">751</span>
+<span class="normal">752</span>
+<span class="normal">753</span>
+<span class="normal">754</span>
+<span class="normal">755</span>
+<span class="normal">756</span>
+<span class="normal">757</span>
+<span class="normal">758</span>
+<span class="normal">759</span>
+<span class="normal">760</span>
+<span class="normal">761</span>
+<span class="normal">762</span>
+<span class="normal">763</span>
+<span class="normal">764</span>
+<span class="normal">765</span>
+<span class="normal">766</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Wiener</span><span class="p">(</span><span class="n">Kernel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wiener kernel class for Gaussian Processes (GPs).</span>
 
@@ -8451,9 +8499,9 @@ model = Model(gp=gp, locs=locs, vals=vals)
 <span class="sd">        # Run predictions</span>
 <span class="sd">        locs2 = np.array([[1.5, 1.5], [2.5, 4.0]])</span>
 <span class="sd">        mean, variance = model.predict(locs2)</span>
-<span class="sd">        print(&quot;Mean: &quot;, mean)</span>
+<span class="sd">        print(mean)</span>
 <span class="sd">        # [ 9.89839798 18.77077269]</span>
-<span class="sd">        print(&quot;Variance: &quot;, variance)</span>
+<span class="sd">        print(variance)</span>
 <span class="sd">        # [2.1572128  0.54444738]</span>
 <span class="sd">        ```</span>
 
@@ -9621,9 +9669,9 @@ model.fit(locs, vals, step_size=0.05, iters=500)
 # Run predictions
 locs2 = np.array([[1.5, 1.5], [2.5, 4.0]])
 mean, variance = model.predict(locs2)
-print(&quot;Mean: &quot;, mean)
+print(mean)
 # [ 9.89839798 18.77077269]
-print(&quot;Variance: &quot;, variance)
+print(variance)
 # [2.1572128  0.54444738]
 </code></pre>
 <h6 id="src.geostat.model.Model.predict--notes">Notes</h6>
@@ -10001,9 +10049,9 @@ in a batched manner to support large datasets efficiently.</li>
 <span class="sd">    # Run predictions</span>
 <span class="sd">    locs2 = np.array([[1.5, 1.5], [2.5, 4.0]])</span>
 <span class="sd">    mean, variance = model.predict(locs2)</span>
-<span class="sd">    print(&quot;Mean: &quot;, mean)</span>
+<span class="sd">    print(mean)</span>
 <span class="sd">    # [ 9.89839798 18.77077269]</span>
-<span class="sd">    print(&quot;Variance: &quot;, variance)</span>
+<span class="sd">    print(variance)</span>
 <span class="sd">    # [2.1572128  0.54444738]</span>
 <span class="sd">    ```</span>
 
