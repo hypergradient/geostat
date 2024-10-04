@@ -46,8 +46,7 @@ class GP:
         kernel (krn.Kernel):
             The kernel function of the Gaussian Process. This parameter is required.
 
-    Examples
-    --------
+    Examples:
     Creating a simple Gaussian Process with default mean and a Noise kernel:
 
     ```
@@ -85,8 +84,7 @@ class GP:
     print("Combined Kernel: ", combined_gp.kernel)  # <Stack object>
     ```
 
-    Notes
-    -----
+    Notes:
     - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.
     - Ensure that the kernel is always provided upon initialization.
     """
