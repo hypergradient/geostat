@@ -166,8 +166,6 @@ class TrendPrior(Kernel):
     def call(self, e):
         F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
         F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
-        print(F1)
-        print(F2)
         return e['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
 
 def scale_to_metric(scale, metric):
