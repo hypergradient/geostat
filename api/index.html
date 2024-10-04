@@ -259,6 +259,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#src.geostat.model.Featurizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Featurizer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#src.geostat.kernel" class="md-nav__link">
     <span class="md-ellipsis">
       kernel
@@ -603,6 +612,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#src.geostat.model.Featurizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Featurizer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#src.geostat.kernel" class="md-nav__link">
     <span class="md-ellipsis">
       kernel
@@ -895,6 +913,264 @@
 
 --- -->
 
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="src.geostat.model.Featurizer" class="doc doc-heading">
+            <code>src.geostat.model.Featurizer</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents first">
+
+
+        <p>Featurizer class for producing feature matrices (F matrix) from location data.</p>
+<p>The <code>Featurizer</code> applies a specified featurization function to the input location data 
+and generates the corresponding feature matrix. If no featurization function is provided, 
+it produces a matrix with appropriate dimensions containing only ones.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>featurization</code></td>
+            <td>
+                  <code><span title="typing.Callable">Callable</span> or None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A function that takes in the individual components of location data and returns the features.
+If set to <code>None</code>, the featurizer will produce an empty feature matrix (i.e., only ones).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <p>Creating a <code>Featurizer</code> using a custom featurization function:</p>
+<pre><code>import tensorflow as tf
+from geostat.model import Featurizer
+
+# Define a custom featurization function
+def simple_featurizer(x, y):
+    return x, y, x * y
+
+# Initialize the Featurizer
+featurizer = Featurizer(simple_featurizer)
+</code></pre>
+<p>Using the <code>Featurizer</code> to transform location data:</p>
+<pre><code>locs = tf.constant([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+F_matrix = featurizer(locs)
+print(F_matrix) # F_matrix will contain the features: (x, y, x*y) for each location
+# tf.Tensor(
+# [[ 1.  2.  2.]
+#  [ 3.  4. 12.]
+#  [ 5.  6. 30.]], shape=(3, 3), dtype=float32)
+</code></pre>
+<p>Handling the case where no featurization is provided:</p>
+<pre><code>featurizer_no_feat = Featurizer(None)
+F_matrix = featurizer_no_feat(locs)
+print(F_matrix) # Since no featurization function is provided, F_matrix will have shape (3, 0)
+# tf.Tensor([], shape=(3, 0), dtype=float32)
+</code></pre>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>The <code>__call__</code> method is used to apply the featurization to input location data.</li>
+<li>If <code>featurization</code> returns a tuple, it is assumed to represent multiple features, 
+which will be stacked to form the feature matrix.</li>
+</ul>
+</details>
+              <details class="quote">
+                <summary>Source code in <code>src/geostat/model.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Featurizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Featurizer class for producing feature matrices (F matrix) from location data.</span>
+
+<span class="sd">    The `Featurizer` applies a specified featurization function to the input location data </span>
+<span class="sd">    and generates the corresponding feature matrix. If no featurization function is provided, </span>
+<span class="sd">    it produces a matrix with appropriate dimensions containing only ones.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        featurization (Callable or None):</span>
+<span class="sd">            A function that takes in the individual components of location data and returns the features.</span>
+<span class="sd">            If set to `None`, the featurizer will produce an empty feature matrix (i.e., only ones).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Creating a `Featurizer` using a custom featurization function:</span>
+
+<span class="sd">        ```</span>
+<span class="sd">        import tensorflow as tf</span>
+<span class="sd">        from geostat.model import Featurizer</span>
+
+<span class="sd">        # Define a custom featurization function</span>
+<span class="sd">        def simple_featurizer(x, y):</span>
+<span class="sd">            return x, y, x * y</span>
+
+<span class="sd">        # Initialize the Featurizer</span>
+<span class="sd">        featurizer = Featurizer(simple_featurizer)</span>
+<span class="sd">        ```</span>
+
+<span class="sd">        Using the `Featurizer` to transform location data:</span>
+
+<span class="sd">        ```</span>
+<span class="sd">        locs = tf.constant([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])</span>
+<span class="sd">        F_matrix = featurizer(locs)</span>
+<span class="sd">        print(F_matrix) # F_matrix will contain the features: (x, y, x*y) for each location</span>
+<span class="sd">        # tf.Tensor(</span>
+<span class="sd">        # [[ 1.  2.  2.]</span>
+<span class="sd">        #  [ 3.  4. 12.]</span>
+<span class="sd">        #  [ 5.  6. 30.]], shape=(3, 3), dtype=float32)</span>
+<span class="sd">        ```</span>
+
+<span class="sd">        Handling the case where no featurization is provided:</span>
+
+<span class="sd">        ```</span>
+<span class="sd">        featurizer_no_feat = Featurizer(None)</span>
+<span class="sd">        F_matrix = featurizer_no_feat(locs)</span>
+<span class="sd">        print(F_matrix) # Since no featurization function is provided, F_matrix will have shape (3, 0)</span>
+<span class="sd">        # tf.Tensor([], shape=(3, 0), dtype=float32)</span>
+<span class="sd">        ```</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - The `__call__` method is used to apply the featurization to input location data.</span>
+<span class="sd">        - If `featurization` returns a tuple, it is assumed to represent multiple features, </span>
+<span class="sd">        which will be stacked to form the feature matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">featurization</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">featurization</span> <span class="o">=</span> <span class="n">featurization</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locs</span><span class="p">):</span>
+        <span class="n">locs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">featurization</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># No features.</span>
+            <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">locs</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="n">feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">featurization</span><span class="p">(</span><span class="o">*</span><span class="n">tf</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feats</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span> <span class="c1"># One or many features.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feats</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">locs</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">featurization</span><span class="p">(</span><span class="o">*</span><span class="n">tf</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">feats</span> <span class="o">=</span> <span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">locs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">feats</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">feats</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># One feature.</span>
+            <span class="k">return</span> <span class="n">e</span><span class="p">(</span><span class="n">feats</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div><hr />
 
 
 <div class="doc doc-object doc-module">
