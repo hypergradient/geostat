@@ -7,6 +7,13 @@
 
 --- -->
 
+::: src.geostat.model.Featurizer
+    options:
+        show_root_heading: True
+        show_source: True
+
+---
+
 ::: src.geostat.kernel
     options:
         show_root_heading: True
