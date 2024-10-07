@@ -16,25 +16,31 @@
 # combined_kernel = kernel1 + kernel2  # Adding kernels
 # product_kernel = kernel1 * kernel2   # Multiplying kernels
 
-#--------------------------ERROR-------------------------------#
+#-----------------------------------------------------------------#
 
-import tensorflow as tf
-from geostat import Parameters
-from geostat.kernel import TrendPrior
+# import tensorflow as tf
+# import geostat
+# from geostat import Parameters
+# from geostat.kernel import TrendPrior
 
-# Define a simple featurizer function
-def simple_featurizer(x):
-    return x, 2*x, x**2
+# # Define a simple featurizer function
+# @geostat.featurizer()
+# def simple_featurizer(x, y):
+#     return x, 2*x, x**2
 
-# Create parameters.
-p = Parameters(alpha=0.5)
+# # Create parameters.
+# p = Parameters(alpha=0.5)
 
-# Construct kernel and call it
-locs1 = tf.constant([[1.0], [2.0], [3.0]])
-locs2 = tf.constant([[1.5], [2.5], [3.5], [4.5]])
-trend_prior_kernel = TrendPrior(featurizer=simple_featurizer, alpha=p.alpha)
-covariance_matrix = trend_prior_kernel({'locs1': locs1, 'locs2': locs2, 'alpha': p.alpha.value})
-print(covariance_matrix)
+# # Construct kernel and call it
+# locs1 = tf.constant([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+# locs2 = tf.constant([[1.5, 2.0], [2.5, 3.0], [3.5, 4.0], [4.5, 5.0]])
+# trend_prior_kernel = TrendPrior(featurizer=simple_featurizer, alpha=p.alpha)
+# covariance_matrix = trend_prior_kernel({'locs1': locs1, 'locs2': locs2, 'alpha': p.alpha.value})
+# print(covariance_matrix)
+# # tf.Tensor(
+# # [[  4.875      9.375     14.875     21.375   ]
+# #  [ 12.        25.        42.        63.      ]
+# #  [ 21.375     46.874996  81.37499  124.875   ]], shape=(3, 4), dtype=float32)
 
 #-----------------------------------------------------------------#
 
@@ -73,3 +79,6 @@ print(covariance_matrix)
 # sq_exp_kernel = SquaredExponential(sill=p.sill, range=p.range, metric='euclidean')
 # covariance_matrix = sq_exp_kernel({'locs1': locs1, 'locs2': locs2, 'sill': 1.0, 'range': 2.0})
 # print(covariance_matrix)
+
+#-----------------------------------------------------------------#
+
