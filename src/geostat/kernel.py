@@ -2,6 +2,10 @@ from dataclasses import dataclass
 from typing import Callable, List, Union
 import numpy as np
 
+import jax
+import jax.numpy as jnp
+
+
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
 with warnings.catch_warnings():
@@ -87,6 +91,8 @@ class Kernel(Op):
         Return values may be unbroadcasted.
         """
         pass
+
+    
 
     def __call__(self, e):
         """
@@ -927,14 +933,21 @@ class Noise(Kernel):
         super().__init__(fa, dict(locs1='locs1', locs2='locs2'))
 
     def vars(self):
-        return ppp(self.fa['nugget'])
+        return ppp(self.fa['nugget'])    
 
     def call(self, e):
-
-        indices1 = tf.range(tf.shape(e['locs1'])[0])
-        indices2 = tf.range(tf.shape(e['locs2'])[0]) + e['offset']
-        C = tf.where(tf.equal(tf.expand_dims(indices1, -1), indices2), e['nugget'], 0.)
+        indices1 = jnp.arange(e['locs1'].shape[0])
+        indices2 = jnp.arange(e['locs2'].shape[0])# + e['offset']
+        C = jnp.where(jnp.expand_dims(indices1, -1) == indices2, e['nugget'], 0.0)
         return C
+
+
+    # def call(self, e):
+
+    #     indices1 = tf.range(tf.shape(e['locs1'])[0])
+    #     indices2 = tf.range(tf.shape(e['locs2'])[0]) + e['offset']
+    #     C = tf.where(tf.equal(tf.expand_dims(indices1, -1), indices2), e['nugget'], 0.)
+    #     return C
 
 class Delta(Kernel):
     """

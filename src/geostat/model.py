@@ -7,6 +7,11 @@ from scipy.special import expit, logit
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
+import jax
+import jax.numpy as jnp
+from jax.scipy.linalg import cholesky
+from jax.scipy.stats import multivariate_normal
+
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
 with warnings.catch_warnings():
@@ -480,21 +485,26 @@ def featurizer(normalize=None):
 def e(x, a=-1):
     return tf.expand_dims(x, a)
 
-@tf.function
+#@jax.jit
 def gp_covariance(gp, locs, cats):
     return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
-@tf.function
+# @tf.function
+# def gp_covariance(gp, locs, cats):
+#     return gp_covariance2(gp, locs, cats, locs, cats, 0)
+
+#@jax.jit
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
-    and locs2.  It is used to create the diagonal non-zero elements
-    of a Noise covariance function.  An non-zero offset results in a
+    and locs2. It is used to create the diagonal non-zero elements
+    of a Noise covariance function. A non-zero offset results in a
     covariance matrix with non-zero entries along an off-center diagonal.
     """
 
-    # assert np.all(cats1 == np.sort(cats1)), '`cats1` must be in non-descending order'
-    # assert np.all(cats2 == np.sort(cats2)), '`cats2` must be in non-descending order'
+    # Ensure that `cats1` and `cats2` are sorted if necessary (commented out for now).
+    # assert jnp.all(cats1 == jnp.sort(cats1)), '`cats1` must be in non-descending order'
+    # assert jnp.all(cats2 == jnp.sort(cats2)), '`cats2` must be in non-descending order'
 
     cache = {}
     cache['offset'] = offset
@@ -507,9 +517,37 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
 
     M = gp.mean.run(cache)
     C = gp.kernel.run(cache)
-    M = tf.cast(M, tf.float64)
-    C = tf.cast(C, tf.float64)
+    M = jnp.asarray(M, dtype=jnp.float64)
+    C = jnp.asarray(C, dtype=jnp.float64)
+
     return M, C
+
+# @tf.function
+# def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
+#     """
+#     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
+#     and locs2.  It is used to create the diagonal non-zero elements
+#     of a Noise covariance function.  An non-zero offset results in a
+#     covariance matrix with non-zero entries along an off-center diagonal.
+#     """
+
+#     # assert np.all(cats1 == np.sort(cats1)), '`cats1` must be in non-descending order'
+#     # assert np.all(cats2 == np.sort(cats2)), '`cats2` must be in non-descending order'
+
+#     cache = {}
+#     cache['offset'] = offset
+#     cache['locs1'] = locs1
+#     cache['locs2'] = locs2
+#     cache['cats1'] = cats1
+#     cache['cats2'] = cats2
+#     cache['per_axis_dist2'] = PerAxisDist2().run(cache)
+#     cache['euclidean'] = Euclidean().run(cache)
+
+#     M = gp.mean.run(cache)
+#     C = gp.kernel.run(cache)
+#     M = tf.cast(M, tf.float64)
+#     C = tf.cast(C, tf.float64)
+#     return M, C
 
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
@@ -948,72 +986,39 @@ class Model():
     def generate(self, locs, cats=None):
         """
         Generates synthetic data values from the Gaussian Process (GP) model based on the provided location data.
-        This method simulates values based on the GP's covariance structure, allowing for random sample generation.
 
         Parameters:
-            locs (np.ndarray):
-                A NumPy array containing the input locations for which to generate synthetic values.
-            cats (np.ndarray, optional):
-                A NumPy array containing categorical data corresponding to `locs`. If provided, data points 
-                are permuted according to `cats` for stratified generation. Defaults to None.
+            locs (np.ndarray): A NumPy array containing the input locations for which to generate synthetic values.
+            cats (np.ndarray, optional): A NumPy array containing categorical data corresponding to `locs`.
 
         Returns:
-            self (Model):
-                The model instance with generated values stored in `self.vals` and corresponding locations stored 
-                in `self.locs`. This enables method chaining.
-
-        Examples
-        --------
-        Generating synthetic values for a set of locations:
-
-        ```
-        from geostat import GP, Model
-        from geostat.kernel import Noise
-
-        # Create model
-        kernel = Noise(nugget=1.0)
-        model = Model(GP(0, kernel))
-
-        # Generate values based on locs
-        locs = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
-        model.generate(locs)
-        generated_vals = model.vals  # Access the generated values
-        ```
-
-        Notes
-        -----
-        - Conditional generation is currently not supported, and this method will raise an assertion error if 
-        `self.locs` and `self.vals` are already defined.
-        - Generation from a distribution is not yet supported, and an assertion error will be raised if 
-        `self.parameter_sample_size` is not `None`.
-        - If `cats` are provided, the data is permuted according to `cats` for stratified generation, and 
-        the original order is restored before returning.
+            self (Model): The model instance with generated values stored in `self.vals` and corresponding locations stored in `self.locs`.
         """
-
         assert self.locs is None and self.vals is None, 'Conditional generation not yet supported'
         assert self.parameter_sample_size is None, 'Generation from a distribution not yet supported'
 
-        locs = np.array(locs)
+        locs = jnp.array(locs)
 
         # Permute datapoints if cats is given.
         if cats is not None:
-            cats = np.array(cats)
-            perm = np.argsort(cats)
+            cats = jnp.array(cats)
+            perm = jnp.argsort(cats)
             locs, cats = locs[perm], cats[perm]
         else:
-            cats = np.zeros(locs.shape[:1], np.int32)
+            cats = jnp.zeros(locs.shape[:1], dtype=jnp.int32)
             perm = None
 
         m, S = gp_covariance(
             self.gp,
             self.warp(locs).run({}),
-            None if cats is None else tf.constant(cats, dtype=tf.int32))
+            None if cats is None else cats
+        )
 
-        vals = MVN(m, tf.linalg.cholesky(S)).sample().numpy()
+        vals = multivariate_normal.rvs(mean=m, cov=cholesky(S, lower=True), random_state=jax.random.PRNGKey(0))
 
         # Restore order if things were permuted.
         if perm is not None:
-            revperm = np.argsort(perm)
+            revperm = jnp.argsort(perm)
             locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
         self.locs = locs
