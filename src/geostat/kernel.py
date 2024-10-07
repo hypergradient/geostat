@@ -162,7 +162,7 @@ class TrendPrior(Kernel):
     def call(self, e):
         F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
         F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
-        return e['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
+        return tf.math.scalar_mul(e['alpha'], tf.einsum('fba,fca->bc', F1, F2))
 
 def scale_to_metric(scale, metric):
     assert scale is None or metric is None
