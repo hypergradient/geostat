@@ -30,63 +30,84 @@ __all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturi
 
 @dataclass
 class GP:    
-    """
+    r"""
     Gaussian Process (GP) model class with a mean function and a kernel.
 
-    This class represents a Gaussian Process with specified mean and kernel functions.
-    If no mean is provided, a zero mean is used by default. The kernel must always be specified.
-    The class supports addition to combine two GP models, and it allows gathering variables 
-    from the mean and kernel.
+    This class represents a Gaussian Process with specified mean
+    and kernel functions.  If no mean is provided, a zero mean is
+    used by default. The kernel must always be specified.  The class
+    supports addition to combine two GP models, and it allows
+    gathering variables from the mean and kernel.
 
-    Parameters:
-        mean (mn.Trend, optional):
+    Parameters
+    ----------
+        mean (mean.Mean, optional):
             The mean function of the Gaussian Process. If not provided or set to 0, 
             a ZeroTrend is used as the default mean.
 
-        kernel (krn.Kernel):
+        kernel (kernel.Kernel):
             The kernel function of the Gaussian Process. This parameter is required.
 
-    Examples:
-        Creating a simple Gaussian Process with default mean and a Noise kernel:
+    Details
+    -------
+    This is how to specify a GP with a squared exponential kernel
+    and superimposed uncorrelated noise:
+    ```python
+    import geostat.kernel as krn
+    from geostat import GP, Model, Parameters
 
-        ```
-        import geostat.mean as mn
-        import geostat.kernel as krn
-        from geostat import Parameters, GP
-        p = Parameters(nugget=1., sill=1., beta=[4., 3., 2., 1.])
-        kernel = krn.Noise(p.nugget)
-        gp = GP(kernel=kernel)
-        ```
-        
-        The mean defaults to ZeroTrend if not provided.
+    p = Parameters(range=1., sill=1., nugget=1.)
+    kernel = krn.SquaredExponential(range=p.range, sill=p.sill) + krn.Noise(nugget=p.nugget)
+    gp = GP(0, kernel)
+    ```
+    To use the GP, it must be wrapped in a model:
+    ```
+    model = Model(GP)
+    ```
+    This model object can then be used to generate synthetic data,
+    fit its parameters to provided data, or make predictions, see
+    [`Model`](#src.geostat.model.Model).
 
-        ```
-        print(gp.mean)
-        # ZeroTrend(fa={}, autoinputs={'locs1': 'locs1'})
-        ```
-        
-        Specifying both mean and kernel:
+    In Geostat, GPs can be defined on locations in Euclidean space
+    of any dimension \(\mathbb{R}^D\), with the number of dimensions
+    specified implicitly by the shape of the location matrix given
+    to `fit()` or `generate()` in the `locs` argument.
+    
+    GPs can also be defined on locations in \(\mathbb{R}^D \times
+    \mathbb{Z}\) using the [`Mix`](#src.geostat.model.Mix) operator.
+    This construction is for modeling multiple spatial quantities,
+    with each quantity occupying a different 'plane' of the space.
+    When multiple spatial quantities are involved, these are specified
+    in the `cats` argument of `fit()`, `generate()` or `predict()`.
 
-        ```
-        @geostat.featurizer()
-        def trend_featurizer(x, y): return 1., x, y, x*y
-        mean_function = mn.Trend(trend_featurizer, beta=p.beta)
-        gp = GP(mean=mean_function, kernel=kernel)
-        ```
+    GPs can be superimposed:
+    ```
+    gp = gp1 + gp2
+    ```
 
-        Adding two GP objects:
-
-        ```
-        gp1 = GP(kernel=krn.Noise(p.nugget))
-        gp2 = GP(mean=mean_function, kernel=krn.Delta(p.sill))
-        combined_gp = gp1 + gp2
-        print("Combined Mean: ", combined_gp.mean)  # <Trend object>
-        print("Combined Kernel: ", combined_gp.kernel)  # <Stack object>
-        ```
-
-    Notes:
-        - The `__tf_tracing_type__` method is used for TensorFlow tracing purposes and typically not called directly.
-        - Ensure that the kernel is always provided upon initialization.
+    Examples
+    --------
+    A linear regression is a special case of GP regression that
+    can be modeled by Geostat. Suppose
+    $$
+    u_i = \beta_1 + \beta_2 x_i + \beta_3 y_i + \beta_4 x_i^2 \
+        + \beta_5 x_i y_i + \beta_6 y_i^2 + \epsilon_i
+    $$
+    where \(u_i\) is an observation, \(x_i\) and \(y_i\) are model
+    inputs, \(\epsilon_i \sim \mathcal{N}(0, \sigma^2)\)
+    describes observation noise, and \(\beta_1, \ldots, \beta_6\)
+    are regression coefficients.  Geostat can be used to fit this
+    regression (though not in the most efficient way):
+    ```python
+    @featurizer
+    def trend_terms(x, y):
+        return 1, x, y, x*x, x*y, y*y
+    p = Parameters(beta=np.zeros([6]), sigma2=1.)
+    mean = mn.Trend(trend_terms, beta=p.beta)
+    kernel = krn.Noise(nugget=p.sigma2)
+    gp = GP(mean, kernel)
+    Model(gp).fit(locs, vals) # locs.shape = [N, 2], vals.shape = [N]
+    ```
     """
 
     mean: mn.Trend = None
@@ -469,9 +490,9 @@ class Featurizer:
         else: # One feature.
             return e(feats)
 
-def featurizer(normalize=None):
+def featurizer(normalize=False):
     def helper(f):
-        if normalize is None:
+        if not normalize:
             return Featurizer(f)
         else:
             return NormalizingFeaturizer(f, normalize)
@@ -575,8 +596,21 @@ class Model():
         verbose (bool, optional):
             Whether to print model parameters and status updates. Default is True.
 
-    Examples:
-        Initializing a `Model` with a Gaussian Process:
+    Details
+    -------
+    To generate synthetic data at \(n\) locations in \(k\)-dimensional
+    space, pass the locations into `generate()`:
+    ```
+    vals = model.generate(locs) # locs has shape (n, k).
+    ```
+
+    To fit to data at \(n\) locations, pass locations and values into
+    `fit()`:
+    ```
+
+    Examples
+    --------
+    Initializing a `Model` with a Gaussian Process:
 
         ```
         from geostat import GP, Model, Parameters

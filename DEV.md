@@ -23,6 +23,8 @@ The source folder of the documentation website is the gh-pages branch. Unfortuna
 1 - Install mkdocs
 ```
 pip install mkdocs
+pip install mkdocs-material
+pip install 'mkdocstrings[python]'
 ```
 
 2 - Navigate to the GitHub repository and checkout to the branch the documentation should be build from
