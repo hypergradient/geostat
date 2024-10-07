@@ -129,19 +129,21 @@ class TrendPrior(Kernel):
 
         ```
         import tensorflow as tf
+        import geostat
         from geostat import Parameters
         from geostat.kernel import TrendPrior
 
         # Define a simple featurizer function
-        def simple_featurizer(x):
+        @geostat.featurizer()
+        def simple_featurizer(x, y):
             return x, 2*x, x**2
 
         # Create parameters.
         p = Parameters(alpha=0.5)
 
         # Construct kernel and call it
-        locs1 = tf.constant([[1.0], [2.0], [3.0]])
-        locs2 = tf.constant([[1.5], [2.5], [3.5], [4.5]])
+        locs1 = tf.constant([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+        locs2 = tf.constant([[1.5, 2.0], [2.5, 3.0], [3.5, 4.0], [4.5, 5.0]])
         trend_prior_kernel = TrendPrior(featurizer=simple_featurizer, alpha=p.alpha)
         covariance_matrix = trend_prior_kernel({'locs1': locs1, 'locs2': locs2, 'alpha': p.alpha.value})
         print(covariance_matrix)
@@ -170,7 +172,7 @@ class TrendPrior(Kernel):
     def call(self, e):
         F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
         F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
-        return tf.math.scalar_mul(e['alpha'], tf.einsum('fba,fca->bc', F1, F2))
+        return e['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
 
 def scale_to_metric(scale, metric):
     assert scale is None or metric is None
