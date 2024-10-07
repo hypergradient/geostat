@@ -92,19 +92,30 @@ class Kernel(Op):
         """
         pass
 
-    
-
     def __call__(self, e):
         """
         Returns tuple `(mean, covariance)` for locations.
         Return values have correct shapes.
         """
         C = self.call(e)
-        if C is None: C = 0.
-        n1 = tf.shape(e['locs1'])[0]
-        n2 = tf.shape(e['locs2'])[0]
-        C = tf.broadcast_to(C, [n1, n2])
+        if C is None:
+            C = 0.0
+        n1 = e['locs1'].shape[0]
+        n2 = e['locs2'].shape[0]
+        C = jnp.broadcast_to(C, (n1, n2))
         return C
+
+    # def __call__(self, e):
+    #     """
+    #     Returns tuple `(mean, covariance)` for locations.
+    #     Return values have correct shapes.
+    #     """
+    #     C = self.call(e)
+    #     if C is None: C = 0.
+    #     n1 = tf.shape(e['locs1'])[0]
+    #     n2 = tf.shape(e['locs2'])[0]
+    #     C = tf.broadcast_to(C, [n1, n2])
+    #     return C
 
     def report(self):
         string = ', '.join('%s %4.2f' % (v.name, p[v.name]) for v in self.vars())
@@ -937,10 +948,9 @@ class Noise(Kernel):
 
     def call(self, e):
         indices1 = jnp.arange(e['locs1'].shape[0])
-        indices2 = jnp.arange(e['locs2'].shape[0])# + e['offset']
+        indices2 = jnp.arange(e['locs2'].shape[0]) + e['offset']
         C = jnp.where(jnp.expand_dims(indices1, -1) == indices2, e['nugget'], 0.0)
         return C
-
 
     # def call(self, e):
 
