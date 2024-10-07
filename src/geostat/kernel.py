@@ -129,18 +129,26 @@ class TrendPrior(Kernel):
 
         ```
         import tensorflow as tf
+        from geostat import Parameters
         from geostat.kernel import TrendPrior
 
         # Define a simple featurizer function
         def simple_featurizer(x):
-            return x, x**2
+            return x, 2*x, x**2
 
-        alpha = 0.5
-        trend_prior_kernel = TrendPrior(featurizer=simple_featurizer, alpha=alpha)
-        
+        # Create parameters.
+        p = Parameters(alpha=0.5)
+
+        # Construct kernel and call it
         locs1 = tf.constant([[1.0], [2.0], [3.0]])
-        locs2 = tf.constant([[1.5], [2.5], [3.5]])
-        covariance_matrix = trend_prior_kernel({'locs1': locs1, 'locs2': locs2, 'alpha': alpha})
+        locs2 = tf.constant([[1.5], [2.5], [3.5], [4.5]])
+        trend_prior_kernel = TrendPrior(featurizer=simple_featurizer, alpha=p.alpha)
+        covariance_matrix = trend_prior_kernel({'locs1': locs1, 'locs2': locs2, 'alpha': p.alpha.value})
+        print(covariance_matrix)
+        # tf.Tensor(
+        # [[  4.875      9.375     14.875     21.375   ]
+        #  [ 12.        25.        42.        63.      ]
+        #  [ 21.375     46.874996  81.37499  124.875   ]], shape=(3, 4), dtype=float32)
         ```
 
     Notes:
