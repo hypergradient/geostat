@@ -1,15 +1,13 @@
 body {
-    color: green;
-}
-
-doc-section-title {
-    color: green;
-}
-
-code {
-    color: green;
+    color: black;
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 500;
+    font-style: normal;
 }
 
 p {
-    color: green;
+    color: black;
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 500;
+    font-style: normal;
 }
