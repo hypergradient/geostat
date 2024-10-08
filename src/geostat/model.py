@@ -11,6 +11,9 @@ import jax
 import jax.numpy as jnp
 from jax.scipy.linalg import cholesky
 from jax.scipy.stats import multivariate_normal
+from jax import grad, jit
+import optax  # JAX-compatible optimization library for optimizers like Adam
+
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
@@ -757,61 +760,8 @@ class Model():
         """
         Trains the model using the provided location and value data by optimizing the parameters of the Gaussian Process (GP)
         using the Adam optimizer. Optionally performs regularization and can handle categorical data.
-
-        Parameters:        
-            locs (np.ndarray):
-                A NumPy array containing the input locations for training.
-            vals (np.ndarray):
-                A NumPy array containing observed values corresponding to the `locs`.
-            cats (np.ndarray, optional):
-                A NumPy array containing categorical data for each observation in `locs`. If provided,
-                the data is sorted according to `cats` to enable stratified training. Defaults to None.
-            step_size (float, optional):
-                The learning rate for the Adam optimizer.
-            iters (int, optional):
-                The total number of iterations to run for training.
-            reg (float or None, optional):
-                Regularization penalty parameter. If None, no regularization is applied.
-
-        Returns:
-            self (Model):
-                The model instance with updated parameters, allowing for method chaining.
-
-        Examples
-        --------
-        Fitting a model using training data:
-
-        ```
-        from geostat import GP, Model
-        from geostat.kernel import Noise
-
-        # Create model
-        kernel = Noise(nugget=1.0)
-        model = Model(GP(0, kernel))
-
-        # Fit model
-        locs = np.array([[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]])
-        vals = np.array([10.0, 15.0, 20.0])
-        model.fit(locs, vals, step_size=0.05, iters=500)
-        ```
-
-        Using categorical data for training:
-
-        ```
-        cats = np.array([1, 1, 2])
-        model.fit(locs, vals, cats=cats, step_size=0.01, iters=300)
-        ```
-
-        Notes
-        -----
-        - The `fit` method uses the Adam optimizer to minimize the negative log-likelihood (`ll`) and any regularization 
-        penalties specified by `reg`.
-        - During training, if `cats` are provided, data points are sorted according to `cats` to ensure grouped training.
-        - The `verbose` flag determines whether training progress is printed after each iteration.
-        - After training, parameter values are saved and can be accessed or updated using the model's attributes.
         """
-
-        # Collect parameters and create TF parameters.
+        # Collect parameters for the JAX optimization.
         parameters = self.gather_vars()
 
         # Permute datapoints if cats is given.
@@ -826,24 +776,40 @@ class Model():
         # Data dict.
         self.data = {
             'warplocs': self.warp(locs),
-            'vals': tf.constant(vals, dtype=tf.float32),
-            'cats': tf.constant(cats, dtype=tf.int32)}
+            'vals': jnp.array(vals, dtype=jnp.float32),
+            'cats': jnp.array(cats, dtype=jnp.int32)
+        }
 
-        optimizer = tf.keras.optimizers.Adam(learning_rate=step_size)
+        # Initialize the Adam optimizer from optax.
+        optimizer = optax.adam(step_size)
+        opt_state = optimizer.init(parameters)
 
-        j = 0 # Iteration count.
+        @jit
+        def loss_fn(params, data, reg):
+            ll, reg_penalty = gp_train_step(params, data, self.gp, reg)
+            return -ll + reg_penalty  # Minimizing the negative log-likelihood with regularization
+
+        @jit
+        def update(params, opt_state, data, reg):
+            grads = grad(loss_fn)(params, data, reg)
+            updates, opt_state = optimizer.update(grads, opt_state)
+            params = optax.apply_updates(params, updates)
+            return params, opt_state
+
+        j = 0  # Iteration count.
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                ll, reg_penalty = gp_train_step(
-                    optimizer, self.data, parameters, self.gp, reg)
+                parameters, opt_state = update(parameters, opt_state, self.data, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
-            if self.verbose == True:
+            if self.verbose:
+                ll, reg_penalty = gp_train_step(parameters, self.data, self.gp, reg)
                 self.report(
-                  dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
-                  {p.name: p.surface() for p in parameters.values()})
+                    dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
+                    {p.name: p.surface() for p in parameters.values()}
+                )
 
         # Save parameter values.
         for p in parameters.values():
@@ -859,6 +825,7 @@ class Model():
         self.cats = cats
 
         return self
+
 
     def mcmc(self, locs, vals, cats=None,
             chains=4, step_size=0.1, move_prob=0.5,
@@ -1014,7 +981,7 @@ class Model():
             None if cats is None else cats
         )
 
-        vals = multivariate_normal.rvs(mean=m, cov=cholesky(S, lower=True), random_state=jax.random.PRNGKey(0))
+        vals = jax.random.multivariate_normal(key=jax.random.PRNGKey(0), mean=m, cov=cholesky(S, lower=True))
 
         # Restore order if things were permuted.
         if perm is not None:

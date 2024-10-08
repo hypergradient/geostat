@@ -947,9 +947,13 @@ class Noise(Kernel):
         return ppp(self.fa['nugget'])    
 
     def call(self, e):
+        # Convert TensorFlow EagerTensors to JAX arrays
+        offset = jnp.asarray(e['offset'])
+        nugget = jnp.asarray(e['nugget'])
+
         indices1 = jnp.arange(e['locs1'].shape[0])
-        indices2 = jnp.arange(e['locs2'].shape[0]) + e['offset']
-        C = jnp.where(jnp.expand_dims(indices1, -1) == indices2, e['nugget'], 0.0)
+        indices2 = jnp.arange(e['locs2'].shape[0]) + offset
+        C = jnp.where(jnp.expand_dims(indices1, -1) == indices2, nugget, 0.0)
         return C
 
     # def call(self, e):
