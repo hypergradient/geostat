@@ -822,32 +822,18 @@ class Model():
         optimizer = optax.adam(learning_rate=step_size)
         opt_state = optimizer.init(params)
 
-        #@jit
-        def loss_fn(params, data, reg):
-            ll, reg_penalty = gp_log_likelihood(self.data, self.gp), 0.0
-            return -ll + reg_penalty  # Minimizing the negative log-likelihood with regularization
-
-        #@jit
-        def update(params, opt_state, data, reg):
-            grads = grad(loss_fn)(params, data, reg)
-            updates, opt_state = optimizer.update(grads, opt_state, params)
-            params = optax.apply_updates(params, updates)
-            #print("Params: ", params)
-            return params, opt_state        
-
-        j = 0  # Iteration count.
+        j = 0 # Iteration count.
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                params, opt_state = update(params, opt_state, self.data, reg)
+                params, opt_state, ll, reg_penalty = gp_train_step(optimizer, opt_state, self.data, params, self.gp, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
-            if self.verbose:
-                params, opt_state, ll, reg_penalty = gp_train_step(optimizer, opt_state, self.data, params, self.gp, reg)
+            if self.verbose == True:
                 self.report(
-                    dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty, params=params)
-                )
+                dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
+                {p.name: p.surface() for p in parameters.values()})
 
         # Save parameter values.
         for p in parameters.values():
