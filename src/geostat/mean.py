@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from typing import Callable, List, Union
 import numpy as np
 
+import jax.numpy as jnp
+
+
 import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -42,9 +45,10 @@ class Mean(Op):
         Return values have correct shapes.
         """
         M = self.call(e)
-        if M is None: M = 0.
-        n1 = tf.shape(e['locs1'])[0]
-        M = tf.broadcast_to(M, [n1])
+        if M is None:
+            M = 0.0
+        n1 = e['locs1'].shape[0]
+        M = jnp.broadcast_to(M, (n1,))
         return M
 
 class Trend(Mean):
@@ -69,7 +73,7 @@ class ZeroTrend(Op):
         return {}
 
     def __call__(self, e):
-        return tf.zeros_like(e['locs1'][:, 0])
+        return jnp.zeros_like(e['locs1'][:, 0])
 
 class Mix(Mean):
     def __init__(self, inputs, weights=None):

@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from tensorflow.types.experimental import TraceType
 from typing import Dict
 
+from jax.tree_util import tree_flatten
+from jax.tree_util import tree_map
+
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
 with warnings.catch_warnings():
@@ -38,13 +41,13 @@ class Op:
 
         Returns a dict of parameters, keyed by name.
         """
-        if cache is None: cache = {}
+        if cache is None:
+            cache = {}
         if id(self) not in cache:
-            vv = {k: v for op in tf.nest.flatten(self.autoinputs)
-                       if isinstance(op, Op)
-                       for k, v in op.gather_vars(cache).items()}
-            # print(self, '<-', [x.name for x in vv], '|', [x.name for x in set(self.vars())], '\n')
-            cache[id(self)] = vv | self.vars()
+            vv = {k: v for op in tree_flatten(self.autoinputs)[0]  # Use tree_flatten for handling nested structures
+                if isinstance(op, Op)
+                for k, v in op.gather_vars(cache).items()}
+            cache[id(self)] = {**vv, **self.vars()}
         return cache[id(self)]
 
     def __call__(self, e):
@@ -56,29 +59,33 @@ class Op:
 
     def run(self, cache):
         """
-        If op has already been run, return result. Else:
-            - Assemble inputs by recursively calling upstream ops.
-            - Execute op by calling `__call__`.
-            - Store result in cache.
+        If the operation has already been run, return the result. Otherwise:
+            - Assemble inputs by recursively calling upstream operations.
+            - Execute the operation by calling `__call__`.
+            - Store the result in the cache.
         """
 
         def eval(op):
             """
             Evaluate `op`. If `op` is a string, look up its value.
-            Otherwise execute it.
+            Otherwise, execute it.
             """
             if isinstance(op, str):
                 return cache[op]
             else:
                 return op.run(cache)
-       
+
         if id(self) not in cache:
-            e = tf.nest.map_structure(lambda op: eval(op), self.autoinputs)
+            # Assemble inputs by recursively calling upstream operations
+            e = tree_map(lambda op: eval(op), self.autoinputs)
             e |= get_parameter_values(self.fa)
+            
+            # Execute the operation and store the result in the cache
             cache[id(self)] = self(e)
 
-            # Save the Op so that its ID remains unique.
-            if '__save__' not in cache: cache['__save__'] = []
+            # Save the operation to ensure its ID remains unique
+            if '__save__' not in cache:
+                cache['__save__'] = []
             cache['__save__'].append(self)
 
         return cache[id(self)]

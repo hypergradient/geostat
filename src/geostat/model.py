@@ -7,13 +7,13 @@ from scipy.special import expit, logit
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
+from jax.scipy.linalg import solve
+from jax.scipy.linalg import cho_solve, cholesky
 import jax
 import jax.numpy as jnp
-from jax.scipy.linalg import cholesky
 from jax.scipy.stats import multivariate_normal
 from jax import grad, jit
 import optax  # JAX-compatible optimization library for optimizers like Adam
-
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
@@ -190,7 +190,7 @@ class WarpLocations(Op):
         super().__init__({}, {})
 
     def __call__(self, e):
-        return tf.cast(self.warped_locs, dtype=tf.float32)
+        return jnp.asarray(self.warped_locs, dtype=jnp.float32)
 
     def __tf_tracing_type__(self, context):
         return SingletonTraceType(self)
@@ -555,38 +555,73 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m
-    logdet = tf.linalg.logdet(2 * np.pi * cov)
-    quad = tf.matmul(e(u_adj, 0), tf.linalg.solve(cov, e(u_adj, -1)))[0, 0]
-    return tf.cast(-0.5 * (logdet + quad), tf.float32)
+    sign, logdet = jnp.linalg.slogdet(2 * np.pi * cov)
+    quad = jnp.dot(u_adj, solve(cov, u_adj))
+    return jnp.array(-0.5 * (logdet + quad), dtype=jnp.float32)
 
-@tf.function
+#@jax.jit
 def gp_log_likelihood(data, gp):
-    m, S = gp_covariance(gp, data['warplocs'].run({}), data['cats'])
-    u = tf.cast(data['vals'], tf.float64)
+    m, S = gp_covariance(gp, data['locs'], data['cats'])
+    u = jnp.asarray(data['vals'], dtype=jnp.float64)
     return mvn_log_pdf(u, m, S)
+
+# @tf.function
+# def gp_log_likelihood(data, gp):
+#     m, S = gp_covariance(gp, data['warplocs'].run({}), data['cats'])
+#     u = tf.cast(data['vals'], tf.float64)
+#     return mvn_log_pdf(u, m, S)
 
 def gp_train_step(
     optimizer,
+    opt_state,
     data,
     parameters: Dict[str, Parameter],
     gp,
     reg=None
 ):
-    with tf.GradientTape() as tape:
+    def loss_fn(params):
         ll = gp_log_likelihood(data, gp)
 
         if reg:
             # TODO: Put in cache later.
             reg_penalty = reg.run({})
         else:
-            reg_penalty = 0.
+            reg_penalty = 0.0
 
-        loss = -ll + reg_penalty
+        return -ll + reg_penalty, reg_penalty
 
-    up = [p.underlying for p in parameters.values()]
-    gradients = tape.gradient(loss, up)
-    optimizer.apply_gradients(zip(gradients, up))
-    return ll, reg_penalty
+    # Calculate loss and gradients
+    (loss, reg_penalty), grads = jax.value_and_grad(loss_fn, has_aux=True)(parameters)
+
+    # Update the parameters using the optimizer
+    updates, opt_state = optimizer.update(grads, opt_state)
+    parameters = optax.apply_updates(parameters, updates)
+
+    return parameters, opt_state, -loss, reg_penalty
+
+
+# def gp_train_step(
+#     optimizer,
+#     data,
+#     parameters: Dict[str, Parameter],
+#     gp,
+#     reg=None
+# ):
+#     with tf.GradientTape() as tape:
+#         ll = gp_log_likelihood(data, gp)
+
+#         if reg:
+#             # TODO: Put in cache later.
+#             reg_penalty = reg.run({})
+#         else:
+#             reg_penalty = 0.
+
+#         loss = -ll + reg_penalty
+
+#     up = [p.underlying for p in parameters.values()]
+#     gradients = tape.gradient(loss, up)
+#     optimizer.apply_gradients(zip(gradients, up))
+#     return ll, reg_penalty
 
 @dataclass
 class Model():
@@ -700,7 +735,7 @@ class Model():
 
         # Collect parameters and create TF parameters.
         for p in self.gather_vars().values():
-            p.create_tf_variable()
+            p.create_jax_variable()
 
     def gather_vars(self):
         return self.gp.gather_vars() | self.warp.gather_vars()
@@ -751,9 +786,9 @@ class Model():
         for name, v in values.items():
             if name in parameters:
                 parameters[name].value = v
-                parameters[name].create_tf_variable()
+                parameters[name].create_jax_variable()
             else:
-                raise ValueError(f"{k} is not a parameter")
+                raise ValueError(f"{name} is not a parameter")
         return self
 
     def fit(self, locs, vals, cats=None, step_size=0.01, iters=100, reg=None):
@@ -763,6 +798,8 @@ class Model():
         """
         # Collect parameters for the JAX optimization.
         parameters = self.gather_vars()
+        params = get_parameter_values(parameters)['nugget']
+  
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -775,40 +812,41 @@ class Model():
 
         # Data dict.
         self.data = {
-            'warplocs': self.warp(locs),
+            'warplocs': jnp.array([0], dtype=jnp.float32), # ToDO
+            'locs': jnp.array(locs, dtype=jnp.float32),
             'vals': jnp.array(vals, dtype=jnp.float32),
             'cats': jnp.array(cats, dtype=jnp.int32)
         }
 
         # Initialize the Adam optimizer from optax.
-        optimizer = optax.adam(step_size)
-        opt_state = optimizer.init(parameters)
+        optimizer = optax.adam(learning_rate=step_size)
+        opt_state = optimizer.init(params)
 
-        @jit
+        #@jit
         def loss_fn(params, data, reg):
-            ll, reg_penalty = gp_train_step(params, data, self.gp, reg)
+            ll, reg_penalty = gp_log_likelihood(self.data, self.gp), 0.0
             return -ll + reg_penalty  # Minimizing the negative log-likelihood with regularization
 
-        @jit
+        #@jit
         def update(params, opt_state, data, reg):
             grads = grad(loss_fn)(params, data, reg)
-            updates, opt_state = optimizer.update(grads, opt_state)
+            updates, opt_state = optimizer.update(grads, opt_state, params)
             params = optax.apply_updates(params, updates)
-            return params, opt_state
+            #print("Params: ", params)
+            return params, opt_state        
 
         j = 0  # Iteration count.
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                parameters, opt_state = update(parameters, opt_state, self.data, reg)
+                params, opt_state = update(params, opt_state, self.data, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
             if self.verbose:
-                ll, reg_penalty = gp_train_step(parameters, self.data, self.gp, reg)
+                params, opt_state, ll, reg_penalty = gp_train_step(optimizer, opt_state, self.data, params, self.gp, reg)
                 self.report(
-                    dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
-                    {p.name: p.surface() for p in parameters.values()}
+                    dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty, params=params)
                 )
 
         # Save parameter values.
