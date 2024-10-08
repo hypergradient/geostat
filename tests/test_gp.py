@@ -6,7 +6,6 @@ from geostat import Parameters, GP, Model, Trend
 
 def test_noise():
     np.random.seed(2)
-    #tf.random.set_seed(2)
 
     # Create random locations in a square centered on the origin.
     locs1 = np.random.normal(size=[1000, 2])
@@ -23,10 +22,10 @@ def test_noise():
     model.set(nugget=0.5)
     model.fit(locs1, vals1, iters=50, step_size=1e-1)
 
-    # assert np.allclose(
-    #     [getattr(p, name).value for name in ['nugget']],
-    #     [1.],
-    #     rtol=0.3)
+    assert np.allclose(
+        [getattr(p, name).value for name in ['nugget']],
+        [1.],
+        rtol=0.3)
 
     # Interpolate using GP.
     N = 20
