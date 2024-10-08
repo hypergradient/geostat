@@ -40,7 +40,7 @@ class Kernel(Op):
     Examples:
         Creating and using a `Kernel` object:
 
-        ```
+        ```python
         from geostat.kernel import Kernel
         import numpy as np
 
@@ -57,7 +57,7 @@ class Kernel(Op):
 
         Combining two kernels using addition and multiplication:
 
-        ```
+        ```python
         kernel1 = Kernel(fa={'alpha': 1.0}, autoinputs={})
         kernel2 = Kernel(fa={'range': 0.5}, autoinputs={})
         combined_kernel = kernel1 + kernel2  # Adding kernels
@@ -127,7 +127,7 @@ class TrendPrior(Kernel):
     Examples:
         Defining a TrendPrior kernel with a custom featurizer:
 
-        ```
+        ```python
         import tensorflow as tf
         import geostat
         from geostat import Parameters
@@ -198,7 +198,7 @@ class Constant(Kernel):
     Examples:
         Creating and using a `Constant` kernel:
 
-        ```
+        ```python
         from geostat import Parameters
         from geostat.kernel import Constant
         import numpy as np
@@ -256,7 +256,7 @@ class SquaredExponential(Kernel):
     Examples:
         Creating and using a `SquaredExponential` kernel:
 
-        ```
+        ```python
         from geostat.kernel import SquaredExponential
 
         # Create a SquaredExponential kernel with a sill of 1.0 and a range of 2.0
@@ -310,7 +310,7 @@ class GammaExponential(Kernel):
     Examples:
         Creating and using a `GammaExponential` kernel:
 
-        ```
+        ```python
         from geostat.kernel import GammaExponential
 
         # Create a GammaExponential kernel with sill=1.0, range=2.0, and gamma=1.5
@@ -368,7 +368,7 @@ class Ramp(Kernel):
     Examples:
         Creating and using a `Ramp` kernel:
 
-        ```
+        ```python
         from geostat.kernel import Ramp
 
         # Create a Ramp kernel with sill=1.0 and range=2.0
@@ -459,7 +459,7 @@ class RampStack(Kernel):
     Examples:
         Creating and using a `RampStack` kernel:
 
-        ```
+        ```python
         from geostat.kernel import RampStack
 
         # Create a RampStack kernel with multiple sills and ranges
@@ -596,7 +596,7 @@ class SmoothConvex(Kernel):
     Examples:
         Creating and using a `SmoothConvex` kernel:
 
-        ```
+        ```python
         from geostat.kernel import SmoothConvex
 
         # Create a SmoothConvex kernel with multiple sills and ranges
@@ -664,7 +664,7 @@ class QuadStack(Kernel):
     Examples:
         Creating and using a `QuadStack` kernel:
 
-        ```
+        ```python
         from geostat.kernel import QuadStack
 
         # Create a QuadStack kernel with multiple sills and ranges
@@ -716,7 +716,7 @@ class Wiener(Kernel):
     Examples:
         Creating and using a `Wiener` kernel:
 
-        ```
+        ```python
         from geostat.kernel import Wiener
 
         # Create a Wiener kernel operating along the x-axis starting from 0.0
@@ -774,7 +774,7 @@ class IntSquaredExponential(Kernel):
     Examples:
         Creating and using an `IntSquaredExponential` kernel:
 
-        ```
+        ```python
         from geostat.kernel import IntSquaredExponential
 
         # Create an IntSquaredExponential kernel integrating along the x-axis starting from 0.0 with a range of 2.0
@@ -840,7 +840,7 @@ class IntExponential(Kernel):
     Examples:
         Creating and using an `IntExponential` kernel:
 
-        ```
+        ```python
         from geostat.kernel import IntExponential
 
         # Create an IntExponential kernel integrating along the x-axis starting from 0.0 with a range of 2.0
@@ -903,7 +903,7 @@ class Noise(Kernel):
     Examples:
         Creating and using a `Noise` kernel:
 
-        ```
+        ```python
         from geostat.kernel import Noise
 
         # Create a Noise kernel with a nugget value of 0.1
@@ -955,7 +955,7 @@ class Delta(Kernel):
     Examples:
         Creating and using a `Delta` kernel:
 
-        ```
+        ```python
         from geostat.kernel import Delta
 
         # Create a Delta kernel with a sill of 1.0, applied across all axes
@@ -1017,7 +1017,7 @@ class Mix(Kernel):
     Examples:
         Combining multiple kernels with specified weights:
 
-        ```
+        ```python
         from geostat.kernel import Mix, SquaredExponential, Noise
 
         # Create individual kernels
@@ -1034,7 +1034,7 @@ class Mix(Kernel):
 
         Using the `Mix` kernel without weights:
 
-        ```
+        ```python
         mixed_kernel_no_weights = Mix(inputs=[kernel1, kernel2])
         ```
 
@@ -1130,7 +1130,7 @@ class Stack(Kernel):
     Examples:
         Creating and using a `Stack` kernel:
 
-        ```
+        ```python
         from geostat.kernel import Stack, SquaredExponential, Noise
 
         # Create individual kernels
@@ -1147,7 +1147,7 @@ class Stack(Kernel):
 
         Adding another kernel to an existing `Stack`:
 
-        ```
+        ```python
         kernel3 = SquaredExponential(sill=0.5, range=1.0)
         combined_stack = stacked_kernel + kernel3
         ```
@@ -1191,7 +1191,7 @@ class Product(Kernel):
     Examples:
         Creating and using a `Product` kernel:
 
-        ```
+        ```python
         from geostat.kernel import Product, SquaredExponential, Noise
 
         # Create individual kernels
@@ -1208,7 +1208,7 @@ class Product(Kernel):
 
         Multiplying another kernel with an existing `Product` kernel:
 
-        ```
+        ```python
         kernel3 = SquaredExponential(sill=0.5, range=1.0)
         combined_product = product_kernel * kernel3
         ```

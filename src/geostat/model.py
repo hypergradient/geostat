@@ -82,7 +82,7 @@ class GP:
     in the `cats` argument of `fit()`, `generate()` or `predict()`.
 
     GPs can be superimposed:
-    ```
+    ```python
     gp = gp1 + gp2
     ```
 
@@ -99,6 +99,7 @@ class GP:
     describes observation noise, and \(\beta_1, \ldots, \beta_6\)
     are regression coefficients.  Geostat can be used to fit this
     regression (though not in the most efficient way):
+
     ```python
     @featurizer
     def trend_terms(x, y):
@@ -163,7 +164,7 @@ def Mix(inputs, weights=None):
 
         where \\(A\\) is the weights matrix. This can be implemented as:
 
-        ```
+        ```python
         g = Mix([f1, f2], [[a11, a12], [a21, a22], [a31, a32]])
         ```
 
@@ -370,7 +371,7 @@ class NormalizingFeaturizer:
     Examples:
         Creating a `NormalizingFeaturizer` using a custom featurization function and location data:
 
-        ```
+        ```python
         import tensorflow as tf
         from geostat.model import NormalizingFeaturizer
 
@@ -387,7 +388,7 @@ class NormalizingFeaturizer:
 
         Using the `NormalizingFeaturizer` to featurize new location data:
 
-        ```
+        ```python
         new_locs = tf.constant([[7.0, 8.0], [9.0, 10.0]])
         F_matrix = norm_featurizer(new_locs)
         print(F_matrix) # F_matrix will contain normalized features with an additional intercept column
@@ -431,7 +432,7 @@ class Featurizer:
     Examples:
         Creating a `Featurizer` using a custom featurization function:
 
-        ```
+        ```python
         import tensorflow as tf
         from geostat.model import Featurizer
 
@@ -445,7 +446,7 @@ class Featurizer:
 
         Using the `Featurizer` to transform location data:
 
-        ```
+        ```python
         locs = tf.constant([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
         F_matrix = featurizer(locs)
         print(F_matrix) # F_matrix will contain the features: (x, y, x*y) for each location
@@ -457,7 +458,7 @@ class Featurizer:
 
         Handling the case where no featurization is provided:
 
-        ```
+        ```python
         featurizer_no_feat = Featurizer(None)
         F_matrix = featurizer_no_feat(locs)
         print(F_matrix) # Since no featurization function is provided, F_matrix will have shape (3, 0)
@@ -631,7 +632,7 @@ class Model():
 
     Initializing a `Model` with a Gaussian Process:
 
-        ```
+        ```python
         from geostat import GP, Model, Parameters
         from geostat.kernel import Noise
         import numpy as np
@@ -741,7 +742,7 @@ class Model():
         Examples:
             Update parameter value using `set`:
 
-            ```
+            ```python
             from geostat import GP, Model, Parameters
             from geostat.kernel import Noise
 
@@ -798,7 +799,7 @@ class Model():
         Examples:
             Fitting a model using training data:
 
-            ```
+            ```python
             from geostat import GP, Model, Parameters
             from geostat.kernel import Noise
             import numpy as np
@@ -828,7 +829,7 @@ class Model():
 
             Using categorical data for training:
 
-            ```
+            ```python
             cats = np.array([1, 1, 2])
             model.fit(locs, vals, cats=cats, step_size=0.01, iters=300)
             # [iter    30 ll -12.84 time  0.25 reg  0.00 nugget 131.53]
@@ -1043,7 +1044,7 @@ class Model():
         Examples:
             Generating synthetic values for a set of locations:
 
-            ```
+            ```python
             from geostat import GP, Model, Parameters
             from geostat.kernel import Noise
             import numpy as np
@@ -1135,7 +1136,7 @@ class Model():
         Examples:
             Making predictions for a set of locations:
 
-            ```
+            ```python
             from geostat import GP, Model, Parameters
             from geostat.kernel import SquaredExponential
             import numpy as np
