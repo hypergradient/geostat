@@ -297,15 +297,15 @@
                   
 
 
-<pre><code class="language-python">from geostat import GP, Model, Mesh, NormalizingFeaturizer, Parameters
-import geostat.kernel as krn
-import matplotlib.pyplot as pp
-import numpy as np
-from shapely.geometry import Point, Polygon
-import shapely.vectorized as shv
-import geopandas as gpd
-import contextily as ctx
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">geostat</span> <span class="kn">import</span> <span class="n">GP</span><span class="p">,</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Mesh</span><span class="p">,</span> <span class="n">NormalizingFeaturizer</span><span class="p">,</span> <span class="n">Parameters</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">geostat.kernel</span> <span class="k">as</span> <span class="nn">krn</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pp</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span><span class="p">,</span> <span class="n">Polygon</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">import</span> <span class="nn">shapely.vectorized</span> <span class="k">as</span> <span class="nn">shv</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kn">import</span> <span class="nn">contextily</span> <span class="k">as</span> <span class="nn">ctx</span>
+</span></code></pre></div>
 <h1 id="overview">Overview</h1>
 <p>In this notebook we will show how <code>Mesh</code> is used to make prediction locations. We will:
   * Generate synthetic data on a map of watersheds in Berkeley, California.
@@ -313,59 +313,59 @@ import contextily as ctx
   * Make predictions using <code>Mesh</code>.</p>
 <h1 id="synthesizing-data">Synthesizing data</h1>
 <p>We will synthesize data at 200 random locations drawn from inside a polygon for Berkeley watersheds.</p>
-<pre><code class="language-python">berkeleydf = gpd.read_file(&quot;./berkeley-watershed.zip&quot;)
-berkeley = berkeleydf['geometry'].iloc[0]
-
-x0, y0, x1, y1 = berkeley.bounds
-locs = np.random.uniform(size = [2000, 2]) * [x1-x0, y1-y0] + [x0, y0] # Generate 2000 points.
-mask = [berkeley.contains(Point(p)) for p in locs]
-locs = locs[mask, :][:200, :] # Filter away points outside of shape and keep just 200.
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">berkeleydf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;./berkeley-watershed.zip&quot;</span><span class="p">)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">berkeley</span> <span class="o">=</span> <span class="n">berkeleydf</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">berkeley</span><span class="o">.</span><span class="n">bounds</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">locs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="p">[</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">,</span> <span class="n">y1</span><span class="o">-</span><span class="n">y0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">]</span> <span class="c1"># Generate 2000 points.</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">mask</span> <span class="o">=</span> <span class="p">[</span><span class="n">berkeley</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">locs</span><span class="p">]</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">locs</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="p">:][:</span><span class="mi">200</span><span class="p">,</span> <span class="p">:]</span> <span class="c1"># Filter away points outside of shape and keep just 200.</span>
+</span></code></pre></div>
 <p>Declare the terms of the spatial trend:</p>
-<pre><code class="language-python">def trend_terms(x, y): return x, y
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span> <span class="nf">trend_terms</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+</span></code></pre></div>
 <p>Create a featurizer that the Gaussian process class <code>GP</code> will use to convert locations into trend features:</p>
-<pre><code class="language-python">featurizer = NormalizingFeaturizer(trend_terms, locs)
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">featurizer</span> <span class="o">=</span> <span class="n">NormalizingFeaturizer</span><span class="p">(</span><span class="n">trend_terms</span><span class="p">,</span> <span class="n">locs</span><span class="p">)</span>
+</span></code></pre></div>
 <p>Make geostatistical parameters for the <code>GP</code>, instiate the <code>GP</code>, instantiate a <code>Model</code>, and call <code>generate</code> to generate synthetic observations.</p>
-<pre><code class="language-python">p = Parameters(alpha=0.25, range=2000, sill=1., nugget=0.25)
-
-gp = GP(0, krn.TrendPrior(featurizer, alpha=p.alpha) + \
-           krn.SquaredExponential(range=p.range, sill=p.sill) + \
-           krn.Noise(nugget=p.nugget))
-
-model = Model(gp)
-
-obs = model.generate(locs).vals
-
-vmin, vmax = obs.min(), obs.max()
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">p</span> <span class="o">=</span> <span class="n">Parameters</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">sill</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">nugget</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">gp</span> <span class="o">=</span> <span class="n">GP</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">krn</span><span class="o">.</span><span class="n">TrendPrior</span><span class="p">(</span><span class="n">featurizer</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> \
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>           <span class="n">krn</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">range</span><span class="p">,</span> <span class="n">sill</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">sill</span><span class="p">)</span> <span class="o">+</span> \
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>           <span class="n">krn</span><span class="o">.</span><span class="n">Noise</span><span class="p">(</span><span class="n">nugget</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">nugget</span><span class="p">))</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">gp</span><span class="p">)</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">obs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">locs</span><span class="p">)</span><span class="o">.</span><span class="n">vals</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">obs</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</span></code></pre></div>
 <p>When the data is plotted, you can see an overall trend with some localized variations.</p>
-<pre><code class="language-python">fig, ax = pp.subplots(figsize=(7, 7), dpi=120)
-
-cax = pp.scatter(locs[:, 0], locs[:, 1], c=obs, vmin=vmin, vmax=vmax)
-
-berkeleydf.plot(ax=ax, fc='none', ec='black', lw=1)
-
-pp.colorbar(cax, shrink=0.7)
-
-ctx.add_basemap(ax, attribution=False, crs=berkeleydf.crs.to_string(), 
-                source='https://basemap.nationalmap.gov/arcgis/rest/services/'
-                       'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}')
-
-pp.title('Synthetic data')
-
-pp.tight_layout()
-pp.show()
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">cax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">locs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">locs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">berkeleydf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">pp</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="n">ctx</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">attribution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">berkeleydf</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_string</span><span class="p">(),</span> 
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>                <span class="n">source</span><span class="o">=</span><span class="s1">&#39;https://basemap.nationalmap.gov/arcgis/rest/services/&#39;</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>                       <span class="s1">&#39;USGSImageryOnly/MapServer/tile/</span><span class="si">{z}</span><span class="s1">/</span><span class="si">{y}</span><span class="s1">/</span><span class="si">{x}</span><span class="s1">&#39;</span><span class="p">)</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="n">pp</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Synthetic data&#39;</span><span class="p">)</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="n">pp</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
 <p><img alt="png" src="../output_11_0.png" /></p>
 <h1 id="inferring-parameters">Inferring parameters</h1>
 <p>Now set the parameters to something arbitrary to see if we can successfully infer model parameters. We call <code>fit</code> with the data (<code>locs</code> and <code>obs</code>).</p>
-<pre><code class="language-python">model.set(alpha=1.0, range=1000.0, sill=0.5, nugget=0.5)
-model.fit(locs, obs, iters=300)
-None
-</code></pre>
-<pre><code>[iter    30 ll -194.17 time  1.49 reg  0.00 alpha  1.24 sill  0.42 range 1336.73 nugget  0.37]
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">model</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">,</span> <span class="n">sill</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">nugget</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kc">None</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>[iter    30 ll -194.17 time  1.49 reg  0.00 alpha  1.24 sill  0.42 range 1336.73 nugget  0.37]
 [iter    60 ll -184.73 time  0.36 reg  0.00 alpha  1.12 sill  0.52 range 1687.33 nugget  0.29]
 [iter    90 ll -181.58 time  0.35 reg  0.00 alpha  1.01 sill  0.68 range 1964.81 nugget  0.25]
 [iter   120 ll -180.89 time  0.34 reg  0.00 alpha  0.96 sill  0.85 range 2135.51 nugget  0.24]
@@ -375,110 +375,110 @@ None
 [iter   240 ll -180.66 time  0.35 reg  0.00 alpha  0.91 sill  1.16 range 2336.16 nugget  0.24]
 [iter   270 ll -180.65 time  0.34 reg  0.00 alpha  0.90 sill  1.17 range 2342.93 nugget  0.24]
 [iter   300 ll -180.65 time  0.34 reg  0.00 alpha  0.90 sill  1.18 range 2345.77 nugget  0.24]
-</code></pre>
+</code></pre></div>
 <h1 id="generating-predictions-in-convex-hull">Generating predictions in convex hull</h1>
 <p>Create a mesh using a convex hull for making predictions.</p>
-<pre><code class="language-python">mesh = Mesh.from_convex_hull(locs, nx=200)
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">mesh</span> <span class="o">=</span> <span class="n">Mesh</span><span class="o">.</span><span class="n">from_convex_hull</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</span></code></pre></div>
 <p>Call <code>Model</code> to get predictions at mesh locations:</p>
-<pre><code class="language-python">mean, var = model.predict(mesh.locations())
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">mean</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">locations</span><span class="p">())</span>
+</span></code></pre></div>
 <p>Create a slice for prediction mean and plot:</p>
-<pre><code class="language-python">meshx, meshy, value = mesh.slice(mean)
-
-fig, ax = pp.subplots(figsize=(7, 7), dpi=120)
-
-cax = pp.pcolormesh(meshx, meshy, value, vmin=vmin, vmax=vmax)
-
-berkeleydf.plot(ax=ax, fc='none', ec='black', lw=1)
-
-pp.colorbar(cax, shrink=0.7)
-
-ctx.add_basemap(ax, attribution=False, crs=berkeleydf.crs.to_string(), 
-                source='https://basemap.nationalmap.gov/arcgis/rest/services/'
-                       'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}')
-
-pp.title('Prediction mean')
-
-pp.tight_layout()
-pp.show()
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">cax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">berkeleydf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">pp</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="n">ctx</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">attribution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">berkeleydf</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_string</span><span class="p">(),</span> 
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>                <span class="n">source</span><span class="o">=</span><span class="s1">&#39;https://basemap.nationalmap.gov/arcgis/rest/services/&#39;</span>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>                       <span class="s1">&#39;USGSImageryOnly/MapServer/tile/</span><span class="si">{z}</span><span class="s1">/</span><span class="si">{y}</span><span class="s1">/</span><span class="si">{x}</span><span class="s1">&#39;</span><span class="p">)</span>
+</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>
+</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="n">pp</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Prediction mean&#39;</span><span class="p">)</span>
+</span><span id="__span-9-16"><a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>
+</span><span id="__span-9-17"><a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="n">pp</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-9-18"><a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
 <p><img alt="png" src="../output_20_0.png" /></p>
 <p>Do the same for prediction variance:</p>
-<pre><code class="language-python">meshx, meshy, value = mesh.slice(var)
-
-fig, ax = pp.subplots(figsize=(7, 7), dpi=120)
-
-cax = pp.pcolormesh(meshx, meshy, value, cmap='gist_heat_r')
-
-berkeleydf.plot(ax=ax, fc='none', ec='black', lw=1)
-
-pp.colorbar(cax, shrink=0.7)
-
-ctx.add_basemap(ax, attribution=False, crs=berkeleydf.crs.to_string(), 
-                source='https://basemap.nationalmap.gov/arcgis/rest/services/'
-                       'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}')
-
-pp.title('Prediction variance')
-
-pp.tight_layout()
-pp.show()
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">cax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gist_heat_r&#39;</span><span class="p">)</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">berkeleydf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">pp</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="n">ctx</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">attribution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">berkeleydf</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_string</span><span class="p">(),</span> 
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>                <span class="n">source</span><span class="o">=</span><span class="s1">&#39;https://basemap.nationalmap.gov/arcgis/rest/services/&#39;</span>
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>                       <span class="s1">&#39;USGSImageryOnly/MapServer/tile/</span><span class="si">{z}</span><span class="s1">/</span><span class="si">{y}</span><span class="s1">/</span><span class="si">{x}</span><span class="s1">&#39;</span><span class="p">)</span>
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>
+</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="n">pp</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Prediction variance&#39;</span><span class="p">)</span>
+</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>
+</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="n">pp</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
 <p><img alt="png" src="../output_22_0.png" /></p>
 <h1 id="generating-predictions-in-arbitrary-shape">Generating predictions in arbitrary shape</h1>
 <p>The convex hull produces predictions both inside and outside the shape for Berkeley watersheds, which can be a bit awkward. Now instead, let's create a mesh using the shape, for making predictions.</p>
-<pre><code class="language-python">mesh = Mesh.from_polygon(berkeley, nx=200)
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">mesh</span> <span class="o">=</span> <span class="n">Mesh</span><span class="o">.</span><span class="n">from_polygon</span><span class="p">(</span><span class="n">berkeley</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</span></code></pre></div>
 <p>Make predictions:</p>
-<pre><code class="language-python">mean, var = model.predict(mesh.locations())
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">mean</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">locations</span><span class="p">())</span>
+</span></code></pre></div>
 <p>Create a slice for prediction mean and plot:</p>
-<pre><code class="language-python">meshx, meshy, value = mesh.slice(mean)
-
-fig, ax = pp.subplots(figsize=(7, 7), dpi=120)
-
-cax = pp.pcolormesh(meshx, meshy, value, vmin=vmin, vmax=vmax)
-
-# Add contour
-value_contains = shv.contains(berkeleydf.geometry.item(), meshx, meshy)
-value_mask = np.where(value_contains, value, np.nan)
-pp.contour(meshx, meshy, value_mask, colors='k', linewidths=0.5, alpha=0.8)
-
-
-berkeleydf.plot(ax=ax, fc='none', ec='black', lw=1)
-
-pp.colorbar(cax, shrink=0.7)
-
-ctx.add_basemap(ax, attribution=False, crs=berkeleydf.crs.to_string(), 
-                source='https://basemap.nationalmap.gov/arcgis/rest/services/'
-                       'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}')
-
-pp.title('Prediction mean')
-
-pp.tight_layout()
-pp.show()
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">cax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="c1"># Add contour</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="n">value_contains</span> <span class="o">=</span> <span class="n">shv</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">berkeleydf</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">)</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="n">value_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">value_contains</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="n">pp</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value_mask</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="n">berkeleydf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="n">pp</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>
+</span><span id="__span-13-17"><a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="n">ctx</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">attribution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">berkeleydf</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_string</span><span class="p">(),</span> 
+</span><span id="__span-13-18"><a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>                <span class="n">source</span><span class="o">=</span><span class="s1">&#39;https://basemap.nationalmap.gov/arcgis/rest/services/&#39;</span>
+</span><span id="__span-13-19"><a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>                       <span class="s1">&#39;USGSImageryOnly/MapServer/tile/</span><span class="si">{z}</span><span class="s1">/</span><span class="si">{y}</span><span class="s1">/</span><span class="si">{x}</span><span class="s1">&#39;</span><span class="p">)</span>
+</span><span id="__span-13-20"><a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>
+</span><span id="__span-13-21"><a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="n">pp</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Prediction mean&#39;</span><span class="p">)</span>
+</span><span id="__span-13-22"><a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a>
+</span><span id="__span-13-23"><a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="n">pp</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-13-24"><a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
 <p><img alt="png" src="../output_28_0.png" /></p>
 <p>Do the same for prediction variance:</p>
-<pre><code class="language-python">meshx, meshy, value = mesh.slice(var)
-
-fig, ax = pp.subplots(figsize=(7, 7), dpi=120)
-
-cax = pp.pcolormesh(meshx, meshy, value, cmap='gist_heat_r')
-
-berkeleydf.plot(ax=ax, fc='none', ec='black', lw=1)
-
-pp.colorbar(cax, shrink=0.7)
-
-ctx.add_basemap(ax, attribution=False, crs=berkeleydf.crs.to_string(), 
-                source='https://basemap.nationalmap.gov/arcgis/rest/services/'
-                       'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}')
-
-pp.title('Prediction variance')
-
-pp.tight_layout()
-pp.show()
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="n">cax</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">meshx</span><span class="p">,</span> <span class="n">meshy</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gist_heat_r&#39;</span><span class="p">)</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="n">berkeleydf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">ec</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="n">pp</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="n">ctx</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">attribution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">berkeleydf</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_string</span><span class="p">(),</span> 
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>                <span class="n">source</span><span class="o">=</span><span class="s1">&#39;https://basemap.nationalmap.gov/arcgis/rest/services/&#39;</span>
+</span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>                       <span class="s1">&#39;USGSImageryOnly/MapServer/tile/</span><span class="si">{z}</span><span class="s1">/</span><span class="si">{y}</span><span class="s1">/</span><span class="si">{x}</span><span class="s1">&#39;</span><span class="p">)</span>
+</span><span id="__span-14-14"><a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>
+</span><span id="__span-14-15"><a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="n">pp</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Prediction variance&#39;</span><span class="p">)</span>
+</span><span id="__span-14-16"><a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>
+</span><span id="__span-14-17"><a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="n">pp</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="__span-14-18"><a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
 <p><img alt="png" src="../output_30_0.png" /></p>
 
 

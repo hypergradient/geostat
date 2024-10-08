@@ -298,11 +298,11 @@
 
 
 <h1 id="gaussian-processes-in-tensorflow">Gaussian processes in Tensorflow</h1>
-<pre><code class="language-python">import tensorflow as tf
-tf.__version__
-</code></pre>
-<pre><code>'1.8.0'
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">tf</span><span class="o">.</span><span class="n">__version__</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>&#39;1.8.0&#39;
+</code></pre></div>
 <p>Geostatistical datasets are often a set of measurements with locations. Nearby measurements covary a lot. Distant measurements are nearly independent.</p>
 <p>Let's simulate this:</p>
 <ul>
@@ -314,55 +314,55 @@ tf.__version__
 </ul>
 <p>This is implemented as <code>simulate_gp</code> below. The range is called <code>vrange</code> to avoid conflicting with Python's <code>range</code>.</p>
 <p>The data consists of locations <code>x</code> (or equivalently, the distance matrix <code>D</code>) and measurements <code>u</code>.</p>
-<pre><code class="language-python">import numpy as np
-from scipy.spatial.distance import cdist
-np.set_printoptions(precision=2, threshold=50)
-
-def simulate_gp(N, vrange, sill, nugget, offset):
-
-    # Sample N locations from square with corners at [±10, ±10].
-    x = np.random.uniform(-10.0, 10.0, [N, 2]) 
-
-    # Compute distance matrix for sampled locations.
-    D = cdist(x, x)
-
-    # Compute corresponding covariance matrix.
-    C = sill * np.exp(-np.square(D/vrange)) + nugget * np.eye(N)
-
-    # The mean is just a vector where every entry is the offset.
-    m = np.zeros([N]) + offset
-
-    # Simulate geospatial measurements by sampling using covariance matrix
-    u = np.random.multivariate_normal(m, C)
-
-    return x, D, C, m, u
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">scipy.spatial.distance</span> <span class="kn">import</span> <span class="n">cdist</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">def</span> <span class="nf">simulate_gp</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="c1"># Sample N locations from square with corners at [±10, ±10].</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span> 
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="c1"># Compute distance matrix for sampled locations.</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">D</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="c1"># Compute corresponding covariance matrix.</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">C</span> <span class="o">=</span> <span class="n">sill</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">D</span><span class="o">/</span><span class="n">vrange</span><span class="p">))</span> <span class="o">+</span> <span class="n">nugget</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="c1"># The mean is just a vector where every entry is the offset.</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">N</span><span class="p">])</span> <span class="o">+</span> <span class="n">offset</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="c1"># Simulate geospatial measurements by sampling using covariance matrix</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">C</span><span class="p">)</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">u</span>
+</span></code></pre></div>
 <p>Now we call <code>simulate_gp</code> and plot the result. (You may have to run this twice to get the plot to show up.)</p>
-<pre><code class="language-python">x, D, C, m, u = simulate_gp(
-    N = 300,
-    vrange = 5.0,
-    sill = 2.0,
-    nugget = 2.0,
-    offset = 1.0)
-
-print(&quot;Locations&quot;)
-print(x)
-
-print(&quot;Distance matrix&quot;)
-print(D)
-
-print(&quot;Covariance matrix&quot;)
-print(C)
-
-print(&quot;Simulated measurements&quot;)
-print(u)
-
-import matplotlib.pyplot as pp
-
-pp.scatter(x[:, 0], x[:, 1], c=u)
-pp.show()
-</code></pre>
-<pre><code>Locations
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">x</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">simulate_gp</span><span class="p">(</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">N</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">vrange</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">sill</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">nugget</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">offset</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Locations&quot;</span><span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Distance matrix&quot;</span><span class="p">)</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nb">print</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Covariance matrix&quot;</span><span class="p">)</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="nb">print</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Simulated measurements&quot;</span><span class="p">)</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="nb">print</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pp</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="n">pp</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">u</span><span class="p">)</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>Locations
 [[ 0.83  9.5 ]
  [-6.51  0.99]
  [ 2.84  6.14]
@@ -388,7 +388,7 @@ Covariance matrix
  [0.02 0.01 0.28 ... 0.02 0.06 4.  ]]
 Simulated measurements
 [ 2.78 -0.64 -0.56 ... -0.27  2.02  2.  ]
-</code></pre>
+</code></pre></div>
 <p><img alt="png" src="../output_5_1.png" /></p>
 <p>Now we make a function <code>infer_gp</code> to infer the gaussian process parameters (range, sill, nugget, offset) using maximum likelihood. We implement the same graph in Tensorflow as we did in NumPy, and tack on the negative log PDF of a multivariate normal distribution at the end, which we minimize. That is, we minimize:
 <span class="arithmatex">\(<span class="arithmatex">\(-\log p(u \mid m, C) = \frac{1}{2}\bigg[\log\,\big|\, 2\pi C\,\big| + (u-m)^T C^{-1} (u-m) \bigg],\)</span>\)</span>
@@ -398,47 +398,47 @@ where <span class="arithmatex">\(m = \beta_1 \cdot \mathbb{1}\)</span>.</p>
       * Distance matrix <code>D</code> (shape: [N, N])
       * Measurements <code>u</code> (shape: [N])
   *  <code>parameters</code> is a list of tensors for range, sill, nugget, and offset. Each tensor can be a <code>tf.Variables</code> (if it is to be inferred) or a constant (if it's a given).</p>
-<pre><code class="language-python">def infer_gp(inputs, parameters):
-
-    D, u = inputs
-    vrange, sill, nugget, offset = parameters
-
-    # Construct covariance; boost diagonal by 1e-6 for numerical stability.
-    covariance = sill * tf.exp(-tf.square(tf.constant(D)/vrange)) \
-               + (nugget + 1e-6) * tf.eye(D.shape[0], dtype=tf.float64)
-
-    # Log likelihood is the PDF of a multivariate gaussian.
-    u_adj = tf.constant(u) - offset
-    logdet = tf.linalg.logdet(2 * np.pi * covariance)
-    quad = tf.matmul(tf.expand_dims(u_adj, 0), tf.matrix_solve(covariance, tf.expand_dims(u_adj, -1)))[0, 0]
-    ll = -0.5 * (logdet + quad)
-
-    # Infer using an adaptive gradient descent optimizer.
-    train = tf.train.AdamOptimizer(1e-2).minimize(-ll)
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        for i in range(20):
-            for j in range(100):
-                sess.run(train)
-            print('[ll %7.2f] [range %4.2f] [sill %4.2f] [nugget %4.2f] [offset %4.2f]' % 
-                  tuple(sess.run([ll, vrange, sill, nugget, offset])))
-
-        return sess.run([vrange, sill, nugget, offset])
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span> <span class="nf">infer_gp</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">D</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">inputs</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">parameters</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="c1"># Construct covariance; boost diagonal by 1e-6 for numerical stability.</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">covariance</span> <span class="o">=</span> <span class="n">sill</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">D</span><span class="p">)</span><span class="o">/</span><span class="n">vrange</span><span class="p">))</span> \
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>               <span class="o">+</span> <span class="p">(</span><span class="n">nugget</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">D</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="c1"># Log likelihood is the PDF of a multivariate gaussian.</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">u_adj</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">-</span> <span class="n">offset</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">logdet</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">logdet</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">covariance</span><span class="p">)</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">quad</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">u_adj</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">matrix_solve</span><span class="p">(</span><span class="n">covariance</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">u_adj</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)))[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">ll</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">logdet</span> <span class="o">+</span> <span class="n">quad</span><span class="p">)</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="c1"># Infer using an adaptive gradient descent optimizer.</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="n">train</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">AdamOptimizer</span><span class="p">(</span><span class="mf">1e-2</span><span class="p">)</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="o">-</span><span class="n">ll</span><span class="p">)</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">global_variables_initializer</span><span class="p">())</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>                <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train</span><span class="p">)</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;[ll </span><span class="si">%7.2f</span><span class="s1">] [range </span><span class="si">%4.2f</span><span class="s1">] [sill </span><span class="si">%4.2f</span><span class="s1">] [nugget </span><span class="si">%4.2f</span><span class="s1">] [offset </span><span class="si">%4.2f</span><span class="s1">]&#39;</span> <span class="o">%</span> 
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>                  <span class="nb">tuple</span><span class="p">(</span><span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="n">ll</span><span class="p">,</span> <span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span><span class="p">,</span> <span class="n">offset</span><span class="p">])))</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>        <span class="k">return</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span><span class="p">,</span> <span class="n">offset</span><span class="p">])</span>
+</span></code></pre></div>
 <p>Here we make a <code>tf.Variable</code> for each parameter, using a log as the underlying representation if the parameter is positive-only.</p>
-<pre><code class="language-python"># Define parameters using tf.Variable.
-log_vrange = tf.Variable(0.0, dtype=tf.float64)
-log_sill = tf.Variable(0.0, dtype=tf.float64)
-log_nugget = tf.Variable(0.0, dtype=tf.float64)
-
-vrange = tf.exp(log_vrange)
-sill = tf.exp(log_sill)
-nugget = tf.exp(log_nugget)
-offset = tf.Variable(0.0, dtype=tf.float64)
-
-vrange_val, sill_val, nugget_val, offset_val = infer_gp([D, u], [vrange, sill, nugget, offset])
-</code></pre>
-<pre><code>[ll -552.48] [range 2.25] [sill 1.48] [nugget 1.66] [offset 0.63]
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Define parameters using tf.Variable.</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">log_vrange</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">log_sill</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">log_nugget</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">vrange</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_vrange</span><span class="p">)</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">sill</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_sill</span><span class="p">)</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">nugget</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_nugget</span><span class="p">)</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">offset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="n">vrange_val</span><span class="p">,</span> <span class="n">sill_val</span><span class="p">,</span> <span class="n">nugget_val</span><span class="p">,</span> <span class="n">offset_val</span> <span class="o">=</span> <span class="n">infer_gp</span><span class="p">([</span><span class="n">D</span><span class="p">,</span> <span class="n">u</span><span class="p">],</span> <span class="p">[</span><span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span><span class="p">,</span> <span class="n">offset</span><span class="p">])</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>[ll -552.48] [range 2.25] [sill 1.48] [nugget 1.66] [offset 0.63]
 [ll -537.88] [range 3.71] [sill 1.36] [nugget 1.68] [offset 0.84]
 [ll -536.83] [range 4.20] [sill 1.38] [nugget 1.70] [offset 0.96]
 [ll -536.62] [range 4.28] [sill 1.42] [nugget 1.71] [offset 1.05]
@@ -458,7 +458,7 @@ vrange_val, sill_val, nugget_val, offset_val = infer_gp([D, u], [vrange, sill, n
 [ll -536.40] [range 4.24] [sill 1.40] [nugget 1.71] [offset 1.30]
 [ll -536.40] [range 4.24] [sill 1.40] [nugget 1.71] [offset 1.30]
 [ll -536.40] [range 4.24] [sill 1.40] [nugget 1.71] [offset 1.30]
-</code></pre>
+</code></pre></div>
 <p>We can do better inference by integrating over all possibilities for <span class="arithmatex">\(\beta_1\)</span>.  (Integrating over range, sill, and nugget, which are parameters in <span class="arithmatex">\(C\)</span>, is hard; but integrating over parameters in <span class="arithmatex">\(m\)</span> is relatively easy.) This corresponds to the following generative model.</p>
 <p>First, draw <span class="arithmatex">\(\beta_1\)</span> from a normal distribution:</p>
 <div class="arithmatex">\[\beta_1 \sim \mathcal{N}(0, 100).\]</div>
@@ -470,48 +470,48 @@ vrange_val, sill_val, nugget_val, offset_val = infer_gp([D, u], [vrange, sill, n
 <p>We rely on the abstract fact that if <span class="arithmatex">\(X_1 \sim \mathcal{N}(\mu_1, \Sigma_1)\)</span> and <span class="arithmatex">\(X_2 \mid X_1 \sim \mathcal{N}(\mu_2, \Sigma_2)\)</span>, then <span class="arithmatex">\(X_2 \sim \mathcal{N}(\mu_1, \Sigma_1 + \Sigma_2)\)</span>.  (<span class="arithmatex">\(X_1\)</span> and <span class="arithmatex">\(X_2\)</span> are vectors equal in length.) To apply this, we note that since <span class="arithmatex">\(\beta_1 \sim \mathcal{N}(0, 100)\)</span>, then <span class="arithmatex">\(\beta_1 \cdot \mathbb{1} \sim \mathcal{N}(0, 100 \cdot \mathbb{1}\mathbb{1}^T)\)</span>, where <span class="arithmatex">\(\mathbb{1}\mathbb{1}^T\)</span> is a matrix of all ones. From this it follows that</p>
 <div class="arithmatex">\[u \sim \mathcal{N}(0, A)\]</div>
 <p>where <span class="arithmatex">\(A = 100 \cdot \mathbb{1}\mathbb{1}^T + C.\)</span> The function below implements inference with this model, where the offset is marginalized out.</p>
-<pre><code class="language-python">def infer_gp_marginalize_over_offset(inputs, parameters, offset_prior):
-
-    D, u = inputs
-    vrange, sill, nugget = parameters
-
-    # Construct covariance; boost diagonal by 1e-6 for numerical stability.
-    covariance = sill * tf.exp(-tf.square(tf.constant(D)/vrange)) \
-               + (nugget + 1e-6) * tf.eye(D.shape[0], dtype=tf.float64) \
-               + offset_prior
-
-    # Log likelihood is the PDF of a multivariate gaussian.
-    u_adj = tf.constant(u) - offset
-    logdet = tf.linalg.logdet(2 * np.pi * covariance)
-    quad = tf.matmul(tf.expand_dims(u_adj, 0), tf.matrix_solve(covariance, tf.expand_dims(u_adj, -1)))[0, 0]
-    ll = -0.5 * (logdet + quad)
-
-    # Infer using an adaptive gradient descent optimizer.
-    train = tf.train.AdamOptimizer(1e-2).minimize(-ll)
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        for i in range(20):
-            for j in range(100):
-                sess.run(train)
-            print('[ll %7.2f] [range %4.2f] [sill %4.2f] [nugget %4.2f]' % tuple(sess.run([ll, vrange, sill, nugget])))
-
-        return sess.run([vrange, sill, nugget])
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">def</span> <span class="nf">infer_gp_marginalize_over_offset</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">offset_prior</span><span class="p">):</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">D</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">inputs</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span> <span class="o">=</span> <span class="n">parameters</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="c1"># Construct covariance; boost diagonal by 1e-6 for numerical stability.</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">covariance</span> <span class="o">=</span> <span class="n">sill</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">D</span><span class="p">)</span><span class="o">/</span><span class="n">vrange</span><span class="p">))</span> \
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>               <span class="o">+</span> <span class="p">(</span><span class="n">nugget</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">D</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> \
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>               <span class="o">+</span> <span class="n">offset_prior</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="c1"># Log likelihood is the PDF of a multivariate gaussian.</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="n">u_adj</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">-</span> <span class="n">offset</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="n">logdet</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">logdet</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">covariance</span><span class="p">)</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="n">quad</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">u_adj</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">matrix_solve</span><span class="p">(</span><span class="n">covariance</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">u_adj</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)))[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    <span class="n">ll</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">logdet</span> <span class="o">+</span> <span class="n">quad</span><span class="p">)</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="c1"># Infer using an adaptive gradient descent optimizer.</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>    <span class="n">train</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">AdamOptimizer</span><span class="p">(</span><span class="mf">1e-2</span><span class="p">)</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="o">-</span><span class="n">ll</span><span class="p">)</span>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>        <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">global_variables_initializer</span><span class="p">())</span>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>                <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">train</span><span class="p">)</span>
+</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;[ll </span><span class="si">%7.2f</span><span class="s1">] [range </span><span class="si">%4.2f</span><span class="s1">] [sill </span><span class="si">%4.2f</span><span class="s1">] [nugget </span><span class="si">%4.2f</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="n">ll</span><span class="p">,</span> <span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span><span class="p">])))</span>
+</span><span id="__span-5-25"><a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>
+</span><span id="__span-5-26"><a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>        <span class="k">return</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span><span class="p">])</span>
+</span></code></pre></div>
 <p>When we run this, we don't get an estimate for the offset, but the other estimates are often improved. Bear in mind that we can actually solve for the posterior distribution of the offset if we want to.</p>
-<pre><code class="language-python"># Define parameters using tf.Variable.
-log_vrange = tf.Variable(0.0, dtype=tf.float64)
-log_sill = tf.Variable(0.0, dtype=tf.float64)
-log_nugget = tf.Variable(0.0, dtype=tf.float64)
-
-vrange = tf.exp(log_vrange)
-sill = tf.exp(log_sill)
-nugget = tf.exp(log_nugget)
-
-offset_prior = 100.0
-
-vrange_val, sill_val, nugget_val = infer_gp_marginalize_over_offset([D, u], [vrange, sill, nugget], offset_prior)
-</code></pre>
-<pre><code>[ll -541.34] [range 3.02] [sill 0.96] [nugget 1.69]
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Define parameters using tf.Variable.</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">log_vrange</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">log_sill</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">log_nugget</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">vrange</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_vrange</span><span class="p">)</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">sill</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_sill</span><span class="p">)</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">nugget</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_nugget</span><span class="p">)</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">offset_prior</span> <span class="o">=</span> <span class="mf">100.0</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="n">vrange_val</span><span class="p">,</span> <span class="n">sill_val</span><span class="p">,</span> <span class="n">nugget_val</span> <span class="o">=</span> <span class="n">infer_gp_marginalize_over_offset</span><span class="p">([</span><span class="n">D</span><span class="p">,</span> <span class="n">u</span><span class="p">],</span> <span class="p">[</span><span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span><span class="p">],</span> <span class="n">offset_prior</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>[ll -541.34] [range 3.02] [sill 0.96] [nugget 1.69]
 [ll -537.97] [range 4.51] [sill 1.13] [nugget 1.73]
 [ll -537.93] [range 4.65] [sill 1.25] [nugget 1.73]
 [ll -537.93] [range 4.67] [sill 1.27] [nugget 1.73]
@@ -531,7 +531,7 @@ vrange_val, sill_val, nugget_val = infer_gp_marginalize_over_offset([D, u], [vra
 [ll -537.93] [range 4.67] [sill 1.27] [nugget 1.73]
 [ll -537.93] [range 4.67] [sill 1.27] [nugget 1.73]
 [ll -537.93] [range 4.67] [sill 1.27] [nugget 1.73]
-</code></pre>
+</code></pre></div>
 <p>Interpolation takes values at <span class="arithmatex">\(N_1\)</span> locations, and gives means and variances for <span class="arithmatex">\(N_2\)</span> locations. Formally, interpolation takes</p>
 <ul>
 <li>input locations <span class="arithmatex">\(x_1\)</span>, an <span class="arithmatex">\(N_1 \times 2\)</span> matrix,</li>
@@ -546,45 +546,45 @@ vrange_val, sill_val, nugget_val = infer_gp_marginalize_over_offset([D, u], [vra
 <div class="arithmatex">\[u_2 \mid u_1 \sim \mathcal{N}(A_{21}A_{11}^{-1}u_1,\ A_{22} - A_{21}A_{11}^{-1}A_{12}).\]</div>
 <p>Bear in mind, if we just want  the marginal variance of each element in <span class="arithmatex">\(u_2\)</span>, we only need to compute the diagonal entries of <span class="arithmatex">\(A_{22} - A_{21}A_{11}^{-1}A_{12}\)</span>.</p>
 <p>Refer to <a href="https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Conditional_distributions">Wikipedia</a> for more details.</p>
-<pre><code class="language-python">def interpolate_gp(x1, u1, x2, parameter_vals, offset_prior):
-
-    vrange, sill, nugget = parameter_vals
-
-    # Compute distance matrices for sampled locations.
-    D11 = cdist(x1, x1)
-    D12 = cdist(x1, x2)
-    D21 = cdist(x2, x1)
-    D22 = cdist(x2, x2)
-
-    # Compute covariance matrices.
-    C11 = sill * np.exp(-np.square(D11/vrange)) + nugget * np.eye(len(x1)) + offset_prior
-    C12 = sill * np.exp(-np.square(D12/vrange)) + offset_prior # No nugget for off-diagonal entries
-    C21 = sill * np.exp(-np.square(D21/vrange)) + offset_prior # No nugget for off-diagonal entries
-    C22 = sill * np.exp(-np.square(D22/vrange)) + nugget * np.eye(len(x2)) + offset_prior
-
-    u2_mean = np.matmul(C21, np.linalg.solve(C11, u))
-    u2_var = np.diag(C22) -  np.sum(C12 * np.linalg.solve(C11, C12), axis=0)
-
-    return u2_mean, u2_var
-
-MX = 61
-MY = 61
-M = MX * MY # Number of points to infer.
-
-# Gross code to get mesh locations.
-xx, yy = np.meshgrid(np.linspace(-12, 12, MX), np.linspace(-12, 12, MY))
-x2 = np.hstack([xx.reshape((M, 1)), yy.reshape((M, 1))])
-
-# Interpolate!
-u2_mean, u2_var = interpolate_gp(x, u, x2, [vrange_val, sill_val, nugget_val], offset_prior)                                                                
-
-# Plot old values, new value means, new value variances
-for locations, values in [(x, u), (x2, u2_mean), (x2, u2_var)]:
-    pp.scatter(locations[:, 0], locations[:, 1], c=values)
-    pp.xlim(-12, 12)
-    pp.ylim(-12, 12)
-    pp.show()
-</code></pre>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">def</span> <span class="nf">interpolate_gp</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">u1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">parameter_vals</span><span class="p">,</span> <span class="n">offset_prior</span><span class="p">):</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">vrange</span><span class="p">,</span> <span class="n">sill</span><span class="p">,</span> <span class="n">nugget</span> <span class="o">=</span> <span class="n">parameter_vals</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="c1"># Compute distance matrices for sampled locations.</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">D11</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x1</span><span class="p">)</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">D12</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">D21</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">x1</span><span class="p">)</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="n">D22</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>    <span class="c1"># Compute covariance matrices.</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    <span class="n">C11</span> <span class="o">=</span> <span class="n">sill</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">D11</span><span class="o">/</span><span class="n">vrange</span><span class="p">))</span> <span class="o">+</span> <span class="n">nugget</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x1</span><span class="p">))</span> <span class="o">+</span> <span class="n">offset_prior</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>    <span class="n">C12</span> <span class="o">=</span> <span class="n">sill</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">D12</span><span class="o">/</span><span class="n">vrange</span><span class="p">))</span> <span class="o">+</span> <span class="n">offset_prior</span> <span class="c1"># No nugget for off-diagonal entries</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>    <span class="n">C21</span> <span class="o">=</span> <span class="n">sill</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">D21</span><span class="o">/</span><span class="n">vrange</span><span class="p">))</span> <span class="o">+</span> <span class="n">offset_prior</span> <span class="c1"># No nugget for off-diagonal entries</span>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>    <span class="n">C22</span> <span class="o">=</span> <span class="n">sill</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">D22</span><span class="o">/</span><span class="n">vrange</span><span class="p">))</span> <span class="o">+</span> <span class="n">nugget</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x2</span><span class="p">))</span> <span class="o">+</span> <span class="n">offset_prior</span>
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>
+</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>    <span class="n">u2_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">C21</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">C11</span><span class="p">,</span> <span class="n">u</span><span class="p">))</span>
+</span><span id="__span-7-18"><a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="n">u2_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">C22</span><span class="p">)</span> <span class="o">-</span>  <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">C12</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">C11</span><span class="p">,</span> <span class="n">C12</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-7-19"><a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>
+</span><span id="__span-7-20"><a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>    <span class="k">return</span> <span class="n">u2_mean</span><span class="p">,</span> <span class="n">u2_var</span>
+</span><span id="__span-7-21"><a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>
+</span><span id="__span-7-22"><a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="n">MX</span> <span class="o">=</span> <span class="mi">61</span>
+</span><span id="__span-7-23"><a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="n">MY</span> <span class="o">=</span> <span class="mi">61</span>
+</span><span id="__span-7-24"><a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="n">M</span> <span class="o">=</span> <span class="n">MX</span> <span class="o">*</span> <span class="n">MY</span> <span class="c1"># Number of points to infer.</span>
+</span><span id="__span-7-25"><a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>
+</span><span id="__span-7-26"><a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="c1"># Gross code to get mesh locations.</span>
+</span><span id="__span-7-27"><a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">MX</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">MY</span><span class="p">))</span>
+</span><span id="__span-7-28"><a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a><span class="n">x2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">xx</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">yy</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">M</span><span class="p">,</span> <span class="mi">1</span><span class="p">))])</span>
+</span><span id="__span-7-29"><a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>
+</span><span id="__span-7-30"><a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a><span class="c1"># Interpolate!</span>
+</span><span id="__span-7-31"><a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a><span class="n">u2_mean</span><span class="p">,</span> <span class="n">u2_var</span> <span class="o">=</span> <span class="n">interpolate_gp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="p">[</span><span class="n">vrange_val</span><span class="p">,</span> <span class="n">sill_val</span><span class="p">,</span> <span class="n">nugget_val</span><span class="p">],</span> <span class="n">offset_prior</span><span class="p">)</span>                                                                
+</span><span id="__span-7-32"><a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>
+</span><span id="__span-7-33"><a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a><span class="c1"># Plot old values, new value means, new value variances</span>
+</span><span id="__span-7-34"><a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a><span class="k">for</span> <span class="n">locations</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">u</span><span class="p">),</span> <span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">u2_mean</span><span class="p">),</span> <span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">u2_var</span><span class="p">)]:</span>
+</span><span id="__span-7-35"><a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>    <span class="n">pp</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">values</span><span class="p">)</span>
+</span><span id="__span-7-36"><a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>    <span class="n">pp</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+</span><span id="__span-7-37"><a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>    <span class="n">pp</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+</span><span id="__span-7-38"><a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a>    <span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
 <p><img alt="png" src="../output_15_0.png" /></p>
 <p><img alt="png" src="../output_15_1.png" /></p>
 <p><img alt="png" src="../output_15_2.png" /></p>

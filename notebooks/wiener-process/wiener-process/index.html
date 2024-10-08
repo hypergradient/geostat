@@ -292,37 +292,37 @@
 
   <h1>Wiener process</h1>
 
-<pre><code class="language-python">from geostat import GP, Model, Featurizer, Parameters
-import geostat.kernel as krn
-import matplotlib.pyplot as plt
-import numpy as np
-</code></pre>
-<pre><code class="language-python">x = np.linspace(-8, 8, 321)[:, np.newaxis]
-
-locs = np.array([-4, -3, -2, -1, 0, 1, 2, 3, 4], dtype=float)[:, np.newaxis]
-obs = np.array([-2, -2, -2, -1, 0, 1, 2, 2, 2], dtype=float)
-
-featurizer = Featurizer(lambda x: (1., x))
-featurizer2 = Featurizer(lambda x: (1.,))
-
-p = Parameters(alpha=0.25)
-kernel = krn.TrendPrior(featurizer, alpha=p.alpha) + krn.Noise(0.25)
-model = Model(GP(0, kernel)).fit(locs, obs, iters=500)
-mu1, _ = model.predict(x)
-
-p = Parameters(range=0.33, sill=1.)
-kernel = krn.SquaredExponential(range=p.range, sill=p.sill) + krn.Noise(0.25)
-model = Model(GP(0, kernel)).fit(locs, obs, iters=500)
-mu2, _ = model.predict(x)
-
-p = Parameters(alpha=0.25, sill=1.)
-kernel = krn.TrendPrior(featurizer2, alpha=p.alpha) \
-       + krn.Constant(sill=p.sill) \
-       * krn.Wiener(axis=0, start=-4) + krn.Noise(nugget=0.25)
-model = Model(GP(0, kernel)).fit(locs, obs, iters=500)
-mu3, _ = model.predict(x)
-</code></pre>
-<pre><code>[iter    50 ll -9.88 time  0.43 reg  0.00 alpha  0.21]
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">geostat</span> <span class="kn">import</span> <span class="n">GP</span><span class="p">,</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Featurizer</span><span class="p">,</span> <span class="n">Parameters</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">geostat.kernel</span> <span class="k">as</span> <span class="nn">krn</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span></code></pre></div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">321</span><span class="p">)[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">locs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">featurizer</span> <span class="o">=</span> <span class="n">Featurizer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="mf">1.</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">featurizer2</span> <span class="o">=</span> <span class="n">Featurizer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="mf">1.</span><span class="p">,))</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">p</span> <span class="o">=</span> <span class="n">Parameters</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">kernel</span> <span class="o">=</span> <span class="n">krn</span><span class="o">.</span><span class="n">TrendPrior</span><span class="p">(</span><span class="n">featurizer</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="n">krn</span><span class="o">.</span><span class="n">Noise</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">GP</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kernel</span><span class="p">))</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">mu1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">p</span> <span class="o">=</span> <span class="n">Parameters</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="mf">0.33</span><span class="p">,</span> <span class="n">sill</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="n">kernel</span> <span class="o">=</span> <span class="n">krn</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">range</span><span class="p">,</span> <span class="n">sill</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">sill</span><span class="p">)</span> <span class="o">+</span> <span class="n">krn</span><span class="o">.</span><span class="n">Noise</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">GP</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kernel</span><span class="p">))</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="n">mu2</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">p</span> <span class="o">=</span> <span class="n">Parameters</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">sill</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="n">kernel</span> <span class="o">=</span> <span class="n">krn</span><span class="o">.</span><span class="n">TrendPrior</span><span class="p">(</span><span class="n">featurizer2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span> \
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>       <span class="o">+</span> <span class="n">krn</span><span class="o">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">sill</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">sill</span><span class="p">)</span> \
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>       <span class="o">*</span> <span class="n">krn</span><span class="o">.</span><span class="n">Wiener</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">start</span><span class="o">=-</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">krn</span><span class="o">.</span><span class="n">Noise</span><span class="p">(</span><span class="n">nugget</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">GP</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kernel</span><span class="p">))</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="n">mu3</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>[iter    50 ll -9.88 time  0.43 reg  0.00 alpha  0.21]
 [iter   100 ll -9.88 time  0.23 reg  0.00 alpha  0.21]
 [iter   150 ll -9.88 time  0.23 reg  0.00 alpha  0.21]
 [iter   200 ll -9.88 time  0.23 reg  0.00 alpha  0.21]
@@ -352,15 +352,15 @@ mu3, _ = model.predict(x)
 [iter   400 ll -12.58 time  0.22 reg  0.00 alpha  2.52 sill  0.64]
 [iter   450 ll -12.57 time  0.22 reg  0.00 alpha  2.77 sill  0.64]
 [iter   500 ll -12.56 time  0.22 reg  0.00 alpha  2.98 sill  0.64]
-</code></pre>
-<pre><code class="language-python">plt.scatter(locs[:, 0], obs, marker='o', color='black')
-plt.plot(x[:, 0], mu1, label='Trend')
-plt.plot(x[:, 0], mu2, label='Stationary')
-plt.plot(x[:, 0], mu3, label='Wiener process')
-plt.legend(title='GP models')
-</code></pre>
-<pre><code>&lt;matplotlib.legend.Legend at 0x7f9df0363ee0&gt;
-</code></pre>
+</code></pre></div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">locs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">obs</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mu1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Trend&#39;</span><span class="p">)</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mu2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Stationary&#39;</span><span class="p">)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">mu3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Wiener process&#39;</span><span class="p">)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;GP models&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code>&lt;matplotlib.legend.Legend at 0x7f9df0363ee0&gt;
+</code></pre></div>
 <p><img alt="png" src="../output_2_1.png" /></p>
 
 
