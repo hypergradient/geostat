@@ -39,8 +39,8 @@ class GP:
     supports addition to combine two GP models, and it allows
     gathering variables from the mean and kernel.
 
-    Parameters
-    ----------
+    Parameters:
+
         mean (mean.Mean, optional):
             The mean function of the Gaussian Process. If not provided or set to 0, 
             a ZeroTrend is used as the default mean.
@@ -48,10 +48,11 @@ class GP:
         kernel (kernel.Kernel):
             The kernel function of the Gaussian Process. This parameter is required.
 
-    Details
-    -------
-    This is how to specify a GP with a squared exponential kernel
-    and superimposed uncorrelated noise:
+    Details:
+
+    A typical GP (with a squared exponential kernel
+    and superimposed uncorrelated noise) is specified
+    this way:
     ```python
     import geostat.kernel as krn
     from geostat import GP, Model, Parameters
@@ -60,12 +61,12 @@ class GP:
     kernel = krn.SquaredExponential(range=p.range, sill=p.sill) + krn.Noise(nugget=p.nugget)
     gp = GP(0, kernel)
     ```
-    To use the GP, it must be wrapped in a model:
+    To use the GP, wrap it in a model:
+    ```python
+    model = Model(gp)
     ```
-    model = Model(GP)
-    ```
-    This model object can then be used to generate synthetic data,
-    fit its parameters to provided data, or make predictions, see
+    The model object can then be used to generate synthetic data,
+    fit GP parameters to data, or make predictions, see
     [`Model`](#src.geostat.model.Model).
 
     In Geostat, GPs can be defined on locations in Euclidean space
@@ -85,10 +86,10 @@ class GP:
     gp = gp1 + gp2
     ```
 
-    Examples
-    --------
+    Examples:
+
     A linear regression is a special case of GP regression that
-    can be modeled by Geostat. Suppose
+    can be modeled with Geostat. Suppose
     $$
     u_i = \beta_1 + \beta_2 x_i + \beta_3 y_i + \beta_4 x_i^2 \
         + \beta_5 x_i y_i + \beta_6 y_i^2 + \epsilon_i
@@ -141,8 +142,6 @@ def Mix(inputs, weights=None):
     Returns:
         GP (GP):
             A new GP object representing the linear combination of the input GPs with the specified weights.
-
-
 
     Examples:
         Combining two GPs into a new multi-output GP:
@@ -571,10 +570,11 @@ def gp_train_step(
 @dataclass
 class Model():
     """
-    Model class for performing Gaussian Process (GP) training and prediction with optional warping.
+    A wrapper class for using and fitting Gaussian Processes (GPs).
 
-    The `Model` class integrates a GP model with optional data warping, and supports data generation on given location,
-    training on given location and observation data, and prediction on given location.
+    A `Model` has fields that hold onto locations and values that define the GP.
+    It uses procedural programming principles. A call to `generate()` or `fit()`
+    will update `locs`, `vals`, and `cats` fields.
 
     Parameters:
         gp (GP):
@@ -582,8 +582,6 @@ class Model():
         warp (Warp, optional):
             An optional warping transformation applied to the data. If not specified, `NoWarp` 
             is used by default.
-        parameter_sample_size (int, optional):
-            The number of parameter samples to draw. Default is None.
         locs (np.ndarray, optional):
             A NumPy array containing location data.
         vals (np.ndarray, optional):
@@ -596,20 +594,41 @@ class Model():
         verbose (bool, optional):
             Whether to print model parameters and status updates. Default is True.
 
-    Details
-    -------
-    To generate synthetic data at \(n\) locations in \(k\)-dimensional
-    space, pass the locations into `generate()`:
+    Details:
+
+    A `Model` is typically initialized with just a `GP` object.
+    ```python
+    import geostat.kernel as krn
+    from geostat import GP, Model, Parameters
+
+    p = Parameters(range=1., sill=1., nugget=1.) # p is a namespace.
+    kernel = krn.SquaredExponential(range=p.range, sill=p.sill) + krn.Noise(nugget=p.nugget)
+    model = Model(GP(0, kernel))
     ```
-    vals = model.generate(locs) # locs has shape (n, k).
+    You can then generate synthetic data at \(n\) locations in \(k\)-dimensional
+    space by calling `generate` with a matrix of locations:
+    ```
+    model.generate(locs) # locs has shape (n, d).
+    vals = model.vals    # Generated values are retained in vals.
     ```
 
-    To fit to data at \(n\) locations, pass locations and values into
-    `fit()`:
+    Alternatively you can fit GP parameters by calling `fit` with
+    locations and values:
     ```
+    model.fit(locs, vals) # locs has shape (n, d); vals has shape (n).
+    ```
+    This will update parameters in `p` and hold onto `locs` and `vals`
+    in `model.locs` and `model.vals`.
 
-    Examples
-    --------
+    After calling `generate` or `fit` you can call `predict` to get
+    predicted mean and variance for locations of interest:
+    ```
+    mean, var = model.predict(locs2) # locs2 has shape (n2, d).
+    ```
+    The model does not hold on to prediction outputs.
+
+    Examples:
+
     Initializing a `Model` with a Gaussian Process:
 
         ```
