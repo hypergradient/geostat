@@ -597,21 +597,18 @@ class Model():
         verbose (bool, optional):
             Whether to print model parameters and status updates. Default is True.
 
-    Details
-    -------
-    To generate synthetic data at \(n\) locations in \(k\)-dimensional
-    space, pass the locations into `generate()`:
-    ```python
-    vals = model.generate(locs) # locs has shape (n, k).
-    ```
+    Details:
+        To generate synthetic data at \(n\) locations in \(k\)-dimensional
+        space, pass the locations into `generate()`:
+        ```python
+        vals = model.generate(locs) # locs has shape (n, k).
+        ```
 
-    To fit to data at \(n\) locations, pass locations and values into
-    `fit()`:
-    ```
+        To fit to data at \(n\) locations, pass locations and values into
+        `fit()`:
 
-    Examples
-    --------
-    Initializing a `Model` with a Gaussian Process:
+    Examples:    
+        Initializing a `Model` with a Gaussian Process:
 
         ```python
         from geostat import GP, Model, Parameters
