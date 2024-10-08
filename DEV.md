@@ -59,3 +59,5 @@ To document a function named `function_name` implemented in `file_name` that is 
         show_root_heading: True
         show_source: True
 ```
+
+To add custom CSS to the web page template, just add your code to the file `style.css` in the `docs` directory. Also, make sure that the file `style.css` is mentioned in the `mkdocs.yml` under `extra_css`.
