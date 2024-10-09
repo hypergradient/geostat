@@ -14,6 +14,7 @@ from jax import grad, jit
 from jax.scipy.linalg import solve
 from jax.scipy.linalg import cho_solve, cholesky
 from jax.scipy.stats import multivariate_normal
+from jax.experimental import checkify
 
 import optax  # JAX-compatible optimization library for optimizers like Adam
 
@@ -585,11 +586,10 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
             reg_penalty = 0.0
 
         return -ll + reg_penalty, reg_penalty
-    
+        
     # Calculate loss and gradients
     (loss, reg_penalty), grads = jax.value_and_grad(loss_fn, has_aux=True)(parameters)
     print(grads)
-
 
     #loss, grads = jax.value_and_grad(gp_log_likelihood, has_aux=False, allow_int=True)(parameters, gp)
     #print("Grads: ", grads)
