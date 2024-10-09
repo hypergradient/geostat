@@ -1,7 +1,7 @@
 ## Development and testing
 
 ```
-pip install -e .[test]
+pip install -e .[extras]
 ```
 
 ## Build

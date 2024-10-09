@@ -26,7 +26,8 @@ dependencies = [
     "scipy >= 1.5",
     "shapely >= 1.8",
     "jax >= 0.4.34",
-    "jax[cuda12] >= 0.4.34"]
+    "jax[cuda12] >= 0.4.34",
+    "optax >= 0"]
 
 [project.urls]
 Homepage = "https://github.com/whdc/geostat"
