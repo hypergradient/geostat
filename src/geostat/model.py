@@ -611,9 +611,7 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
 
     def loss_fn(params):
         ll = gp_log_likelihood(data, gp, params)
-        return -ll
-    
-    print(parameters)
+        return -ll    
 
     # Calculate loss and gradients
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
@@ -623,7 +621,6 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
     parameters = optax.apply_updates(parameters, updates)
 
     return parameters, opt_state, -loss, 0
-
 
 # def gp_train_step(
 #     optimizer,
@@ -823,10 +820,11 @@ class Model():
         """
         # Collect parameters for the JAX optimization.
         parameters = self.gather_vars()
-        params = get_parameter_values(parameters)
-        prmtrs = {}
+
+        params = {}
         for p in parameters.values():
-            prmtrs[p.name] = p.underlying  
+            p.create_jax_variable()
+            params[p.name] = p.underlying
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -853,20 +851,26 @@ class Model():
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                prmtrs, opt_state, ll, reg_penalty = gp_train_step(optimizer, opt_state, self.data, prmtrs, self.gp, reg)
+                params, opt_state, ll, reg_penalty = gp_train_step(optimizer, opt_state, self.data, params, self.gp, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
             if self.verbose == True:
                 self.report(
                 dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
-                {key: prmtrs[key] for key in prmtrs.keys()})
+                {key: params[key] for key in params.keys()})
+
+        parameters = self.gather_vars()
+        for name, v in params.items():
+            if name in parameters:
+                parameters[name].value = v
+                parameters[name].create_jax_variable()
+            else:
+                raise ValueError(f"{name} is not a parameter")
 
         # Save parameter values.
         for p in parameters.values():
-            p.uderlying = prmtrs[p.name]._value
             p.update_value()
-            print(p)
 
         # Restore order if things were permuted.
         if perm is not None:
