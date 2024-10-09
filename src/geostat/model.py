@@ -576,7 +576,7 @@ def gp_log_likelihood(data, gp):
 def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], gp, reg=None):
 
     def loss_fn(params):
-        ll = gp_log_likelihood(data, gp)
+        ll = gp_log_likelihood(data, gp)        
 
         if reg:
             # TODO: Put in cache later.
@@ -585,12 +585,25 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
             reg_penalty = 0.0
 
         return -ll + reg_penalty, reg_penalty
-
+    
     # Calculate loss and gradients
     (loss, reg_penalty), grads = jax.value_and_grad(loss_fn, has_aux=True)(parameters)
+    print(grads)
+
+
+    #loss, grads = jax.value_and_grad(gp_log_likelihood, has_aux=False, allow_int=True)(parameters, gp)
+    #print("Grads: ", grads)
+    # print(type(grads))
+    # print(grads) 
+    # print(type(opt_state))
+    # print(opt_state)
+    # print(type(parameters))
+    # print(parameters)
+
+    #optimizer.update()
 
     # Update the parameters using the optimizer
-    updates, opt_state = optimizer.update(grads, opt_state)
+    updates, opt_state = optimizer.update(grads, opt_state, parameters)
     parameters = optax.apply_updates(parameters, updates)
 
     return parameters, opt_state, -loss, reg_penalty
@@ -794,7 +807,7 @@ class Model():
         """
         # Collect parameters for the JAX optimization.
         parameters = self.gather_vars()
-        params = get_parameter_values(parameters)['nugget']
+        params = get_parameter_values(parameters)
   
 
         # Permute datapoints if cats is given.

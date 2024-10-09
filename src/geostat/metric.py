@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict
 
 import numpy as np
+import jax.numpy as jnp
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.
 import warnings
@@ -13,7 +14,7 @@ from .op import Op
 from .param import ppp, upp, bpp
 
 def ed(x, a=-1):
-    return tf.expand_dims(x, a)
+    return jnp.expand_dims(x, a)
 
 class PerAxisDist2(Op):
     def __init__(self):
@@ -22,7 +23,7 @@ class PerAxisDist2(Op):
     def __call__(self, e):
         x1 = e['locs1']
         x2 = e['locs2']
-        return tf.square(ed(x1, 1) - ed(x2, 0))
+        return jnp.square(ed(x1, 1) - ed(x2, 0))
 
 class Metric(Op):
     pass
@@ -43,9 +44,9 @@ class Euclidean(Metric):
 
     def __call__(self, e):
         if e['scale'] is not None:
-            return tf.einsum('abc,c->ab', e['pa_d2'], tf.square(e['scale']))
+            return jnp.einsum('abc,c->ab', e['pa_d2'], jnp.square(e['scale']))
         else:
-            return tf.reduce_sum(e['pa_d2'], axis=-1)
+            return jnp.sum(e['pa_d2'], axis=-1)
 
 class Poincare(Metric):
     def __init__(self, xform: Callable, zoff='zoff', scale=None):
