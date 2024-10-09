@@ -522,8 +522,41 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     cache['euclidean'] = Euclidean().run(cache)
 
     M = gp.mean.run(cache)
-    C = gp.kernel.run(cache)
     M = jnp.asarray(M, dtype=jnp.float64)
+    C = gp.kernel.run(cache)
+    C = jnp.asarray(C, dtype=jnp.float64)
+
+    return M, C
+
+#@jax.jit
+def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
+    """
+    `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
+    and locs2. It is used to create the diagonal non-zero elements
+    of a Noise covariance function. A non-zero offset results in a
+    covariance matrix with non-zero entries along an off-center diagonal.
+    """
+
+    # Ensure that `cats1` and `cats2` are sorted if necessary (commented out for now).
+    # assert jnp.all(cats1 == jnp.sort(cats1)), '`cats1` must be in non-descending order'
+    # assert jnp.all(cats2 == jnp.sort(cats2)), '`cats2` must be in non-descending order'
+
+    cache = {}
+    cache['offset'] = offset
+    cache['locs1'] = locs1
+    cache['locs2'] = locs2
+    cache['cats1'] = cats1
+    cache['cats2'] = cats2
+    cache['per_axis_dist2'] = PerAxisDist2().run(cache)
+    cache['euclidean'] = Euclidean().run(cache)
+
+    M = gp.mean.run(cache)
+    M = jnp.asarray(M, dtype=jnp.float64)
+
+    #C = gp.kernel.run(cache)
+    indices1 = jnp.arange(cache['locs1'].shape[0])
+    indices2 = jnp.arange(cache['locs2'].shape[0]) + cache['offset']
+    C = jnp.where(jnp.expand_dims(indices1, -1) == indices2, params['nugget'], 0.0)
     C = jnp.asarray(C, dtype=jnp.float64)
 
     return M, C
@@ -563,8 +596,8 @@ def mvn_log_pdf(u, m, cov):
     return jnp.array(-0.5 * (logdet + quad), dtype=jnp.float32)
 
 #@jax.jit
-def gp_log_likelihood(data, gp):
-    m, S = gp_covariance(gp, data['locs'], data['cats'])
+def gp_log_likelihood(data, gp, params):
+    m, S = gp_covariance3(gp, data['locs'], data['cats'], data['locs'], data['cats'], 0, params)
     u = jnp.asarray(data['vals'], dtype=jnp.float64)
     return mvn_log_pdf(u, m, S)
 
@@ -576,19 +609,23 @@ def gp_log_likelihood(data, gp):
 
 def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], gp, reg=None):
 
-    def loss_fn(data, gp):
-        ll = gp_log_likelihood(data, gp)   
+    def loss_fn(params):
+        ll = gp_log_likelihood(data, gp, params)
         return -ll
-        
+
+    #up = [p.underlying for p in parameters.values()]
+    #print("Up: ", up)
+
+    print("Parameters: ", parameters)
+
     # Calculate loss and gradients
-    loss, grads = jax.value_and_grad(loss_fn, has_aux=False, allow_int=True)(data, gp)
-    print(grads)
+    loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
 
     # Update the parameters using the optimizer
     updates, opt_state = optimizer.update(grads, opt_state, parameters)
     parameters = optax.apply_updates(parameters, updates)
 
-    return parameters, opt_state, -loss, reg_penalty
+    return parameters, opt_state, -loss, 0
 
 
 # def gp_train_step(
