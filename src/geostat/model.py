@@ -612,11 +612,8 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
     def loss_fn(params):
         ll = gp_log_likelihood(data, gp, params)
         return -ll
-
-    #up = [p.underlying for p in parameters.values()]
-    #print("Up: ", up)
-
-    print("Parameters: ", parameters)
+    
+    print(parameters)
 
     # Calculate loss and gradients
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
@@ -827,7 +824,9 @@ class Model():
         # Collect parameters for the JAX optimization.
         parameters = self.gather_vars()
         params = get_parameter_values(parameters)
-  
+        prmtrs = {}
+        for p in parameters.values():
+            prmtrs[p.name] = p.underlying  
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -854,18 +853,20 @@ class Model():
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                params, opt_state, ll, reg_penalty = gp_train_step(optimizer, opt_state, self.data, params, self.gp, reg)
+                prmtrs, opt_state, ll, reg_penalty = gp_train_step(optimizer, opt_state, self.data, prmtrs, self.gp, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
             if self.verbose == True:
                 self.report(
                 dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
-                {p.name: p.surface() for p in parameters.values()})
+                {key: prmtrs[key] for key in prmtrs.keys()})
 
         # Save parameter values.
         for p in parameters.values():
+            p.uderlying = prmtrs[p.name]._value
             p.update_value()
+            print(p)
 
         # Restore order if things were permuted.
         if perm is not None:
