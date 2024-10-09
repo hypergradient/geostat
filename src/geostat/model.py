@@ -465,18 +465,18 @@ class Featurizer:
         self.featurization = featurization
 
     def __call__(self, locs):
-        locs = tf.cast(locs, tf.float32)
-        if self.featurization is None: # No features.
-            return tf.ones([tf.shape(locs)[0], 0], dtype=tf.float32)
+        locs = jnp.array(locs, dtype=jnp.float32)
+        if self.featurization is None:  # No features.
+            return jnp.ones([locs.shape[0], 0], dtype=jnp.float32)
 
-        feats = self.featurization(*tf.unstack(locs, axis=1))
-        if isinstance(feats, tuple): # One or many features.
+        feats = self.featurization(*jnp.split(locs, locs.shape[1], axis=1))
+        if isinstance(feats, tuple):  # One or many features.
             if len(feats) == 0:
-                return tf.ones([tf.shape(locs)[0], 0], dtype=tf.float32)
+                return jnp.ones([locs.shape[0], 0], dtype=jnp.float32)
             else:
-                feats = self.featurization(*tf.unstack(locs, axis=1))
-                feats = [tf.broadcast_to(tf.cast(f, tf.float32), [tf.shape(locs)[0]]) for f in feats]
-                return tf.stack(feats, axis=1)
+                feats = self.featurization(*jnp.split(locs, locs.shape[1], axis=1))
+                feats = [jnp.broadcast_to(jnp.squeeze(jnp.array(f, dtype=jnp.float32)), [locs.shape[0]]) for f in feats]
+                return jnp.stack(feats, axis=1)
         else: # One feature.
             return e(feats)
 
@@ -489,7 +489,7 @@ def featurizer(normalize=None):
     return helper
 
 def e(x, a=-1):
-    return tf.expand_dims(x, a)
+    return jnp.expand_dims(x, a)
 
 #@jax.jit
 def gp_covariance(gp, locs, cats):
@@ -550,13 +550,30 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
     cache['per_axis_dist2'] = PerAxisDist2().run(cache)
     cache['euclidean'] = Euclidean().run(cache)
 
+    for key in params.keys():
+        cache[key] = params[key]
+
+    cache['d2'] = Euclidean().run(cache) #TODO
+
     M = gp.mean.run(cache)
     M = jnp.asarray(M, dtype=jnp.float64)
 
+    if isinstance(gp.kernel, krn.Stack):
+        print(gp.kernel.parts)
+        Cs = jnp.array([])
+        for kernel in gp.kernel.parts:
+            Cs = jnp.append(Cs, kernel(cache))
+        C = jnp.sum(Cs, axis=0)
+        print("Cs: ", Cs)
+        print("C: ", C)
+
+    else:
+        C = gp.kernel(cache)
+
     #C = gp.kernel.run(cache)
-    indices1 = jnp.arange(cache['locs1'].shape[0])
-    indices2 = jnp.arange(cache['locs2'].shape[0]) + cache['offset']
-    C = jnp.where(jnp.expand_dims(indices1, -1) == indices2, params['nugget'], 0.0)
+    #indices1 = jnp.arange(cache['locs1'].shape[0])
+    #indices2 = jnp.arange(cache['locs2'].shape[0]) + cache['offset']
+    #C = jnp.where(jnp.expand_dims(indices1, -1) == indices2, params['nugget'], 0.0)
     C = jnp.asarray(C, dtype=jnp.float64)
 
     return M, C
@@ -615,6 +632,8 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
 
     # Calculate loss and gradients
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
+
+    #print(parameters)
 
     # Update the parameters using the optimizer
     updates, opt_state = optimizer.update(grads, opt_state, parameters)
@@ -820,7 +839,6 @@ class Model():
         """
         # Collect parameters for the JAX optimization.
         parameters = self.gather_vars()
-
         params = {}
         for p in parameters.values():
             p.create_jax_variable()
@@ -837,7 +855,7 @@ class Model():
 
         # Data dict.
         self.data = {
-            'warplocs': jnp.array([0], dtype=jnp.float32), # ToDO
+            'warplocs': jnp.array([0], dtype=jnp.float32), # TODO
             'locs': jnp.array(locs, dtype=jnp.float32),
             'vals': jnp.array(vals, dtype=jnp.float32),
             'cats': jnp.array(cats, dtype=jnp.int32)

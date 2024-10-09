@@ -283,7 +283,7 @@ class SquaredExponential(Kernel):
         return ppp(self.fa['sill']) | ppp(self.fa['range'])
 
     def call(self, e):
-        return e['sill'] * tf.exp(-0.5 * e['d2'] / tf.square(e['range']))
+        return e['sill'] * jnp.exp(-0.5 * e['d2'] / jnp.square(e['range']))
 
 class GammaExponential(Kernel):
     """
@@ -1204,7 +1204,7 @@ class Stack(Kernel):
             return Stack(self.parts + [other])
     
     def call(self, e):
-        return tf.reduce_sum(e['parts'], axis=0)
+        return jnp.sum(jnp.array(e['parts']), axis=0)
 
     def report(self):
         return ' '.join(part.report(p) for part in self.parts)

@@ -60,10 +60,10 @@ class Trend(Mean):
         return get_trend_coefs(self.fa['beta'])
 
     def call(self, e):
-        x = tf.cast(self.featurizer(e['locs1']), tf.float32)
+        x = jnp.array(self.featurizer(e['locs1']), dtype=jnp.float32)
         if isinstance(e['beta'], (tuple, list)):
-            e['beta'] = tf.stack(e['beta'])
-        return tf.einsum('ab,b->a', x, e['beta']) # [locs1]
+            e['beta'] = jnp.stack(e['beta'])
+        return jnp.einsum('ab,b->a', x, e['beta'])  # [locs1]
 
 class ZeroTrend(Op):
     def __init__(self):
