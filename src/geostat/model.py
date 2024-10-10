@@ -560,20 +560,28 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
 
     if isinstance(gp.kernel, krn.Stack):
         print(gp.kernel.parts)
-        Cs = jnp.array([])
+        #print("Locs1_0: ", cache['locs1'].shape[0])
+        #print("Locs1_1: ", cache['locs1'].shape[1])
+        #print("Locs2_0: ", cache['locs2'].shape[0])
+        #print("Locs2_1: ", cache['locs2'].shape[1])
+
+        C = jnp.zeros((cache['locs1'].shape[0], cache['locs2'].shape[0]))
+        print("C before: ", C)
+        i = 0
+        
         for kernel in gp.kernel.parts:
-            Cs = jnp.append(Cs, kernel(cache))
-        C = jnp.sum(Cs, axis=0)
-        print("Cs: ", Cs)
-        print("C: ", C)
+            print("Kernel: ", kernel)
+            C += kernel(cache)
+            print("C after: ", C)
+
+        #C = jnp.sum(Cs, axis=0)
+        #print("C: ", C)
 
     else:
         C = gp.kernel(cache)
+        print("C after: ", C)
 
     #C = gp.kernel.run(cache)
-    #indices1 = jnp.arange(cache['locs1'].shape[0])
-    #indices2 = jnp.arange(cache['locs2'].shape[0]) + cache['offset']
-    #C = jnp.where(jnp.expand_dims(indices1, -1) == indices2, params['nugget'], 0.0)
     C = jnp.asarray(C, dtype=jnp.float64)
 
     return M, C
@@ -632,8 +640,6 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
 
     # Calculate loss and gradients
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
-
-    #print(parameters)
 
     # Update the parameters using the optimizer
     updates, opt_state = optimizer.update(grads, opt_state, parameters)
@@ -839,10 +845,9 @@ class Model():
         """
         # Collect parameters for the JAX optimization.
         parameters = self.gather_vars()
-        params = {}
-        for p in parameters.values():
-            p.create_jax_variable()
-            params[p.name] = p.underlying
+        params = get_parameter_values(parameters)
+
+        print("Start fitting: ")
 
         # Permute datapoints if cats is given.
         if cats is not None:
