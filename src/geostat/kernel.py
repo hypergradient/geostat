@@ -174,9 +174,9 @@ class TrendPrior(Kernel):
         return ppp(self.fa['alpha'])
 
     def call(self, e):
-        F1 = tf.cast(self.featurizer(e['locs1']), tf.float32)
-        F2 = tf.cast(self.featurizer(e['locs2']), tf.float32)
-        return e['alpha'] * tf.einsum('ba,ca->bc', F1, F2)
+        F1 = jnp.array(self.featurizer(e['locs1']), jnp.float32)
+        F2 = jnp.array(self.featurizer(e['locs2']), jnp.float32)
+        return e['alpha'] * jnp.einsum('ba,ca->bc', F1, F2)
 
 def scale_to_metric(scale, metric):
     assert scale is None or metric is None
@@ -340,7 +340,7 @@ class GammaExponential(Kernel):
         return ppp(self.fa['sill']) | ppp(self.fa['range']) | bpp(self.fa['gamma'], 0., 2.)
 
     def call(self, e):
-        return e['sill'] * gamma_exp(e['d2'] / tf.square(e['range']), e['gamma'])
+        return e['sill'] * gamma_exp(e['d2'] / jnp.square(e['range']), e['gamma'])
 
 @tf.custom_gradient
 def ramp(x):
@@ -1020,13 +1020,14 @@ class Delta(Kernel):
     def call(self, e):
 
         if self.axes is not None:
-            n = tf.shape(e['pa_d2'])[-1]
-            mask = tf.math.bincount(self.axes, minlength=n, maxlength=n, dtype=tf.float32)
-            d2 = tf.einsum('abc,c->ab', e['pa_d2'], mask)
+            n = e['pa_d2'].shape[-1]
+            mask = mask.at[self.axes].set(1.0)  # Create a mask with 1.0 on specified axes
+            #mask = tf.math.bincount(self.axes, minlength=n, maxlength=n, dtype=tf.float32)
+            d2 = jnp.einsum('abc,c->ab', e['pa_d2'], mask)
         else:
-            d2 = tf.reduce_sum(e['pa_d2'], axis=-1)
+            d2 = jnp.sum(e['pa_d2'], axis=-1)
 
-        return e['sill'] * tf.cast(tf.equal(d2, 0.), tf.float32)
+        return e['sill'] * jnp.where(d2 == 0., 1.0, 0.0)
 
 class Mix(Kernel):
     """
@@ -1294,7 +1295,7 @@ def unbroadcast(x, shape):
     return x
 
 def gamma_exp(d2, gamma):
-    return tf.exp(-safepow(tf.maximum(d2, 0.0), 0.5 * gamma))
+    return jnp.exp(-safepow(jnp.maximum(d2, 0.0), 0.5 * gamma))
 
 class Observation(Op):
 

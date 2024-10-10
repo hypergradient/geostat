@@ -555,7 +555,10 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
 
     cache['d2'] = Euclidean().run(cache) #TODO
 
-    M = gp.mean.run(cache)
+    #print("gp.mean: ", gp.mean)
+
+    M = gp.mean(cache)
+    #M = gp.mean.run(cache)
     M = jnp.asarray(M, dtype=jnp.float64)
 
     if isinstance(gp.kernel, krn.Stack):
@@ -654,7 +657,8 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
 
     # print("Loss: ", loss)
-    # print("Grads: ", grads)    
+    # print("Grads: ", grads) 
+       
 
     for key in grads:
         grads[key] = jnp.clip(grads[key], -1.0, 1.0)
@@ -865,7 +869,7 @@ class Model():
         parameters = self.gather_vars()
         params = get_parameter_values(parameters)
 
-        print("Start fitting: ")
+        print(" ")
 
         # Permute datapoints if cats is given.
         if cats is not None:
