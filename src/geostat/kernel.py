@@ -340,6 +340,8 @@ class GammaExponential(Kernel):
         return ppp(self.fa['sill']) | ppp(self.fa['range']) | bpp(self.fa['gamma'], 0., 2.)
 
     def call(self, e):
+        print("e[d2]: ", e['d2'])
+        print("e[gamma]: ", e['gamma'])
         return e['sill'] * gamma_exp(e['d2'] / jnp.square(e['range']), e['gamma'])
 
 @tf.custom_gradient
@@ -1021,7 +1023,9 @@ class Delta(Kernel):
 
         if self.axes is not None:
             n = e['pa_d2'].shape[-1]
-            mask = mask.at[self.axes].set(1.0)  # Create a mask with 1.0 on specified axes
+            mask = jnp.zeros(n)
+            for axis in self.axes:
+                mask += mask.at[axis].set(1.0)  # Create a mask with 1.0 on specified axis
             #mask = tf.math.bincount(self.axes, minlength=n, maxlength=n, dtype=tf.float32)
             d2 = jnp.einsum('abc,c->ab', e['pa_d2'], mask)
         else:
@@ -1274,16 +1278,23 @@ class Product(Kernel):
         return ' '.join(part.report(p) for part in self.parts)
 
 # Gamma exponential covariance function.
-@tf.custom_gradient
+@jax.custom_vjp
 def safepow(x, a):
-    y = tf.pow(x, a)
-    def grad(dy):
-        dx = tf.where(x <= 0.0, tf.zeros_like(x), dy * tf.pow(x, a-1))
-        dx = unbroadcast(dx, x.shape)
-        da = tf.where(x <= 0.0, tf.zeros_like(a), dy * y * tf.math.log(x))
-        da = unbroadcast(da, a.shape)
-        return dx, da
-    return y, grad
+    return jnp.power(x, a)
+
+# Forward and backward functions for the custom VJP
+def safepow_fwd(x, a):
+    y = jnp.power(x, a)
+    return y, (x, a, y)
+
+def safepow_bwd(res, dy):
+    x, a, y = res
+    dx = jnp.where(x <= 0.0, jnp.zeros_like(x), dy * jnp.power(x, a - 1))
+    da = jnp.where(x <= 0.0, jnp.zeros_like(a), dy * y * jnp.log(x))
+    return dx, da
+
+# Register the forward and backward functions with the custom VJP
+safepow.defvjp(safepow_fwd, safepow_bwd)
 
 def unbroadcast(x, shape):
     xrank = len(x.shape)

@@ -44,7 +44,6 @@ class Euclidean(Metric):
 
     def __call__(self, e):
         if e['scale'] is not None:
-            print("e[scale]: ", e['scale'])
             return jnp.einsum('abc,c->ab', e['pa_d2'], jnp.square(jnp.array(e['scale'])))
         else:
             return jnp.sum(e['pa_d2'], axis=-1)

@@ -554,6 +554,7 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
         cache[key] = params[key]
 
     cache['d2'] = Euclidean().run(cache) #TODO
+    cache['pa_d2'] = cache['per_axis_dist2'] #TODO
 
     #print("gp.mean: ", gp.mean)
 
