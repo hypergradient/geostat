@@ -893,11 +893,15 @@ class Model():
         optimizer = optax.adam(learning_rate=step_size)
         opt_state = optimizer.init(params)
 
+        @jax.jit
+        def jit_gp_train_step(opt_state, self.data, params, reg):
+            return gp_train_step(optimizer, opt_state, self.data, params, self.gp, reg)
+
         j = 0 # Iteration count.
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                params, opt_state, ll, reg_penalty = gp_train_step(optimizer, opt_state, self.data, params, self.gp, reg)
+                params, opt_state, ll, reg_penalty = jit_gp_train_step(opt_state, self.data, params, reg)
                 j += 1
 
             time_elapsed = time.time() - t0
