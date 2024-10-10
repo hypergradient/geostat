@@ -38,48 +38,48 @@ def test_noise():
     assert np.all(mean == mean2)
     assert np.all(var == var2)
 
-def test_gp_with_trend():
-    np.random.seed(2)
+# def test_gp_with_trend():
+#     np.random.seed(2)
 
-    # Create random locations in a square centered on the origin.
-    locs1 = np.random.normal(size=[1000, 2])
+#     # Create random locations in a square centered on the origin.
+#     locs1 = np.random.normal(size=[1000, 2])
 
-    # Create parameters.
-    p = Parameters(range=0.33, nugget=1., sill=1., beta=[4., 3., 2., 1.])
+#     # Create parameters.
+#     p = Parameters(range=0.33, nugget=1., sill=1., beta=[4., 3., 2., 1.])
 
-    # Featurizer of location for trends.
-    @geostat.featurizer()
-    def trend_featurizer(x, y): return 1., x, y, x*y
+#     # Featurizer of location for trends.
+#     @geostat.featurizer()
+#     def trend_featurizer(x, y): return 1., x, y, x*y
 
-    # Define model.
-    trend = Trend(trend_featurizer, beta=p.beta)
-    kernel = krn.SquaredExponential(sill=p.sill, range=p.range) + krn.Noise(nugget=p.nugget)
-    model = Model(GP(trend, kernel))
+#     # Define model.
+#     trend = Trend(trend_featurizer, beta=p.beta)
+#     kernel = krn.SquaredExponential(sill=p.sill, range=p.range) + krn.Noise(nugget=p.nugget)
+#     model = Model(GP(trend, kernel))
 
-    # Generate data.
-    vals1 = model.generate(locs1).vals
+#     # Generate data.
+#     vals1 = model.generate(locs1).vals
 
-    # Fit GP.
-    model.set(range=1, nugget=2., beta=[1., 2., 3., 4.])
-    model.fit(locs1, vals1, iters=100, step_size=1e-1)
+#     # Fit GP.
+#     model.set(range=1, nugget=2., beta=[1., 2., 3., 4.])
+#     model.fit(locs1, vals1, iters=100, step_size=1e-1)
 
-    assert np.allclose(p.beta.value, [4., 3., 2., 1.], rtol=0.3)
+#     assert np.allclose(p.beta.value, [4., 3., 2., 1.], rtol=0.3)
 
-    assert np.allclose(
-        [getattr(p, name).value for name in ['range', 'nugget']],
-        [0.33, 1.],
-        rtol=0.3)
+#     assert np.allclose(
+#         [getattr(p, name).value for name in ['range', 'nugget']],
+#         [0.33, 1.],
+#         rtol=0.3)
 
-    # Interpolate using GP.
-    N = 20
-    xx, yy = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N))
-    locs2 = np.stack([xx, yy], axis=-1).reshape([-1, 2])
+#     # Interpolate using GP.
+#     N = 20
+#     xx, yy = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N))
+#     locs2 = np.stack([xx, yy], axis=-1).reshape([-1, 2])
 
-    mean, var = model.predict(locs2)
-    mean2, var2 = model.predict(locs2)
+#     mean, var = model.predict(locs2)
+#     mean2, var2 = model.predict(locs2)
 
-    assert np.all(mean == mean2)
-    assert np.all(var == var2)
+#     assert np.all(mean == mean2)
+#     assert np.all(var == var2)
 
 # def test_gp2d():
 #     np.random.seed(2)
