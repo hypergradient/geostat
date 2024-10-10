@@ -340,8 +340,6 @@ class GammaExponential(Kernel):
         return ppp(self.fa['sill']) | ppp(self.fa['range']) | bpp(self.fa['gamma'], 0., 2.)
 
     def call(self, e):
-        print("e[d2]: ", e['d2'])
-        print("e[gamma]: ", e['gamma'])
         return e['sill'] * gamma_exp(e['d2'] / jnp.square(e['range']), e['gamma'])
 
 @tf.custom_gradient
@@ -1277,20 +1275,29 @@ class Product(Kernel):
     def report(self):
         return ' '.join(part.report(p) for part in self.parts)
 
-# Gamma exponential covariance function.
 @jax.custom_vjp
 def safepow(x, a):
     return jnp.power(x, a)
 
-# Forward and backward functions for the custom VJP
+# Forward function for the custom VJP
 def safepow_fwd(x, a):
     y = jnp.power(x, a)
     return y, (x, a, y)
 
+# Backward function for the custom VJP
 def safepow_bwd(res, dy):
     x, a, y = res
+    
+    # Compute the gradient with respect to x
     dx = jnp.where(x <= 0.0, jnp.zeros_like(x), dy * jnp.power(x, a - 1))
-    da = jnp.where(x <= 0.0, jnp.zeros_like(a), dy * y * jnp.log(x))
+    
+    # Compute the gradient with respect to a
+    da = jnp.where(x <= 0.0, jnp.zeros_like(a), dy * y * jnp.log(jnp.maximum(x, 1e-10)))
+    
+    # Ensure that dx and da have the correct shape by broadcasting to the combined shape of inputs
+    dx = jnp.broadcast_to(dx, jnp.broadcast_shapes(dx.shape, x.shape))
+    da = jnp.broadcast_to(da, jnp.broadcast_shapes(da.shape, a.shape))
+    
     return dx, da
 
 # Register the forward and backward functions with the custom VJP
