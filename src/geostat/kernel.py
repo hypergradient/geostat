@@ -1294,22 +1294,33 @@ def safepow_bwd(res, dy):
     # Compute the gradient with respect to a
     da = jnp.where(x <= 0.0, jnp.zeros_like(a), dy * y * jnp.log(jnp.maximum(x, 1e-10)))
     
-    # Ensure that dx and da have the correct shape by broadcasting to the combined shape of inputs
-    dx = jnp.broadcast_to(dx, jnp.broadcast_shapes(dx.shape, x.shape))
-    da = jnp.broadcast_to(da, jnp.broadcast_shapes(da.shape, a.shape))
+    # Use the unbroadcast function to ensure the shapes of dx and da match their respective inputs
+    dx = unbroadcast(dx, x.shape)
+    da = unbroadcast(da, a.shape)
     
     return dx, da
 
 # Register the forward and backward functions with the custom VJP
 safepow.defvjp(safepow_fwd, safepow_bwd)
 
-def unbroadcast(x, shape):
-    xrank = len(x.shape)
-    rank = len(shape)
-    excess_rank = tf.maximum(0, xrank - rank)
-    x = tf.reduce_sum(x, axis=tf.range(excess_rank))
-    axes_that_are_one = tf.where(tf.equal(shape, 1))[:, 0]
-    x = tf.reduce_sum(x, axis=axes_that_are_one, keepdims=True)
+def unbroadcast(x, target_shape):
+    """
+    Adjusts the shape of x to match target_shape by summing across broadcasted dimensions.
+    
+    Parameters:
+        x (jnp.ndarray): The array to unbroadcast.
+        target_shape (tuple): The desired shape to match.
+    
+    Returns:
+        jnp.ndarray: The array with the shape adjusted to target_shape.
+    """
+    while len(x.shape) > len(target_shape):
+        x = x.sum(axis=0)  # Reduce excess dimensions
+
+    for axis, size in enumerate(target_shape):
+        if size == 1 and x.shape[axis] != 1:
+            x = x.sum(axis=axis, keepdims=True)
+
     return x
 
 def gamma_exp(d2, gamma):

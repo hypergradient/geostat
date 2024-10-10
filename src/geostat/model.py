@@ -550,45 +550,27 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
     cache['per_axis_dist2'] = PerAxisDist2().run(cache)
     cache['euclidean'] = Euclidean().run(cache)
 
+    cache['d2'] = Euclidean().run(cache) #TODO: Check if valid assumption
+    cache['pa_d2'] = cache['per_axis_dist2'] #TODO: Check if valid assumption
+
     for key in params.keys():
         cache[key] = params[key]
 
-    cache['d2'] = Euclidean().run(cache) #TODO
-    cache['pa_d2'] = cache['per_axis_dist2'] #TODO
-
-    #print("gp.mean: ", gp.mean)
 
     M = gp.mean(cache)
-    #M = gp.mean.run(cache)
-    M = jnp.asarray(M, dtype=jnp.float64)
 
     if isinstance(gp.kernel, krn.Stack):
-        #print(gp.kernel.parts)
-        #print("Locs1_0: ", cache['locs1'].shape[0])
-        #print("Locs1_1: ", cache['locs1'].shape[1])
-        #print("Locs2_0: ", cache['locs2'].shape[0])
-        #print("Locs2_1: ", cache['locs2'].shape[1])
-
-        C = jnp.zeros((cache['locs1'].shape[0], cache['locs2'].shape[0]), dtype=jnp.float64)
-        #print("C before: ", C)
-
-        #jitter = 1e-6  # or another small value
-        
+        C = jnp.zeros((cache['locs1'].shape[0], cache['locs2'].shape[0]), dtype=jnp.float64)        
         for kernel in gp.kernel.parts:
-            #print("Kernel: ", kernel)
             C += kernel(cache)
-            #C += jitter * jnp.eye(C.shape[0])
-            #print("C after: ", C)
-
-        #C = jnp.sum(Cs, axis=0)
-        #print("C: ", C)
-
     else:
         C = gp.kernel(cache)
-        # print("C after: ", C)
 
+    #M = gp.mean.run(cache)
     #C = gp.kernel.run(cache)
+
     C = jnp.asarray(C, dtype=jnp.float64)
+    M = jnp.asarray(M, dtype=jnp.float64)
 
     return M, C
 
@@ -658,8 +640,8 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
 
     # print("Loss: ", loss)
-    # print("Grads: ", grads) 
-       
+    print("Grads: ", grads)
+    return       
 
     for key in grads:
         grads[key] = jnp.clip(grads[key], -1.0, 1.0)
