@@ -565,13 +565,15 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
         #print("Locs2_0: ", cache['locs2'].shape[0])
         #print("Locs2_1: ", cache['locs2'].shape[1])
 
-        C = jnp.zeros((cache['locs1'].shape[0], cache['locs2'].shape[0]))
+        C = jnp.zeros((cache['locs1'].shape[0], cache['locs2'].shape[0]), dtype=jnp.float64)
         print("C before: ", C)
-        i = 0
+
+        jitter = 1e-6  # or another small value
         
         for kernel in gp.kernel.parts:
             print("Kernel: ", kernel)
             C += kernel(cache)
+            C += jitter * jnp.eye(C.shape[0])
             print("C after: ", C)
 
         #C = jnp.sum(Cs, axis=0)
@@ -617,13 +619,19 @@ def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m
     sign, logdet = jnp.linalg.slogdet(2 * np.pi * cov)
+    print("logdet: ", logdet)
     quad = jnp.dot(u_adj, solve(cov, u_adj))
+    print("quad: ", quad)
     return jnp.array(-0.5 * (logdet + quad), dtype=jnp.float32)
 
 #@jax.jit
 def gp_log_likelihood(data, gp, params):
     m, S = gp_covariance3(gp, data['locs'], data['cats'], data['locs'], data['cats'], 0, params)
-    u = jnp.asarray(data['vals'], dtype=jnp.float64)
+    print("m: ", m)
+    print("S: ", S)
+    print("data['vals']: ", data['vals'])
+    u = jnp.asarray(data['vals'], dtype=jnp.float32)
+    print("u: ", u)
     return mvn_log_pdf(u, m, S)
 
 # @tf.function
@@ -635,11 +643,23 @@ def gp_log_likelihood(data, gp, params):
 def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], gp, reg=None):
 
     def loss_fn(params):
+
         ll = gp_log_likelihood(data, gp, params)
+
+        print("ll: ", ll)
+
         return -ll    
 
     # Calculate loss and gradients
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
+
+    print("Loss: ", loss)
+    print("Grads: ", grads)
+
+    return
+
+    for key in grads:
+        grads[key] = jnp.clip(grads[key], -1.0, 1.0)
 
     # Update the parameters using the optimizer
     updates, opt_state = optimizer.update(grads, opt_state, parameters)
@@ -1060,8 +1080,16 @@ class Model():
             self.warp(locs).run({}),
             None if cats is None else cats
         )
+        print("gen_m: ", m)
+        print("gen_S: ", S)
+
+        jitter = 1e-6  # or another small value        
+        S += jitter * jnp.eye(S.shape[0])
 
         vals = jax.random.multivariate_normal(key=jax.random.PRNGKey(0), mean=m, cov=cholesky(S, lower=True))
+        print("gen_vals: ", vals)
+
+        return
 
         # Restore order if things were permuted.
         if perm is not None:
