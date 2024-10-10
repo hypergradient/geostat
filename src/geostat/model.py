@@ -39,17 +39,6 @@ class GP:
     supports addition to combine two GP models, and it allows
     gathering variables from the mean and kernel.
 
-    Parameters:
-
-        mean (mean.Mean, optional):
-            The mean function of the Gaussian Process. If not provided or set to 0, 
-            a ZeroTrend is used as the default mean.
-
-        kernel (kernel.Kernel):
-            The kernel function of the Gaussian Process. This parameter is required.
-
-    Details:
-
     A typical GP (with a squared exponential kernel
     and superimposed uncorrelated noise) is specified
     this way:
@@ -86,31 +75,38 @@ class GP:
     gp = gp1 + gp2
     ```
 
+    Parameters:
+        mean (mean.Mean, optional):
+            The mean function of the Gaussian Process. If not provided or set to 0, 
+            a ZeroTrend is used as the default mean.
+
+        kernel (kernel.Kernel):
+            The kernel function of the Gaussian Process. This parameter is required.
+
     Examples:
+        A linear regression is a special case of GP regression that
+        can be modeled with Geostat. Suppose
+        $$
+        u_i = \beta_1 + \beta_2 x_i + \beta_3 y_i + \beta_4 x_i^2 \
+            + \beta_5 x_i y_i + \beta_6 y_i^2 + \epsilon_i
+        $$
+        where \(u_i\) is an observation, \(x_i\) and \(y_i\) are model
+        inputs, \(\epsilon_i \sim \mathcal{N}(0, \sigma^2)\)
+        describes observation noise, and \(\beta_1, \ldots, \beta_6\)
+        are regression coefficients.  Geostat can be used to fit this
+        regression (though not in the most efficient way):
 
-    A linear regression is a special case of GP regression that
-    can be modeled with Geostat. Suppose
-    $$
-    u_i = \beta_1 + \beta_2 x_i + \beta_3 y_i + \beta_4 x_i^2 \
-        + \beta_5 x_i y_i + \beta_6 y_i^2 + \epsilon_i
-    $$
-    where \(u_i\) is an observation, \(x_i\) and \(y_i\) are model
-    inputs, \(\epsilon_i \sim \mathcal{N}(0, \sigma^2)\)
-    describes observation noise, and \(\beta_1, \ldots, \beta_6\)
-    are regression coefficients.  Geostat can be used to fit this
-    regression (though not in the most efficient way):
-
-    ```python
-    @featurizer
-    def trend_terms(x, y):
-        return 1, x, y, x*x, x*y, y*y
-    p = Parameters(beta=np.zeros([6]), sigma2=1.)
-    mean = mn.Trend(trend_terms, beta=p.beta)
-    kernel = krn.Noise(nugget=p.sigma2)
-    gp = GP(mean, kernel)
-    Model(gp).fit(locs, vals) # locs.shape = [N, 2], vals.shape = [N]
-    ```
-    """
+        ```python
+        @featurizer
+        def trend_terms(x, y):
+            return 1, x, y, x*x, x*y, y*y
+        p = Parameters(beta=np.zeros([6]), sigma2=1.)
+        mean = mn.Trend(trend_terms, beta=p.beta)
+        kernel = krn.Noise(nugget=p.sigma2)
+        gp = GP(mean, kernel)
+        Model(gp).fit(locs, vals) # locs.shape = [N, 2], vals.shape = [N]
+        ```
+        """
 
     mean: mn.Trend = None
     kernel: krn.Kernel = None
@@ -131,7 +127,7 @@ class GP:
 
 def Mix(inputs, weights=None):
     """
-    Linearly combines multiple Gaussian Processes (GPs) into a single GP using specified weights.
+    Linearly combines multiple Gaussian Processes (GPs) into a single GP.
 
     Parameters:
         inputs (list of GPs):  
@@ -143,6 +139,10 @@ def Mix(inputs, weights=None):
     Returns:
         GP (GP):
             A new GP object representing the linear combination of the input GPs with the specified weights.
+
+    Details:
+        
+
 
     Examples:
         Combining two GPs into a new multi-output GP:
@@ -577,26 +577,6 @@ class Model():
     It uses procedural programming principles. A call to `generate()` or `fit()`
     will update `locs`, `vals`, and `cats` fields.
 
-    Parameters:
-        gp (GP):
-            The Gaussian Process model to be used for training and prediction.
-        warp (Warp, optional):
-            An optional warping transformation applied to the data. If not specified, `NoWarp` 
-            is used by default.
-        locs (np.ndarray, optional):
-            A NumPy array containing location data.
-        vals (np.ndarray, optional):
-            A NumPy array containing observed values corresponding to `locs`.
-        cats (np.ndarray, optional):
-            A NumPy array containing categorical data.
-        report (Callable, optional):
-            A custom reporting function to display model parameters. If not provided, a default 
-            reporting function is used.
-        verbose (bool, optional):
-            Whether to print model parameters and status updates. Default is True.
-
-    Details:
-
     A `Model` is typically initialized with just a `GP` object.
     ```python
     import geostat.kernel as krn
@@ -628,24 +608,41 @@ class Model():
     ```
     The model does not hold on to prediction outputs.
 
+    Parameters:
+        gp (GP):
+            The Gaussian Process model to be used for training and prediction.
+        warp (Warp, optional):
+            An optional warping transformation applied to the data. If not specified, `NoWarp` 
+            is used by default.
+        locs (np.ndarray, optional):
+            A NumPy array containing location data.
+        vals (np.ndarray, optional):
+            A NumPy array containing observed values corresponding to `locs`.
+        cats (np.ndarray, optional):
+            A NumPy array containing categorical data.
+        report (Callable, optional):
+            A custom reporting function to display model parameters. If not provided, a default 
+            reporting function is used.
+        verbose (bool, optional):
+            Whether to print model parameters and status updates. Default is True.
+
     Examples:
+        Initializing a `Model` with a Gaussian Process:
 
-    Initializing a `Model` with a Gaussian Process:
+            ```python
+            from geostat import GP, Model, Parameters
+            from geostat.kernel import Noise
+            import numpy as np
 
-        ```python
-        from geostat import GP, Model, Parameters
-        from geostat.kernel import Noise
-        import numpy as np
+            # Create parameters.
+            p = Parameters(nugget=1.)
 
-        # Create parameters.
-        p = Parameters(nugget=1.)
-
-        # Define the Gaussian Process and the model
-        gp = GP(kernel=Noise(nugget=p.nugget))
-        locs = np.array([[0.0, 1.0], [1.0, 2.0]])
-        vals = np.array([1.0, 2.0])
-        model = Model(gp=gp, locs=locs, vals=vals)
-        ```
+            # Define the Gaussian Process and the model
+            gp = GP(kernel=Noise(nugget=p.nugget))
+            locs = np.array([[0.0, 1.0], [1.0, 2.0]])
+            vals = np.array([1.0, 2.0])
+            model = Model(gp=gp, locs=locs, vals=vals)
+            ```
 
     Notes:
         - The `__post_init__` method sets up default values, initializes the warping if not provided, 
