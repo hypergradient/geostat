@@ -400,14 +400,14 @@ class NormalizingFeaturizer:
     def __init__(self, featurization, locs):
         self.unnorm_featurizer = Featurizer(featurization)
         F_unnorm = self.unnorm_featurizer(locs)
-        self.unnorm_mean = tf.reduce_mean(F_unnorm, axis=0)
-        self.unnorm_std = tf.math.reduce_std(F_unnorm, axis=0)
+        self.unnorm_mean = jnp.mean(F_unnorm, axis=0)
+        self.unnorm_std = jnp.std(F_unnorm, axis=0)
 
     def __call__(self, locs):
-        ones = tf.ones([tf.shape(locs)[0], 1], dtype=tf.float32)
+        ones = jnp.ones([locs.shape[0], 1], dtype=jnp.float32)
         F_unnorm = self.unnorm_featurizer(locs)
         F_norm = (F_unnorm - self.unnorm_mean) / self.unnorm_std
-        return tf.concat([ones, F_norm], axis=1)
+        return jnp.concatenate([ones, F_norm], axis=1)
 
 class Featurizer:
     """
@@ -495,10 +495,6 @@ def e(x, a=-1):
 def gp_covariance(gp, locs, cats):
     return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
-# @tf.function
-# def gp_covariance(gp, locs, cats):
-#     return gp_covariance2(gp, locs, cats, locs, cats, 0)
-
 #@jax.jit
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
@@ -542,6 +538,9 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
     # assert jnp.all(cats2 == jnp.sort(cats2)), '`cats2` must be in non-descending order'
 
     cache = {}
+    for key in params.keys():
+        cache[key] = params[key]
+    
     cache['offset'] = offset
     cache['locs1'] = locs1
     cache['locs2'] = locs2
@@ -550,12 +549,12 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
     cache['per_axis_dist2'] = PerAxisDist2().run(cache)
     cache['euclidean'] = Euclidean().run(cache)
 
-    cache['d2'] = Euclidean().run(cache) #TODO: Check if valid assumption
     cache['pa_d2'] = cache['per_axis_dist2'] #TODO: Check if valid assumption
+    cache['d2'] = Euclidean().run(cache) #TODO: Check if valid assumption
 
-    for key in params.keys():
-        cache[key] = params[key]
-
+    # if 'xscale' in params.keys():
+    #     print("Test Array: ", [cache['xscale'], cache['yscale'], cache['zscale']])
+    #     cache['d2'] = krn.scale_to_metric(scale=[cache['xscale'], cache['yscale'], cache['zscale']], metric=None)
 
     M = gp.mean(cache)
 
@@ -605,41 +604,24 @@ def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
     u_adj = u - m
     sign, logdet = jnp.linalg.slogdet(2 * np.pi * cov)
-    # print("logdet: ", logdet)
     quad = jnp.dot(u_adj, solve(cov, u_adj))
-    # print("quad: ", quad)
     return jnp.array(-0.5 * (logdet + quad), dtype=jnp.float32)
 
 #@jax.jit
 def gp_log_likelihood(data, gp, params):
     m, S = gp_covariance3(gp, data['locs'], data['cats'], data['locs'], data['cats'], 0, params)
-    # print("m: ", m)
-    # print("S: ", S)
-    # print("data['vals']: ", data['vals'])
     u = jnp.asarray(data['vals'], dtype=jnp.float32)
-    # print("u: ", u)
     return mvn_log_pdf(u, m, S)
-
-# @tf.function
-# def gp_log_likelihood(data, gp):
-#     m, S = gp_covariance(gp, data['warplocs'].run({}), data['cats'])
-#     u = tf.cast(data['vals'], tf.float64)
-#     return mvn_log_pdf(u, m, S)
 
 def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], gp, reg=None):
 
     def loss_fn(params):
-
         ll = gp_log_likelihood(data, gp, params)
-
-        # print("ll: ", ll)
-
         return -ll    
 
     # Calculate loss and gradients
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
 
-    # print("Loss: ", loss)
     # print("Grads: ", grads)           
 
     for key in grads:
@@ -1069,23 +1051,7 @@ class Model():
             None if cats is None else cats
         )
 
-        # print("gen_m: ", m)
-        # print("gen_S: ", S)
-        # eigenvalues = jnp.linalg.eigvalsh(S)
-        # print("Eigenvalues of S:", eigenvalues)
-        # S = (S + S.T) / 2 # Ensure symmetry of the covariance matrix
-        # jitter = 1e-6  # or another small value
-        # S = S + jitter * jnp.eye(S.shape[0])
-        # try:
-        #     L = jnp.linalg.cholesky(S)
-        #     print("Cholesky decomposition successful.")
-        # except jnp.linalg.LinAlgError:
-        #     print("Cholesky decomposition failed.")
-        # print("cholesky: ", L)
-
         vals = jax.random.multivariate_normal(key=jax.random.PRNGKey(0), mean=m, cov=S)
-
-        #print("gen_vals: ", vals)        
 
         # Restore order if things were permuted.
         if perm is not None:

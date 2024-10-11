@@ -187,6 +187,16 @@ def scale_to_metric(scale, metric):
             metric = Euclidean(scale)
     return metric
 
+def scale_to_metric_2(e, metric):
+    scale = [e['xscale'], e['yscale'], e['zscale']]
+    assert scale is None or metric is None
+    if metric is None:
+        if scale is None:
+            metric = 'euclidean'
+        else:
+            metric = Euclidean(scale)
+    return metric
+
 class Constant(Kernel):
     """
     Constant kernel class for Gaussian Processes (GPs).
