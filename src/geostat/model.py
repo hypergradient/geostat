@@ -640,8 +640,7 @@ def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], 
     loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
 
     # print("Loss: ", loss)
-    print("Grads: ", grads)
-    return       
+    # print("Grads: ", grads)           
 
     for key in grads:
         grads[key] = jnp.clip(grads[key], -1.0, 1.0)
