@@ -894,8 +894,8 @@ class Model():
         opt_state = optimizer.init(params)
 
         @jax.jit
-        def jit_gp_train_step(opt_state, self.data, params, reg):
-            return gp_train_step(optimizer, opt_state, self.data, params, self.gp, reg)
+        def jit_gp_train_step(opt_state, data, params, reg):
+            return gp_train_step(optimizer, opt_state, data, params, self.gp, reg)
 
         j = 0 # Iteration count.
         for i in range(10):
