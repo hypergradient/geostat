@@ -1,5 +1,4 @@
 import numpy as np
-import tensorflow as tf
 import geostat
 import geostat.kernel as krn
 from geostat import Parameters, GP, Model, Trend

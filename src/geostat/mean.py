@@ -4,12 +4,6 @@ import numpy as np
 
 import jax.numpy as jnp
 
-
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    import tensorflow as tf
-
 from .op import Op
 from .param import Parameter, ppp, upp, bpp
 

@@ -7,7 +7,6 @@ from scipy.special import expit, logit
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
-
 import jax
 import jax.numpy as jnp
 from jax import grad, jit
@@ -18,24 +17,12 @@ from jax.experimental import checkify
 
 import optax  # JAX-compatible optimization library for optimizers like Adam
 
-# Tensorflow is extraordinarily noisy. Catch warnings during import.
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    import tensorflow as tf
-    import tensorflow_probability as tfp
-    tfd = tfp.distributions
-    from tensorflow.core.function.trace_type import default_types
-
 from . import mean as mn
 from . import kernel as krn
 from .metric import Euclidean, PerAxisDist2
 from .op import Op
-from .op import SingletonTraceType
 from .param import get_parameter_values, ppp, upp, bpp
 from .param import Parameter
-
-MVN = tfp.distributions.MultivariateNormalTriL
 
 __all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturizer', 'StratigraphicWarp']
 
@@ -112,9 +99,6 @@ class GP:
 
     def __add__(self, other):
         return GP(self.mean + other.mean, self.kernel + other.kernel)
-
-    def __tf_tracing_type__(self, context):
-        return SingletonTraceType(self)
 
     def gather_vars(self):
         return self.mean.gather_vars() | self.kernel.gather_vars()
@@ -195,9 +179,6 @@ class WarpLocations(Op):
     def __call__(self, e):
         return jnp.asarray(self.warped_locs, dtype=jnp.float32)
 
-    def __tf_tracing_type__(self, context):
-        return SingletonTraceType(self)
-
     def gather_vars(self):
         return {}
 
@@ -217,7 +198,6 @@ class CrazyWarp(Warp):
     def gather_vars(self):
         return {}
 
-@tf.function
 def interpolate_1d_tf(src, tgt, x):
     """
     `src`: (batch, breaks)
@@ -235,7 +215,6 @@ def interpolate_1d_tf(src, tgt, x):
     xout = ((x - src0) * tgt1 + (src1 - x) * tgt0) / (src1 - src0)
     return tf.reshape(xout, x_shape)
 
-@tf.function
 def relax(s, t, distort):
     xi = distort / (1 - distort)
     ds = s[:, 1:] - s[:, :-1]
@@ -298,9 +277,6 @@ class TweeningStratigraphicWarpLocations(Op):
         locs1 = tf.cast(self.warped_locs, dtype=tf.float32)
         return locs0 * (1. - tween) + locs1 * tween
 
-    def __tf_tracing_type__(self, context):
-        return SingletonTraceType(self)
-
     def gather_vars(self):
         return bpp(self.fa['tween'], 0., 1.)
 
@@ -341,9 +317,6 @@ class StratigraphicWarpLocations(Op):
 
         return locs1
 
-    def __tf_tracing_type__(self, context):
-        return SingletonTraceType(self)
-
     def gather_vars(self):
         return bpp(self.fa['tween'], 0., 1.)
 
@@ -367,7 +340,6 @@ class NormalizingFeaturizer:
     Creating a `NormalizingFeaturizer` using a custom featurization function and location data:
 
     ```
-    import tensorflow as tf
     from geostat.model import NormalizingFeaturizer
 
     # Define a simple featurization function
@@ -427,7 +399,6 @@ class Featurizer:
     Creating a `Featurizer` using a custom featurization function:
 
     ```
-    import tensorflow as tf
     from geostat.model import Featurizer
 
     # Define a custom featurization function
@@ -524,7 +495,6 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
 
     return M, C
 
-#@jax.jit
 def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
@@ -549,28 +519,26 @@ def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
     cache['per_axis_dist2'] = PerAxisDist2().run(cache)
     cache['euclidean'] = Euclidean().run(cache)
 
-    cache['pa_d2'] = cache['per_axis_dist2'] #TODO: Check if valid assumption
-    cache['d2'] = Euclidean().run(cache) #TODO: Check if valid assumption
+    # cache['pa_d2'] = cache['per_axis_dist2'] #TODO: Check if valid assumption
+    # cache['d2'] = Euclidean().run(cache) #TODO: Check if valid assumption
 
     # if 'xscale' in params.keys():
     #     print("Test Array: ", [cache['xscale'], cache['yscale'], cache['zscale']])
     #     cache['d2'] = krn.scale_to_metric(scale=[cache['xscale'], cache['yscale'], cache['zscale']], metric=None)
 
-    M = gp.mean(cache)
+    # M = gp.mean.run(cache)
 
-    if isinstance(gp.kernel, krn.Stack):
-        C = jnp.zeros((cache['locs1'].shape[0], cache['locs2'].shape[0]), dtype=jnp.float64)        
-        for kernel in gp.kernel.parts:
-            C += kernel(cache)
-    else:
-        C = gp.kernel(cache)
+    # if isinstance(gp.kernel, krn.Stack):
+    #     C = jnp.zeros((cache['locs1'].shape[0], cache['locs2'].shape[0]), dtype=jnp.float64)        
+    #     for kernel in gp.kernel.parts:
+    #         C += kernel(cache)
+    # else:
+    #     C = gp.kernel(cache)
 
-    #M = gp.mean.run(cache)
-    #C = gp.kernel.run(cache)
-
-    C = jnp.asarray(C, dtype=jnp.float64)
+    M = gp.mean.run(cache)
+    C = gp.kernel.run(cache)
     M = jnp.asarray(M, dtype=jnp.float64)
-
+    C = jnp.asarray(C, dtype=jnp.float64)
     return M, C
 
 # @tf.function
@@ -747,8 +715,8 @@ class Model():
             if prefix: print(prefix, end=' ')
 
             def fmt(x):
-                if isinstance(x, tf.Tensor):
-                    x = x.numpy()
+                # if isinstance(x, tf.Tensor):
+                #     x = x.numpy()
 
                 if isinstance(x, (int, np.int32, np.int64)):
                     return '{:5d}'.format(x)

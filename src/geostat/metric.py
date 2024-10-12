@@ -4,12 +4,6 @@ from typing import Callable, Dict
 import numpy as np
 import jax.numpy as jnp
 
-# Tensorflow is extraordinarily noisy. Catch warnings during import.
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    import tensorflow as tf
-
 from .op import Op
 from .param import ppp, upp, bpp
 

@@ -1,15 +1,8 @@
 from dataclasses import dataclass
-from tensorflow.types.experimental import TraceType
 from typing import Dict
 
 from jax.tree_util import tree_flatten
 from jax.tree_util import tree_map
-
-# Tensorflow is extraordinarily noisy. Catch warnings during import.
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    import tensorflow as tf
 
 from .param import get_parameter_values
 
@@ -89,33 +82,3 @@ class Op:
             cache['__save__'].append(self)
 
         return cache[id(self)]
-
-    def __tf_tracing_type__(self, context):
-        return SingletonTraceType(self)
-
-
-class SingletonTraceType(TraceType):
-    """
-    A trace type to override TF's default behavior, which is
-    to treat dataclass-based onjects as dicts.
-    """
-    def __init__(self, thing):
-        self.value = thing
-
-    def is_subtype_of(self, other):
-        return self.value is other.value
-
-    def most_specific_common_supertype(self, other):
-        if self.value is other.value:
-            return self.value
-        else:
-            return None
-
-    def placeholder_value(self, placeholder_context):
-        return self.value
-
-    def __eq__(self, other):
-        return self.value is other.value
-        
-    def __hash__(self):
-        return hash(id(self.value))

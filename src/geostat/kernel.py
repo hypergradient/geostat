@@ -5,14 +5,13 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 
-
-# Tensorflow is extraordinarily noisy. Catch warnings during import.
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    import tensorflow as tf
-    from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
-    from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
+# # Tensorflow is extraordinarily noisy. Catch warnings during import.
+# import warnings
+# with warnings.catch_warnings():
+#     warnings.filterwarnings("ignore", category=DeprecationWarning)
+#     import tensorflow as tf
+#     from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
+#     from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
 
 from .op import Op
 from .metric import Euclidean, PerAxisDist2, ed
@@ -352,7 +351,7 @@ class GammaExponential(Kernel):
     def call(self, e):
         return e['sill'] * gamma_exp(e['d2'] / jnp.square(e['range']), e['gamma'])
 
-@tf.custom_gradient
+# @tf.custom_gradient
 def ramp(x):
     ax = tf.abs(x)
     def grad(upstream):
@@ -430,7 +429,7 @@ class Ramp(Kernel):
 #         return grad_x, grad_sills, grad_ranges
 #     return tf.reduce_sum(y, -1), grad
 
-@tf.custom_gradient
+# @tf.custom_gradient
 def rampstack(x, sills, ranges):
     """
     `x` has arbitrary shape [...], but must be non-negative.
@@ -509,7 +508,7 @@ class RampStack(Kernel):
 
         return rampstack(tf.sqrt(e['d2']), e['sill'], e['range'])
 
-@tf.recompute_grad
+# @tf.recompute_grad
 def smooth_convex(x, sills, ranges):
     """
     `x` has arbitrary shape [...], but must be non-negative.
@@ -534,7 +533,7 @@ def smooth_convex(x, sills, ranges):
     y = tf.einsum('...k,k->...', v, sills)
     return y
 
-@tf.custom_gradient
+# @tf.custom_gradient
 def smooth_convex_grad(x, sills, ranges):
     """
     `x` has arbitrary shape [...], but must be non-negative.
@@ -648,7 +647,7 @@ class SmoothConvex(Kernel):
 
         return smooth_convex(tf.sqrt(e['d2']), e['sill'], e['range'])
 
-@tf.recompute_grad
+# @tf.recompute_grad
 def quadstack(x, sills, ranges):
     """
     `x` has arbitrary shape [...], but must be non-negative.
