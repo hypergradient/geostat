@@ -462,11 +462,9 @@ def featurizer(normalize=None):
 def e(x, a=-1):
     return jnp.expand_dims(x, a)
 
-#@jax.jit
 def gp_covariance(gp, locs, cats):
     return gp_covariance2(gp, locs, cats, locs, cats, 0)
 
-#@jax.jit
 def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     """
     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
@@ -474,7 +472,6 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     of a Noise covariance function. A non-zero offset results in a
     covariance matrix with non-zero entries along an off-center diagonal.
     """
-
     # Ensure that `cats1` and `cats2` are sorted if necessary (commented out for now).
     # assert jnp.all(cats1 == jnp.sort(cats1)), '`cats1` must be in non-descending order'
     # assert jnp.all(cats2 == jnp.sort(cats2)), '`cats2` must be in non-descending order'
@@ -489,84 +486,10 @@ def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
     cache['euclidean'] = Euclidean().run(cache)
 
     M = gp.mean.run(cache)
-    M = jnp.asarray(M, dtype=jnp.float64)
-    C = gp.kernel.run(cache)
-    C = jnp.asarray(C, dtype=jnp.float64)
-
-    return M, C
-
-def gp_covariance3(gp, locs1, cats1, locs2, cats2, offset, params):
-    """
-    `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
-    and locs2. It is used to create the diagonal non-zero elements
-    of a Noise covariance function. A non-zero offset results in a
-    covariance matrix with non-zero entries along an off-center diagonal.
-    """
-
-    # Ensure that `cats1` and `cats2` are sorted if necessary (commented out for now).
-    # assert jnp.all(cats1 == jnp.sort(cats1)), '`cats1` must be in non-descending order'
-    # assert jnp.all(cats2 == jnp.sort(cats2)), '`cats2` must be in non-descending order'
-
-    cache = {}
-    for key in params.keys():
-        cache[key] = params[key]
-    
-    cache['offset'] = offset
-    cache['locs1'] = locs1
-    cache['locs2'] = locs2
-    cache['cats1'] = cats1
-    cache['cats2'] = cats2
-    cache['per_axis_dist2'] = PerAxisDist2().run(cache)
-    cache['euclidean'] = Euclidean().run(cache)
-
-    # cache['pa_d2'] = cache['per_axis_dist2'] #TODO: Check if valid assumption
-    # cache['d2'] = Euclidean().run(cache) #TODO: Check if valid assumption
-
-    # if 'xscale' in params.keys():
-    #     print("Test Array: ", [cache['xscale'], cache['yscale'], cache['zscale']])
-    #     cache['d2'] = krn.scale_to_metric(scale=[cache['xscale'], cache['yscale'], cache['zscale']], metric=None)
-
-    # M = gp.mean.run(cache)
-
-    # if isinstance(gp.kernel, krn.Stack):
-    #     C = jnp.zeros((cache['locs1'].shape[0], cache['locs2'].shape[0]), dtype=jnp.float64)        
-    #     for kernel in gp.kernel.parts:
-    #         C += kernel(cache)
-    # else:
-    #     C = gp.kernel(cache)
-
-    M = gp.mean.run(cache)
     C = gp.kernel.run(cache)
     M = jnp.asarray(M, dtype=jnp.float64)
     C = jnp.asarray(C, dtype=jnp.float64)
     return M, C
-
-# @tf.function
-# def gp_covariance2(gp, locs1, cats1, locs2, cats2, offset):
-#     """
-#     `offset` is i2-i1, where i1 and i2 are the starting indices of locs1
-#     and locs2.  It is used to create the diagonal non-zero elements
-#     of a Noise covariance function.  An non-zero offset results in a
-#     covariance matrix with non-zero entries along an off-center diagonal.
-#     """
-
-#     # assert np.all(cats1 == np.sort(cats1)), '`cats1` must be in non-descending order'
-#     # assert np.all(cats2 == np.sort(cats2)), '`cats2` must be in non-descending order'
-
-#     cache = {}
-#     cache['offset'] = offset
-#     cache['locs1'] = locs1
-#     cache['locs2'] = locs2
-#     cache['cats1'] = cats1
-#     cache['cats2'] = cats2
-#     cache['per_axis_dist2'] = PerAxisDist2().run(cache)
-#     cache['euclidean'] = Euclidean().run(cache)
-
-#     M = gp.mean.run(cache)
-#     C = gp.kernel.run(cache)
-#     M = tf.cast(M, tf.float64)
-#     C = tf.cast(C, tf.float64)
-#     return M, C
 
 def mvn_log_pdf(u, m, cov):
     """Log PDF of a multivariate gaussian."""
@@ -575,31 +498,29 @@ def mvn_log_pdf(u, m, cov):
     quad = jnp.dot(u_adj, solve(cov, u_adj))
     return jnp.array(-0.5 * (logdet + quad), dtype=jnp.float32)
 
-#@jax.jit
-def gp_log_likelihood(data, gp, params):
-    m, S = gp_covariance3(gp, data['locs'], data['cats'], data['locs'], data['cats'], 0, params)
+def gp_log_likelihood(data, gp):
+    m, S = gp_covariance2(gp, data['locs'], data['cats'], data['locs'], data['cats'], 0)
     u = jnp.asarray(data['vals'], dtype=jnp.float32)
     return mvn_log_pdf(u, m, S)
 
-def gp_train_step(optimizer, opt_state, data, parameters: Dict[str, Parameter], gp, reg=None):
+def gp_train_step(optimizer, opt_state, data, jax_params, gp, geo_params, reg=None):
 
-    def loss_fn(params):
-        ll = gp_log_likelihood(data, gp, params)
+    def loss_fn(jax_params):
+        for k, v in jax_params.items(): geo_params[k].underlying = v
+        ll = gp_log_likelihood(data, gp)
         return -ll    
 
     # Calculate loss and gradients
-    loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(parameters)
-
-    # print("Grads: ", grads)           
+    loss, grads = jax.value_and_grad(loss_fn, has_aux=False)(jax_params)
 
     for key in grads:
         grads[key] = jnp.clip(grads[key], -1.0, 1.0)
 
     # Update the parameters using the optimizer
-    updates, opt_state = optimizer.update(grads, opt_state, parameters)
-    parameters = optax.apply_updates(parameters, updates)
+    updates, opt_state = optimizer.update(grads, opt_state, jax_params)
+    jax_params = optax.apply_updates(jax_params, updates)
 
-    return parameters, opt_state, -loss, 0
+    return jax_params, opt_state, -loss, 0
 
 # def gp_train_step(
 #     optimizer,
@@ -798,10 +719,8 @@ class Model():
         using the Adam optimizer. Optionally performs regularization and can handle categorical data.
         """
         # Collect parameters for the JAX optimization.
-        parameters = self.gather_vars()
-        params = get_parameter_values(parameters)
-
-        print(" ")
+        geo_params = self.gather_vars()
+        jax_params = {k: v.underlying for k, v in geo_params.items()}
 
         # Permute datapoints if cats is given.
         if cats is not None:
@@ -822,35 +741,37 @@ class Model():
 
         # Initialize the Adam optimizer from optax.
         optimizer = optax.adam(learning_rate=step_size)
-        opt_state = optimizer.init(params)
+        opt_state = optimizer.init(jax_params)
 
         @jax.jit
         def jit_gp_train_step(opt_state, data, params, reg):
-            return gp_train_step(optimizer, opt_state, data, params, self.gp, reg)
+            return gp_train_step(optimizer, opt_state, data, params, self.gp, geo_params, reg)
 
         j = 0 # Iteration count.
         for i in range(10):
             t0 = time.time()
             while j < (i + 1) * iters / 10:
-                params, opt_state, ll, reg_penalty = jit_gp_train_step(opt_state, self.data, params, reg)
+                jax_params, opt_state, ll, reg_penalty = jit_gp_train_step(opt_state, self.data, jax_params, reg)
+                for k, v in jax_params.items(): geo_params[k].underlying = v
                 j += 1
 
             time_elapsed = time.time() - t0
             if self.verbose == True:
                 self.report(
-                dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
-                {key: params[key] for key in params.keys()})
+                    dict(iter=j, ll=ll, time=time_elapsed, reg=reg_penalty) |
+                        {p.name: p.surface() for p in geo_params.values()})
 
-        parameters = self.gather_vars()
-        for name, v in params.items():
-            if name in parameters:
-                parameters[name].value = v
-                parameters[name].create_jax_variable()
-            else:
-                raise ValueError(f"{name} is not a parameter")
+           
+        # parameters = self.gather_vars()
+        # for name, v in params.items():
+        #     if name in parameters:
+        #         parameters[name].value = v
+        #         parameters[name].create_jax_variable()
+        #     else:
+        #         raise ValueError(f"{name} is not a parameter")
 
         # Save parameter values.
-        for p in parameters.values():
+        for p in geo_params.values():
             p.update_value()
 
         # Restore order if things were permuted.
@@ -863,130 +784,6 @@ class Model():
         self.cats = cats
 
         return self
-
-
-    def mcmc(self, locs, vals, cats=None,
-            chains=4, step_size=0.1, move_prob=0.5,
-            samples=1000, burnin=500, report_interval=100):
-
-        assert samples % report_interval == 0, '`samples` must be a multiple of `report_interval`'
-        assert burnin % report_interval == 0, '`burnin` must be a multiple of `report_interval`'
-
-        # Permute datapoints if cats is given.
-        if cats is not None:
-            cats = np.array(cats)
-            perm = np.argsort(cats)
-            locs, vals, cats = locs[perm], vals[perm], cats[perm]
-
-        # Data dict.
-        self.data = {
-            'locs': tf.constant(locs, dtype=tf.float32),
-            'vals': tf.constant(vals, dtype=tf.float32),
-            'cats': None if cats is None else tf.constant(cats, dtype=tf.int32)}
-
-        # Initial MCMC state.
-        initial_up = self.parameter_space.get_underlying(self.parameters)
-
-        # Unnormalized log posterior distribution.
-        def g(up):
-            sp = self.parameter_space.get_surface(up)
-            return gp_log_likelihood(self.data, sp, self.gp)
-
-        def f(*up_flat):
-            up = tf.nest.pack_sequence_as(initial_up, up_flat)
-            ll = tf.map_fn(g, up, fn_output_signature=tf.float32)
-            # log_prior = -tf.reduce_sum(tf.math.log(1. + tf.square(up_flat)), axis=0)
-            return ll # + log_prior
-
-        # Run the chain for a burst.
-        @tf.function
-        def run_chain(current_state, final_results, kernel, iters):
-            samples, results, final_results = tfp.mcmc.sample_chain(
-                num_results=iters,
-                current_state=current_state,
-                kernel=kernel,
-                return_final_kernel_results=True,
-                trace_fn=lambda _, results: results)
-
-            return samples, results, final_results
-        
-        def new_state_fn(scale, dtype):
-          direction_dist = tfd.Normal(loc=dtype(0), scale=dtype(1))
-          scale_dist = tfd.Exponential(rate=dtype(1/scale))
-          pick_dist = tfd.Bernoulli(probs=move_prob)
-
-          def _fn(state_parts, seed):
-            next_state_parts = []
-            part_seeds = tfp.random.split_seed(
-                seed, n=len(state_parts), salt='rwmcauchy')
-            for sp, ps in zip(state_parts, part_seeds):
-                pick = tf.cast(pick_dist.sample(sample_shape=sp.shape, seed=ps), tf.float32)
-                direction = direction_dist.sample(sample_shape=sp.shape, seed=ps)
-                scale_val = scale_dist.sample(seed=ps)
-                next_state_parts.append(sp + tf.einsum('a...,a->a...', pick * direction, scale_val))
-            return next_state_parts
-          return _fn
-
-        inv_temps = 0.5**np.arange(chains, dtype=np.float32)
-
-        def make_kernel_fn(target_log_prob_fn):
-            return tfp.mcmc.RandomWalkMetropolis(
-                target_log_prob_fn=target_log_prob_fn,
-                new_state_fn=new_state_fn(scale=step_size / np.sqrt(inv_temps), dtype=np.float32))
-
-        kernel = tfp.mcmc.ReplicaExchangeMC(
-            target_log_prob_fn=f,
-            inverse_temperatures=inv_temps,
-            make_kernel_fn=make_kernel_fn)
-
-        # Do bursts.
-        current_state = tf.nest.flatten(initial_up)
-        final_results = None
-        acc_states = []
-        num_bursts = (samples + burnin) // report_interval
-        burnin_bursts = burnin // report_interval
-        for i in range(num_bursts):
-            is_burnin = i < burnin_bursts
-
-            if self.verbose and (i == 0 or i == burnin_bursts):
-                print('BURNIN\n' if is_burnin else '\nSAMPLING')
-            
-            t0 = time.time()
-            states, results, final_results = run_chain(current_state, final_results, kernel, report_interval)
-
-            if self.verbose == True:
-                if not is_burnin: print()
-                accept_rates = results.post_swap_replica_results.is_accepted.numpy().mean(axis=0)
-                print('[iter {:4d}] [time {:.1f}] [accept rates {}]'.format(
-                    ((i if is_burnin else i - burnin_bursts) + 1) * report_interval,
-                    time.time() - t0,
-                    ' '.join([f'{x:.2f}' for x in accept_rates.tolist()])))
-
-            if not is_burnin:
-                acc_states.append(tf.nest.map_structure(lambda x: x.numpy(), states))
-                all_states = [np.concatenate(x, 0) for x in zip(*acc_states)]
-                up = tf.nest.pack_sequence_as(initial_up, all_states)
-                sp = self.parameter_space.get_surface(up, numpy=True) 
-
-                # Reporting
-                if self.verbose == True:
-                    for p in [5, 50, 95]:
-                        x = tf.nest.map_structure(lambda x: np.percentile(x, p, axis=0), sp)
-                        self.report(x, prefix=f'{p:02d}%ile')
-
-            current_state = [s[-1] for s in states]
-
-        posterior = self.parameter_space.get_surface(up, numpy=True)
-
-        # Restore order if things were permuted.
-        if cats is not None:
-            revperm = np.argsort(perm)
-            locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
-
-        return replace(self, 
-            parameters=posterior,
-            parameter_sample_size=samples,
-            locs=locs, vals=vals, cats=cats)
 
     def generate(self, locs, cats=None):
         """

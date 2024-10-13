@@ -70,21 +70,33 @@ class Parameter:
     def update_value(self):
         self.value = np.array(self.surface())  # Convert to NumPy array for compatibility
 
+def map_blob(blob: object, f):
+    """
+    Apply f to all values in blob.
+    """
+    if isinstance(blob, dict):
+        return {k: map_blob(v, f) for k, v in blob.items()}
+    elif isinstance(blob, list):
+        return [map_blob(v, f) for v in blob]
+    elif isinstance(blob, tuple):
+        return tuple([map_blob(v, f) for v in blob])
+    else:
+        return f(blob)
+
 def get_parameter_values(blob: object):
     """
     For each Parameter encountered in the nested blob,
     replace it with its surface tensor.
     """
-    if isinstance(blob, dict):
-        return {k: get_parameter_values(a) for k, a in blob.items()}
-    elif isinstance(blob, (list, tuple)):
-        return [get_parameter_values(a) for a in blob]
-    elif isinstance(blob, Parameter):
-        return blob.surface()
-    elif isinstance(blob, str):
-        raise ValueError(f'Bad parameter {blob} is a string')
-    else:
-        return blob
+    def f(x):
+        if isinstance(x, Parameter):
+            return x.surface()
+        elif isinstance(x, str):
+            raise ValueError(f'Bad parameter {blob} is a string')
+        else:
+            return x
+
+    return map_blob(blob, f)
 
 
 # from types import SimpleNamespace

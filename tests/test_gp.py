@@ -167,49 +167,48 @@ def test_gp3d():
     assert np.all(mean == mean2)
     assert np.all(var == var2)
 
-# def test_gp3d_stacked():
-#     np.random.seed(2)
-#     tf.random.set_seed(2)
+def test_gp3d_stacked():
+    np.random.seed(2)
 
-#     # Create random locations centered on the origin.
-#     locs1 = np.random.normal(size=[2500, 3])
+    # Create random locations centered on the origin.
+    locs1 = np.random.normal(size=[3000, 3])
 
-#     # Create parameters.
-#     p = Parameters(alpha=1., zscale=5., r1=0.25, s1=1., r2=1.0, s2=0.25, nugget=1.)
+    # Create parameters.
+    p = Parameters(alpha=1., zscale=5., r1=0.25, s1=1., r2=1.0, s2=0.25, nugget=1.)
 
-#     # Featurizer of location for trends.
-#     @geostat.featurizer(normalize=locs1)
-#     def trend_featurizer(x, y, z): return z, z*z
+    # Featurizer of location for trends.
+    @geostat.featurizer(normalize=locs1)
+    def trend_featurizer(x, y, z): return z, z*z
 
-#     # Covariance structure
-#     kernel = \
-#         krn.TrendPrior(trend_featurizer, alpha=p.alpha) + \
-#         krn.SquaredExponential(range=p.r1, sill=p.s1, scale=[1., 1., p.zscale]) + \
-#         krn.SquaredExponential(range=p.r2, sill=p.s2, scale=[1., 1., 0.]) + \
-#         krn.Noise(nugget=p.nugget)
+    # Covariance structure
+    kernel = \
+        krn.TrendPrior(trend_featurizer, alpha=p.alpha) + \
+        krn.SquaredExponential(range=p.r1, sill=p.s1, scale=[1., 1., p.zscale]) + \
+        krn.SquaredExponential(range=p.r2, sill=p.s2, scale=[1., 1., 0.]) + \
+        krn.Noise(nugget=p.nugget)
 
-#     # Model
-#     model = Model(GP(0, kernel))
+    # Model
+    model = Model(GP(0, kernel))
 
-#     # Generate data.
-#     vals1 = model.generate(locs1).vals
+    # Generate data.
+    vals1 = model.generate(locs1).vals
 
-#     # Fit GP.
-#     model.set(alpha=2., zscale=2.5, r1=0.125, s1=0.5, r2=0.5, s2=0.125, nugget=0.5)
-#     model.fit(locs1, vals1, iters=100, step_size=1e-1)
+    # Fit GP.
+    model.set(alpha=2., zscale=2.5, r1=0.125, s1=0.5, r2=0.5, s2=0.125, nugget=0.5)
+    model.fit(locs1, vals1, iters=100, step_size=1e-1)
 
-#     assert np.allclose(
-#         [getattr(p, name).value for name in ['zscale', 'r1', 's1', 'r2', 's2', 'nugget']],
-#         [5., 0.25, 1., 1., 0.25, 1.],
-#         rtol=0.3)
+    assert np.allclose(
+        [getattr(p, name).value for name in ['zscale', 'r1', 's1', 'r2', 's2', 'nugget']],
+        [5., 0.25, 1., 1., 0.25, 1.],
+        rtol=0.3)
 
-#     # Interpolate using GP.
-#     N = 10
-#     xx, yy, zz = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N), np.linspace(-1, 1, N))
-#     locs2 = np.stack([xx, yy, zz], axis=-1).reshape([-1, 3])
+    # Interpolate using GP.
+    N = 10
+    xx, yy, zz = np.meshgrid(np.linspace(-1, 1, N), np.linspace(-1, 1, N), np.linspace(-1, 1, N))
+    locs2 = np.stack([xx, yy, zz], axis=-1).reshape([-1, 3])
 
-#     mean, var = model.predict(locs2)
-#     mean2, var2 = model.predict(locs2)
+    mean, var = model.predict(locs2)
+    mean2, var2 = model.predict(locs2)
 
-#     assert np.all(mean == mean2)
-#     assert np.all(var == var2)
+    assert np.all(mean == mean2)
+    assert np.all(var == var2)
