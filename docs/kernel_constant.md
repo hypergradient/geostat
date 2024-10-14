@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 ::: src.geostat.kernel.Constant
     options:
         show_root_heading: True
