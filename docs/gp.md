@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 ::: src.geostat.model.GP
     options:
         show_root_heading: True

@@ -29,9 +29,6 @@ nav:
   - Examples: examples.md
   - About: about.md
 
-hide:
-  - toc
-
 theme:
   name: "material"
 

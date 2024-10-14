@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 ::: src.geostat.model.NormalizingFeaturizer
     options:
         show_root_heading: True

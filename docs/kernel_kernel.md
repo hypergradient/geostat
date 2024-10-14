@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 ::: src.geostat.kernel.Kernel
     options:
         show_root_heading: True

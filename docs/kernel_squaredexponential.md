@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 ::: src.geostat.kernel.SquaredExponential
     options:
         show_root_heading: True

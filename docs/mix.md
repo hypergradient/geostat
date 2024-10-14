@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 ::: src.geostat.model.Mix
     options:
         show_root_heading: True
