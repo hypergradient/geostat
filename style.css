@@ -1,4 +1,3 @@
-/*
 body {
     color: black;
     font-family: "Fira Sans", sans-serif;
@@ -12,16 +11,15 @@ p {
     font-weight: 500;
     font-style: normal;
 }
-*/
 
 
-doc {
+/* doc {
     color: black;
     font-family: "Fira Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
     font-size: 18px;
-}
+} */
 
 details.notes {
     color: black;
