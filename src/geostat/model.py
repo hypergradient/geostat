@@ -46,7 +46,7 @@ class GP:
         kernel (kernel.Kernel):
             The kernel function of the Gaussian Process. This parameter is required.
 
-    Details:
+    Examples: Details 
         This is how to specify a GP with a squared exponential kernel 
         and superimposed uncorrelated noise:
 
