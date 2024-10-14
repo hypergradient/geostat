@@ -597,7 +597,7 @@ class Model():
         verbose (bool, optional):
             Whether to print model parameters and status updates. Default is True.
 
-    Details:
+    Examples: Details:
         To generate synthetic data at \(n\) locations in \(k\)-dimensional
         space, pass the locations into `generate()`:
         ```python
