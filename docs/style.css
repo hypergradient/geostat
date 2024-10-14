@@ -3,7 +3,6 @@ body {
     font-family: "Fira Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
-    font-size: 18px;
 }
 
 p {
@@ -11,7 +10,6 @@ p {
     font-family: "Fira Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
-    font-size: 18px;
 }
 
 
@@ -23,10 +21,10 @@ p {
     font-size: 18px;
 } */
 
-details.notes {
+/* details.notes {
     color: black;
     font-family: "Fira Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
     font-size: 18px;
-}
+} */

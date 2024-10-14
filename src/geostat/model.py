@@ -172,7 +172,7 @@ def Mix(inputs, weights=None):
         The resulting GP \\(\mathbf{g}(x)\\) can then be used for fitting, generating, or predicting 
         with methods such as `g.fit()`, `g.generate()`, or `g.predict()` and its components are specified using the `cats` parameter.
     
-    Notes:
+    Examples: Notes:
         - The `weights` parameter defines how the input GPs are linearly combined. If omitted, 
         each GP is assumed to be independent, and the identity matrix is used.
         - The resulting GP supports all standard operations (e.g., `fit`, `generate`, `predict`).
@@ -398,7 +398,7 @@ class NormalizingFeaturizer:
         #  [1.        3.6742349 3.6742349 6.50242  ]], shape=(2, 4), dtype=float32)
         ```
 
-    Notes:
+    Examples: Notes:
         - The normalization parameters (`unnorm_mean` and `unnorm_std`) are calculated based on the 
         initial `locs` data provided during initialization.
         - The `__call__` method applies the normalization and adds an intercept feature when used 
@@ -466,7 +466,7 @@ class Featurizer:
         # tf.Tensor([], shape=(3, 0), dtype=float32)
         ```
 
-    Notes:
+    Examples: Notes:
         - The `__call__` method is used to apply the featurization to input location data.
         - If `featurization` returns a tuple, it is assumed to represent multiple features, 
         which will be stacked to form the feature matrix.
@@ -625,7 +625,7 @@ class Model():
         model = Model(gp=gp, locs=locs, vals=vals)
         ```
 
-    Notes:
+    Examples: Notes:
         - The `__post_init__` method sets up default values, initializes the warping if not provided, 
         and sets up reporting and data preprocessing.
     """
@@ -735,7 +735,7 @@ class Model():
             model.set(nugget=0.5)
             ```
 
-        Notes:
+        Examples: Notes:
             - The `set` method retrieves the current parameters using `gather_vars` and updates 
             their values. The associated TensorFlow variables are also recreated.
             - This method is useful for dynamically updating the model's parameters after initialization.
@@ -822,7 +822,7 @@ class Model():
             # [iter   300 ll -12.49 time  0.15 reg  0.00 nugget 241.42]
             ```
 
-        Notes:
+        Examples: Notes:
             - The `fit` method uses the Adam optimizer to minimize the negative log-likelihood (`ll`) and any regularization 
             penalties specified by `reg`.
             - During training, if `cats` are provided, data points are sorted according to `cats` to ensure grouped training.
@@ -1042,7 +1042,7 @@ class Model():
             # [0.45151083 1.23276189 0.3822659 ] (Values are non-deterministic)
             ```
 
-        Notes:
+        Examples: Notes:
             - Conditional generation is currently not supported, and this method will raise an assertion error if 
             `self.locs` and `self.vals` are already defined.
             - Generation from a distribution is not yet supported, and an assertion error will be raised if 
@@ -1150,7 +1150,7 @@ class Model():
             # [2.1572128  0.54444738]
             ```
 
-        Notes:
+        Examples: Notes:
             - If `subsample` is specified, it should be used only when `parameter_sample_size` is defined.
             - The `reduce` parameter allows aggregation of predictions, but it's valid only with sampled parameters.
             - The method supports pairwise predictions by setting `pair=True`, which is useful for predicting 
