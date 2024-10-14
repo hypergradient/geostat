@@ -39,76 +39,76 @@ class GP:
     supports addition to combine two GP models, and it allows
     gathering variables from the mean and kernel.
 
-    Parameters
-    ----------
+    Parameters:    
         mean (mean.Mean, optional):
             The mean function of the Gaussian Process. If not provided or set to 0, 
             a ZeroTrend is used as the default mean.
-
         kernel (kernel.Kernel):
             The kernel function of the Gaussian Process. This parameter is required.
 
-    Details
-    -------
-    This is how to specify a GP with a squared exponential kernel
-    and superimposed uncorrelated noise:
-    ```python
-    import geostat.kernel as krn
-    from geostat import GP, Model, Parameters
+    Details:
+        This is how to specify a GP with a squared exponential kernel 
+        and superimposed uncorrelated noise:
 
-    p = Parameters(range=1., sill=1., nugget=1.)
-    kernel = krn.SquaredExponential(range=p.range, sill=p.sill) + krn.Noise(nugget=p.nugget)
-    gp = GP(0, kernel)
-    ```
-    To use the GP, it must be wrapped in a model:
-    ```python
-    model = Model(GP)
-    ```
-    This model object can then be used to generate synthetic data,
-    fit its parameters to provided data, or make predictions, see
-    [`Model`](#src.geostat.model.Model).
+        ```python
+        import geostat.kernel as krn
+        from geostat import GP, Model, Parameters
 
-    In Geostat, GPs can be defined on locations in Euclidean space
-    of any dimension \(\mathbb{R}^D\), with the number of dimensions
-    specified implicitly by the shape of the location matrix given
-    to `fit()` or `generate()` in the `locs` argument.
-    
-    GPs can also be defined on locations in \(\mathbb{R}^D \times
-    \mathbb{Z}\) using the [`Mix`](#src.geostat.model.Mix) operator.
-    This construction is for modeling multiple spatial quantities,
-    with each quantity occupying a different 'plane' of the space.
-    When multiple spatial quantities are involved, these are specified
-    in the `cats` argument of `fit()`, `generate()` or `predict()`.
+        p = Parameters(range=1., sill=1., nugget=1.)
+        kernel = krn.SquaredExponential(range=p.range, sill=p.sill) + krn.Noise(nugget=p.nugget)
+        gp = GP(0, kernel)
+        ```
 
-    GPs can be superimposed:
-    ```python
-    gp = gp1 + gp2
-    ```
+        To use the GP, it must be wrapped in a model:
 
-    Examples
-    --------
-    A linear regression is a special case of GP regression that
-    can be modeled by Geostat. Suppose
-    $$
-    u_i = \beta_1 + \beta_2 x_i + \beta_3 y_i + \beta_4 x_i^2 \
-        + \beta_5 x_i y_i + \beta_6 y_i^2 + \epsilon_i
-    $$
-    where \(u_i\) is an observation, \(x_i\) and \(y_i\) are model
-    inputs, \(\epsilon_i \sim \mathcal{N}(0, \sigma^2)\)
-    describes observation noise, and \(\beta_1, \ldots, \beta_6\)
-    are regression coefficients.  Geostat can be used to fit this
-    regression (though not in the most efficient way):
+        ```python
+        model = Model(GP)
+        ```
 
-    ```python
-    @featurizer
-    def trend_terms(x, y):
-        return 1, x, y, x*x, x*y, y*y
-    p = Parameters(beta=np.zeros([6]), sigma2=1.)
-    mean = mn.Trend(trend_terms, beta=p.beta)
-    kernel = krn.Noise(nugget=p.sigma2)
-    gp = GP(mean, kernel)
-    Model(gp).fit(locs, vals) # locs.shape = [N, 2], vals.shape = [N]
-    ```
+        This model object can then be used to generate synthetic data,
+        fit its parameters to provided data, or make predictions, see
+        [`Model`](#src.geostat.model.Model).
+
+        In Geostat, GPs can be defined on locations in Euclidean space
+        of any dimension \(\mathbb{R}^D\), with the number of dimensions
+        specified implicitly by the shape of the location matrix given
+        to `fit()` or `generate()` in the `locs` argument.
+        
+        GPs can also be defined on locations in \(\mathbb{R}^D \times
+        \mathbb{Z}\) using the [`Mix`](#src.geostat.model.Mix) operator.
+        This construction is for modeling multiple spatial quantities,
+        with each quantity occupying a different 'plane' of the space.
+        When multiple spatial quantities are involved, these are specified
+        in the `cats` argument of `fit()`, `generate()` or `predict()`.
+
+        GPs can be superimposed:
+        ```python
+        gp = gp1 + gp2
+        ```
+
+    Examples:    
+        A linear regression is a special case of GP regression that
+        can be modeled by Geostat. Suppose
+        $$
+        u_i = \beta_1 + \beta_2 x_i + \beta_3 y_i + \beta_4 x_i^2 \
+            + \beta_5 x_i y_i + \beta_6 y_i^2 + \epsilon_i
+        $$
+        where \(u_i\) is an observation, \(x_i\) and \(y_i\) are model
+        inputs, \(\epsilon_i \sim \mathcal{N}(0, \sigma^2)\)
+        describes observation noise, and \(\beta_1, \ldots, \beta_6\)
+        are regression coefficients.  Geostat can be used to fit this
+        regression (though not in the most efficient way):
+
+        ```python
+        @featurizer
+        def trend_terms(x, y):
+            return 1, x, y, x*x, x*y, y*y
+        p = Parameters(beta=np.zeros([6]), sigma2=1.)
+        mean = mn.Trend(trend_terms, beta=p.beta)
+        kernel = krn.Noise(nugget=p.sigma2)
+        gp = GP(mean, kernel)
+        Model(gp).fit(locs, vals) # locs.shape = [N, 2], vals.shape = [N]
+        ```
     """
 
     mean: mn.Trend = None
