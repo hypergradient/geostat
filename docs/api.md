@@ -4,6 +4,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 --- -->
 
@@ -27,6 +28,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 ---
 
@@ -34,6 +36,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 ---
 
@@ -41,6 +44,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 ---
 
@@ -48,6 +52,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
         filters:
           - "!__call__"
           - "!call"
@@ -64,6 +69,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 ---
 
@@ -71,6 +77,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 ---
 
@@ -78,6 +85,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 ---
 
@@ -85,6 +93,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 ---
 
@@ -92,6 +101,7 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
         filters:
           - "!Warp"
           - "!gp_covariance2"
@@ -104,10 +114,12 @@
     options:
         show_root_heading: True
         show_source: True
+        docstring_section_style: list
 
 ---
 
 ::: src.geostat.param
     options:
         show_root_heading: True
-        show_source: True -->
+        show_source: True
+        docstring_section_style: list -->
