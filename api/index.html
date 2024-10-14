@@ -933,14 +933,13 @@ If set to <code>None</code>, the featurizer will produce an empty feature matrix
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>__call__</code> method is used to apply the featurization to input location data.</li>
 <li>If <code>featurization</code> returns a tuple, it is assumed to represent multiple features, 
 which will be stacked to form the feature matrix.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-420">420</a></span>
@@ -1064,7 +1063,7 @@ which will be stacked to form the feature matrix.</li>
 </span><span id="__span-0-466"><a id="__codelineno-0-466" name="__codelineno-0-466"></a><span class="sd">        # tf.Tensor([], shape=(3, 0), dtype=float32)</span>
 </span><span id="__span-0-467"><a id="__codelineno-0-467" name="__codelineno-0-467"></a><span class="sd">        ```</span>
 </span><span id="__span-0-468"><a id="__codelineno-0-468" name="__codelineno-0-468"></a>
-</span><span id="__span-0-469"><a id="__codelineno-0-469" name="__codelineno-0-469"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-469"><a id="__codelineno-0-469" name="__codelineno-0-469"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-470"><a id="__codelineno-0-470" name="__codelineno-0-470"></a><span class="sd">        - The `__call__` method is used to apply the featurization to input location data.</span>
 </span><span id="__span-0-471"><a id="__codelineno-0-471" name="__codelineno-0-471"></a><span class="sd">        - If `featurization` returns a tuple, it is assumed to represent multiple features, </span>
 </span><span id="__span-0-472"><a id="__codelineno-0-472" name="__codelineno-0-472"></a><span class="sd">        which will be stacked to form the feature matrix.</span>
@@ -1179,15 +1178,14 @@ deviation) and featurizing new data.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The normalization parameters (<code>unnorm_mean</code> and <code>unnorm_std</code>) are calculated based on the 
 initial <code>locs</code> data provided during initialization.</li>
 <li>The <code>__call__</code> method applies the normalization and adds an intercept feature when used 
 to featurize new location data.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-357">357</a></span>
@@ -1295,7 +1293,7 @@ to featurize new location data.</li>
 </span><span id="__span-0-398"><a id="__codelineno-0-398" name="__codelineno-0-398"></a><span class="sd">        #  [1.        3.6742349 3.6742349 6.50242  ]], shape=(2, 4), dtype=float32)</span>
 </span><span id="__span-0-399"><a id="__codelineno-0-399" name="__codelineno-0-399"></a><span class="sd">        ```</span>
 </span><span id="__span-0-400"><a id="__codelineno-0-400" name="__codelineno-0-400"></a>
-</span><span id="__span-0-401"><a id="__codelineno-0-401" name="__codelineno-0-401"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-401"><a id="__codelineno-0-401" name="__codelineno-0-401"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-402"><a id="__codelineno-0-402" name="__codelineno-0-402"></a><span class="sd">        - The normalization parameters (`unnorm_mean` and `unnorm_std`) are calculated based on the </span>
 </span><span id="__span-0-403"><a id="__codelineno-0-403" name="__codelineno-0-403"></a><span class="sd">        initial `locs` data provided during initialization.</span>
 </span><span id="__span-0-404"><a id="__codelineno-0-404" name="__codelineno-0-404"></a><span class="sd">        - The `__call__` method applies the normalization and adds an intercept feature when used </span>
@@ -1737,14 +1735,13 @@ f_2(x)
 with methods such as <code>g.fit()</code>, <code>g.generate()</code>, or <code>g.predict()</code> and its components are specified using the <code>cats</code> parameter.</p>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>weights</code> parameter defines how the input GPs are linearly combined. If omitted, 
 each GP is assumed to be independent, and the identity matrix is used.</li>
 <li>The resulting GP supports all standard operations (e.g., <code>fit</code>, <code>generate</code>, <code>predict</code>).</li>
 </ul>
-</details>
+
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-131">131</a></span>
@@ -1843,7 +1840,7 @@ each GP is assumed to be independent, and the identity matrix is used.</li>
 </span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">        The resulting GP \\(\mathbf{g}(x)\\) can then be used for fitting, generating, or predicting </span>
 </span><span id="__span-0-173"><a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">        with methods such as `g.fit()`, `g.generate()`, or `g.predict()` and its components are specified using the `cats` parameter.</span>
 </span><span id="__span-0-174"><a id="__codelineno-0-174" name="__codelineno-0-174"></a>
-</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-176"><a id="__codelineno-0-176" name="__codelineno-0-176"></a><span class="sd">        - The `weights` parameter defines how the input GPs are linearly combined. If omitted, </span>
 </span><span id="__span-0-177"><a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">        each GP is assumed to be independent, and the identity matrix is used.</span>
 </span><span id="__span-0-178"><a id="__codelineno-0-178" name="__codelineno-0-178"></a><span class="sd">        - The resulting GP supports all standard operations (e.g., `fit`, `generate`, `predict`).</span>
@@ -1993,13 +1990,12 @@ space, pass the locations into <code>generate()</code>:
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>__post_init__</code> method sets up default values, initializes the warping if not provided, 
 and sets up reporting and data preprocessing.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/model.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-572"> 572</a></span>
@@ -2871,7 +2867,7 @@ and sets up reporting and data preprocessing.</li>
 </span><span id="__span-0-625"><a id="__codelineno-0-625" name="__codelineno-0-625"></a><span class="sd">        model = Model(gp=gp, locs=locs, vals=vals)</span>
 </span><span id="__span-0-626"><a id="__codelineno-0-626" name="__codelineno-0-626"></a><span class="sd">        ```</span>
 </span><span id="__span-0-627"><a id="__codelineno-0-627" name="__codelineno-0-627"></a>
-</span><span id="__span-0-628"><a id="__codelineno-0-628" name="__codelineno-0-628"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-628"><a id="__codelineno-0-628" name="__codelineno-0-628"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-629"><a id="__codelineno-0-629" name="__codelineno-0-629"></a><span class="sd">        - The `__post_init__` method sets up default values, initializes the warping if not provided, </span>
 </span><span id="__span-0-630"><a id="__codelineno-0-630" name="__codelineno-0-630"></a><span class="sd">        and sets up reporting and data preprocessing.</span>
 </span><span id="__span-0-631"><a id="__codelineno-0-631" name="__codelineno-0-631"></a><span class="sd">    &quot;&quot;&quot;</span>
@@ -2981,7 +2977,7 @@ and sets up reporting and data preprocessing.</li>
 </span><span id="__span-0-735"><a id="__codelineno-0-735" name="__codelineno-0-735"></a><span class="sd">            model.set(nugget=0.5)</span>
 </span><span id="__span-0-736"><a id="__codelineno-0-736" name="__codelineno-0-736"></a><span class="sd">            ```</span>
 </span><span id="__span-0-737"><a id="__codelineno-0-737" name="__codelineno-0-737"></a>
-</span><span id="__span-0-738"><a id="__codelineno-0-738" name="__codelineno-0-738"></a><span class="sd">        Notes:</span>
+</span><span id="__span-0-738"><a id="__codelineno-0-738" name="__codelineno-0-738"></a><span class="sd">        Examples: Notes:</span>
 </span><span id="__span-0-739"><a id="__codelineno-0-739" name="__codelineno-0-739"></a><span class="sd">            - The `set` method retrieves the current parameters using `gather_vars` and updates </span>
 </span><span id="__span-0-740"><a id="__codelineno-0-740" name="__codelineno-0-740"></a><span class="sd">            their values. The associated TensorFlow variables are also recreated.</span>
 </span><span id="__span-0-741"><a id="__codelineno-0-741" name="__codelineno-0-741"></a><span class="sd">            - This method is useful for dynamically updating the model&#39;s parameters after initialization.</span>
@@ -3068,7 +3064,7 @@ and sets up reporting and data preprocessing.</li>
 </span><span id="__span-0-822"><a id="__codelineno-0-822" name="__codelineno-0-822"></a><span class="sd">            # [iter   300 ll -12.49 time  0.15 reg  0.00 nugget 241.42]</span>
 </span><span id="__span-0-823"><a id="__codelineno-0-823" name="__codelineno-0-823"></a><span class="sd">            ```</span>
 </span><span id="__span-0-824"><a id="__codelineno-0-824" name="__codelineno-0-824"></a>
-</span><span id="__span-0-825"><a id="__codelineno-0-825" name="__codelineno-0-825"></a><span class="sd">        Notes:</span>
+</span><span id="__span-0-825"><a id="__codelineno-0-825" name="__codelineno-0-825"></a><span class="sd">        Examples: Notes:</span>
 </span><span id="__span-0-826"><a id="__codelineno-0-826" name="__codelineno-0-826"></a><span class="sd">            - The `fit` method uses the Adam optimizer to minimize the negative log-likelihood (`ll`) and any regularization </span>
 </span><span id="__span-0-827"><a id="__codelineno-0-827" name="__codelineno-0-827"></a><span class="sd">            penalties specified by `reg`.</span>
 </span><span id="__span-0-828"><a id="__codelineno-0-828" name="__codelineno-0-828"></a><span class="sd">            - During training, if `cats` are provided, data points are sorted according to `cats` to ensure grouped training.</span>
@@ -3288,7 +3284,7 @@ and sets up reporting and data preprocessing.</li>
 </span><span id="__span-0-1042"><a id="__codelineno-0-1042" name="__codelineno-0-1042"></a><span class="sd">            # [0.45151083 1.23276189 0.3822659 ] (Values are non-deterministic)</span>
 </span><span id="__span-0-1043"><a id="__codelineno-0-1043" name="__codelineno-0-1043"></a><span class="sd">            ```</span>
 </span><span id="__span-0-1044"><a id="__codelineno-0-1044" name="__codelineno-0-1044"></a>
-</span><span id="__span-0-1045"><a id="__codelineno-0-1045" name="__codelineno-0-1045"></a><span class="sd">        Notes:</span>
+</span><span id="__span-0-1045"><a id="__codelineno-0-1045" name="__codelineno-0-1045"></a><span class="sd">        Examples: Notes:</span>
 </span><span id="__span-0-1046"><a id="__codelineno-0-1046" name="__codelineno-0-1046"></a><span class="sd">            - Conditional generation is currently not supported, and this method will raise an assertion error if </span>
 </span><span id="__span-0-1047"><a id="__codelineno-0-1047" name="__codelineno-0-1047"></a><span class="sd">            `self.locs` and `self.vals` are already defined.</span>
 </span><span id="__span-0-1048"><a id="__codelineno-0-1048" name="__codelineno-0-1048"></a><span class="sd">            - Generation from a distribution is not yet supported, and an assertion error will be raised if </span>
@@ -3396,7 +3392,7 @@ and sets up reporting and data preprocessing.</li>
 </span><span id="__span-0-1150"><a id="__codelineno-0-1150" name="__codelineno-0-1150"></a><span class="sd">            # [2.1572128  0.54444738]</span>
 </span><span id="__span-0-1151"><a id="__codelineno-0-1151" name="__codelineno-0-1151"></a><span class="sd">            ```</span>
 </span><span id="__span-0-1152"><a id="__codelineno-0-1152" name="__codelineno-0-1152"></a>
-</span><span id="__span-0-1153"><a id="__codelineno-0-1153" name="__codelineno-0-1153"></a><span class="sd">        Notes:</span>
+</span><span id="__span-0-1153"><a id="__codelineno-0-1153" name="__codelineno-0-1153"></a><span class="sd">        Examples: Notes:</span>
 </span><span id="__span-0-1154"><a id="__codelineno-0-1154" name="__codelineno-0-1154"></a><span class="sd">            - If `subsample` is specified, it should be used only when `parameter_sample_size` is defined.</span>
 </span><span id="__span-0-1155"><a id="__codelineno-0-1155" name="__codelineno-0-1155"></a><span class="sd">            - The `reduce` parameter allows aggregation of predictions, but it&#39;s valid only with sampled parameters.</span>
 </span><span id="__span-0-1156"><a id="__codelineno-0-1156" name="__codelineno-0-1156"></a><span class="sd">            - The method supports pairwise predictions by setting `pair=True`, which is useful for predicting </span>
@@ -3777,16 +3773,15 @@ the data is sorted according to <code>cats</code> to enable stratified training.
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>fit</code> method uses the Adam optimizer to minimize the negative log-likelihood (<code>ll</code>) and any regularization 
 penalties specified by <code>reg</code>.</li>
 <li>During training, if <code>cats</code> are provided, data points are sorted according to <code>cats</code> to ensure grouped training.</li>
 <li>The <code>verbose</code> flag determines whether training progress is printed after each iteration.</li>
 <li>After training, parameter values are saved and can be accessed or updated using the model's attributes.</li>
 </ul>
-</details>
+
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-753">753</a></span>
@@ -3988,7 +3983,7 @@ penalties specified by <code>reg</code>.</li>
 </span><span id="__span-0-822"><a id="__codelineno-0-822" name="__codelineno-0-822"></a><span class="sd">        # [iter   300 ll -12.49 time  0.15 reg  0.00 nugget 241.42]</span>
 </span><span id="__span-0-823"><a id="__codelineno-0-823" name="__codelineno-0-823"></a><span class="sd">        ```</span>
 </span><span id="__span-0-824"><a id="__codelineno-0-824" name="__codelineno-0-824"></a>
-</span><span id="__span-0-825"><a id="__codelineno-0-825" name="__codelineno-0-825"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-825"><a id="__codelineno-0-825" name="__codelineno-0-825"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-826"><a id="__codelineno-0-826" name="__codelineno-0-826"></a><span class="sd">        - The `fit` method uses the Adam optimizer to minimize the negative log-likelihood (`ll`) and any regularization </span>
 </span><span id="__span-0-827"><a id="__codelineno-0-827" name="__codelineno-0-827"></a><span class="sd">        penalties specified by `reg`.</span>
 </span><span id="__span-0-828"><a id="__codelineno-0-828" name="__codelineno-0-828"></a><span class="sd">        - During training, if `cats` are provided, data points are sorted according to `cats` to ensure grouped training.</span>
@@ -4124,9 +4119,8 @@ in <code>self.locs</code>. This enables method chaining.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>Conditional generation is currently not supported, and this method will raise an assertion error if 
 <code>self.locs</code> and <code>self.vals</code> are already defined.</li>
 <li>Generation from a distribution is not yet supported, and an assertion error will be raised if 
@@ -4134,7 +4128,7 @@ in <code>self.locs</code>. This enables method chaining.</p>
 <li>If <code>cats</code> are provided, the data is permuted according to <code>cats</code> for stratified generation, and 
 the original order is restored before returning.</li>
 </ul>
-</details>
+
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1005">1005</a></span>
@@ -4256,7 +4250,7 @@ the original order is restored before returning.</li>
 </span><span id="__span-0-1042"><a id="__codelineno-0-1042" name="__codelineno-0-1042"></a><span class="sd">        # [0.45151083 1.23276189 0.3822659 ] (Values are non-deterministic)</span>
 </span><span id="__span-0-1043"><a id="__codelineno-0-1043" name="__codelineno-0-1043"></a><span class="sd">        ```</span>
 </span><span id="__span-0-1044"><a id="__codelineno-0-1044" name="__codelineno-0-1044"></a>
-</span><span id="__span-0-1045"><a id="__codelineno-0-1045" name="__codelineno-0-1045"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-1045"><a id="__codelineno-0-1045" name="__codelineno-0-1045"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-1046"><a id="__codelineno-0-1046" name="__codelineno-0-1046"></a><span class="sd">        - Conditional generation is currently not supported, and this method will raise an assertion error if </span>
 </span><span id="__span-0-1047"><a id="__codelineno-0-1047" name="__codelineno-0-1047"></a><span class="sd">        `self.locs` and `self.vals` are already defined.</span>
 </span><span id="__span-0-1048"><a id="__codelineno-0-1048" name="__codelineno-0-1048"></a><span class="sd">        - Generation from a distribution is not yet supported, and an assertion error will be raised if </span>
@@ -4440,9 +4434,8 @@ Only valid if parameters are sampled. Default is None.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>If <code>subsample</code> is specified, it should be used only when <code>parameter_sample_size</code> is defined.</li>
 <li>The <code>reduce</code> parameter allows aggregation of predictions, but it's valid only with sampled parameters.</li>
 <li>The method supports pairwise predictions by setting <code>pair=True</code>, which is useful for predicting 
@@ -4450,7 +4443,7 @@ the covariance between two sets of locations.</li>
 <li>The internal <code>interpolate_batch</code> and <code>interpolate_pair_batch</code> functions handle the prediction computations
 in a batched manner to support large datasets efficiently.</li>
 </ul>
-</details>
+
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1086">1086</a></span>
@@ -4819,7 +4812,7 @@ in a batched manner to support large datasets efficiently.</li>
 </span><span id="__span-0-1150"><a id="__codelineno-0-1150" name="__codelineno-0-1150"></a><span class="sd">        # [2.1572128  0.54444738]</span>
 </span><span id="__span-0-1151"><a id="__codelineno-0-1151" name="__codelineno-0-1151"></a><span class="sd">        ```</span>
 </span><span id="__span-0-1152"><a id="__codelineno-0-1152" name="__codelineno-0-1152"></a>
-</span><span id="__span-0-1153"><a id="__codelineno-0-1153" name="__codelineno-0-1153"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-1153"><a id="__codelineno-0-1153" name="__codelineno-0-1153"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-1154"><a id="__codelineno-0-1154" name="__codelineno-0-1154"></a><span class="sd">        - If `subsample` is specified, it should be used only when `parameter_sample_size` is defined.</span>
 </span><span id="__span-0-1155"><a id="__codelineno-0-1155" name="__codelineno-0-1155"></a><span class="sd">        - The `reduce` parameter allows aggregation of predictions, but it&#39;s valid only with sampled parameters.</span>
 </span><span id="__span-0-1156"><a id="__codelineno-0-1156" name="__codelineno-0-1156"></a><span class="sd">        - The method supports pairwise predictions by setting `pair=True`, which is useful for predicting </span>
@@ -5131,14 +5124,13 @@ the value to be assigned to that parameter.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>set</code> method retrieves the current parameters using <code>gather_vars</code> and updates 
 their values. The associated TensorFlow variables are also recreated.</li>
 <li>This method is useful for dynamically updating the model's parameters after initialization.</li>
 </ul>
-</details>
+
             <details class="quote">
               <summary>Source code in <code>src/geostat/model.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-701">701</a></span>
@@ -5228,7 +5220,7 @@ their values. The associated TensorFlow variables are also recreated.</li>
 </span><span id="__span-0-735"><a id="__codelineno-0-735" name="__codelineno-0-735"></a><span class="sd">        model.set(nugget=0.5)</span>
 </span><span id="__span-0-736"><a id="__codelineno-0-736" name="__codelineno-0-736"></a><span class="sd">        ```</span>
 </span><span id="__span-0-737"><a id="__codelineno-0-737" name="__codelineno-0-737"></a>
-</span><span id="__span-0-738"><a id="__codelineno-0-738" name="__codelineno-0-738"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-738"><a id="__codelineno-0-738" name="__codelineno-0-738"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-739"><a id="__codelineno-0-739" name="__codelineno-0-739"></a><span class="sd">        - The `set` method retrieves the current parameters using `gather_vars` and updates </span>
 </span><span id="__span-0-740"><a id="__codelineno-0-740" name="__codelineno-0-740"></a><span class="sd">        their values. The associated TensorFlow variables are also recreated.</span>
 </span><span id="__span-0-741"><a id="__codelineno-0-741" name="__codelineno-0-741"></a><span class="sd">        - This method is useful for dynamically updating the model&#39;s parameters after initialization.</span>
@@ -5337,14 +5329,13 @@ variance (sill) in the GP model.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method returns the constant value specified by <code>sill</code> for all pairs of input locations.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for <code>sill</code> using the <code>ppp</code> function.</li>
 <li>The <code>Constant</code> kernel is useful when you want to add a fixed variance component to your GP model.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-186">186</a></span>
@@ -5431,7 +5422,7 @@ variance (sill) in the GP model.</p>
 </span><span id="__span-0-218"><a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">        #  [2. 2. 2.]], shape=(3, 3), dtype=float32)</span>
 </span><span id="__span-0-219"><a id="__codelineno-0-219" name="__codelineno-0-219"></a><span class="sd">        ```</span>
 </span><span id="__span-0-220"><a id="__codelineno-0-220" name="__codelineno-0-220"></a>
-</span><span id="__span-0-221"><a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-221"><a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-222"><a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">        - The `call` method returns the constant value specified by `sill` for all pairs of input locations.</span>
 </span><span id="__span-0-223"><a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="sd">        - The `vars` method returns the parameter dictionary for `sill` using the `ppp` function.</span>
 </span><span id="__span-0-224"><a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="sd">        - The `Constant` kernel is useful when you want to add a fixed variance component to your GP model.</span>
@@ -5532,16 +5523,15 @@ is applied across all axes.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes a covariance matrix using a delta function, returning <code>sill</code> when the 
     squared distances are zero along the specified axes, and 0 otherwise.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for <code>sill</code> using the <code>ppp</code> function.</li>
 <li>The <code>Delta</code> kernel is useful for modeling processes that exhibit exact matches or sharp changes 
     in covariance when inputs coincide, making it ideal for capturing discrete effects.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-939"> 939</a></span>
@@ -5641,7 +5631,7 @@ is applied across all axes.</p>
 </span><span id="__span-0-972"><a id="__codelineno-0-972" name="__codelineno-0-972"></a><span class="sd">        delta_kernel_axes = Delta(sill=1.0, axes=[0])</span>
 </span><span id="__span-0-973"><a id="__codelineno-0-973" name="__codelineno-0-973"></a><span class="sd">        ```</span>
 </span><span id="__span-0-974"><a id="__codelineno-0-974" name="__codelineno-0-974"></a>
-</span><span id="__span-0-975"><a id="__codelineno-0-975" name="__codelineno-0-975"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-975"><a id="__codelineno-0-975" name="__codelineno-0-975"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-976"><a id="__codelineno-0-976" name="__codelineno-0-976"></a><span class="sd">        - The `call` method computes a covariance matrix using a delta function, returning `sill` when the </span>
 </span><span id="__span-0-977"><a id="__codelineno-0-977" name="__codelineno-0-977"></a><span class="sd">            squared distances are zero along the specified axes, and 0 otherwise.</span>
 </span><span id="__span-0-978"><a id="__codelineno-0-978" name="__codelineno-0-978"></a><span class="sd">        - The `vars` method returns the parameter dictionary for `sill` using the `ppp` function.</span>
@@ -5775,9 +5765,8 @@ recovers the Squared Exponential kernel. Values between 0 and 2 adjust the smoot
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix using the gamma-exponential formula:
     <span class="arithmatex">\( C(x, x') = \text{sill} \cdot \exp\left(-\left(\frac{d^2}{\text{range}^2}\right)^{\text{gamma} / 2}\right) \)</span>,
     where <span class="arithmatex">\(d^2\)</span> is the squared distance between <code>locs1</code> and <code>locs2</code>.</li>
@@ -5785,7 +5774,7 @@ recovers the Squared Exponential kernel. Values between 0 and 2 adjust the smoot
 <li>The <code>GammaExponential</code> kernel provides a more flexible covariance structure than the Squared Exponential kernel,
     allowing for varying degrees of smoothness.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-289">289</a></span>
@@ -5876,7 +5865,7 @@ recovers the Squared Exponential kernel. Values between 0 and 2 adjust the smoot
 </span><span id="__span-0-321"><a id="__codelineno-0-321" name="__codelineno-0-321"></a><span class="sd">        covariance_matrix = gamma_exp_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;sill&#39;: 1.0, &#39;range&#39;: 2.0, &#39;gamma&#39;: 1.5})</span>
 </span><span id="__span-0-322"><a id="__codelineno-0-322" name="__codelineno-0-322"></a><span class="sd">        ```</span>
 </span><span id="__span-0-323"><a id="__codelineno-0-323" name="__codelineno-0-323"></a>
-</span><span id="__span-0-324"><a id="__codelineno-0-324" name="__codelineno-0-324"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-324"><a id="__codelineno-0-324" name="__codelineno-0-324"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-325"><a id="__codelineno-0-325" name="__codelineno-0-325"></a><span class="sd">        - The `call` method computes the covariance matrix using the gamma-exponential formula:</span>
 </span><span id="__span-0-326"><a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="sd">            \\( C(x, x&#39;) = \\text{sill} \cdot \exp\left(-\left(\\frac{d^2}{\\text{range}^2}\\right)^{\\text{gamma} / 2}\\right) \\),</span>
 </span><span id="__span-0-327"><a id="__codelineno-0-327" name="__codelineno-0-327"></a><span class="sd">            where \\(d^2\\) is the squared distance between `locs1` and `locs2`.</span>
@@ -5982,16 +5971,15 @@ decay along one dimension, starting from a given point.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the integrated exponential covariance matrix based on the 
     specified axis, starting point, and range.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for <code>range</code> using the <code>ppp</code> function.</li>
 <li>The <code>IntExponential</code> kernel is suitable for modeling processes with exponential decay 
     along one dimension with integrated covariance structures.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-824">824</a></span>
@@ -6088,7 +6076,7 @@ decay along one dimension, starting from a given point.</p>
 </span><span id="__span-0-851"><a id="__codelineno-0-851" name="__codelineno-0-851"></a><span class="sd">        covariance_matrix = int_exp_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;range&#39;: 2.0})</span>
 </span><span id="__span-0-852"><a id="__codelineno-0-852" name="__codelineno-0-852"></a><span class="sd">        ```</span>
 </span><span id="__span-0-853"><a id="__codelineno-0-853" name="__codelineno-0-853"></a>
-</span><span id="__span-0-854"><a id="__codelineno-0-854" name="__codelineno-0-854"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-854"><a id="__codelineno-0-854" name="__codelineno-0-854"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-855"><a id="__codelineno-0-855" name="__codelineno-0-855"></a><span class="sd">        - The `call` method computes the integrated exponential covariance matrix based on the </span>
 </span><span id="__span-0-856"><a id="__codelineno-0-856" name="__codelineno-0-856"></a><span class="sd">            specified axis, starting point, and range.</span>
 </span><span id="__span-0-857"><a id="__codelineno-0-857" name="__codelineno-0-857"></a><span class="sd">        - The `vars` method returns the parameter dictionary for `range` using the `ppp` function.</span>
@@ -6210,16 +6198,15 @@ one dimension, starting from a given point.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the integrated squared exponential covariance matrix based on the 
     specified axis, starting point, and range.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for <code>range</code> using the <code>ppp</code> function.</li>
 <li>The <code>IntSquaredExponential</code> kernel is suitable for modeling smooth processes with integrated 
     covariance structures along one dimension.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-758">758</a></span>
@@ -6316,7 +6303,7 @@ one dimension, starting from a given point.</p>
 </span><span id="__span-0-785"><a id="__codelineno-0-785" name="__codelineno-0-785"></a><span class="sd">        covariance_matrix = int_sq_exp_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;range&#39;: 2.0})</span>
 </span><span id="__span-0-786"><a id="__codelineno-0-786" name="__codelineno-0-786"></a><span class="sd">        ```</span>
 </span><span id="__span-0-787"><a id="__codelineno-0-787" name="__codelineno-0-787"></a>
-</span><span id="__span-0-788"><a id="__codelineno-0-788" name="__codelineno-0-788"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-788"><a id="__codelineno-0-788" name="__codelineno-0-788"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-789"><a id="__codelineno-0-789" name="__codelineno-0-789"></a><span class="sd">        - The `call` method computes the integrated squared exponential covariance matrix based on the </span>
 </span><span id="__span-0-790"><a id="__codelineno-0-790" name="__codelineno-0-790"></a><span class="sd">            specified axis, starting point, and range.</span>
 </span><span id="__span-0-791"><a id="__codelineno-0-791" name="__codelineno-0-791"></a><span class="sd">        - The `vars` method returns the parameter dictionary for `range` using the `ppp` function.</span>
@@ -6442,15 +6429,14 @@ covariance matrix between sets of locations.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>__call__</code> method computes the covariance matrix between two sets of locations 
     (<code>locs1</code> and <code>locs2</code>) and ensures the result is correctly broadcasted to the appropriate shape.</li>
 <li>The <code>report</code> method provides a summary of the kernel's parameters and their values.</li>
 <li>This class serves as a base class for more specialized kernel functions in GP modeling.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-24"> 24</a></span>
@@ -6582,7 +6568,7 @@ covariance matrix between sets of locations.</p>
 </span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">        product_kernel = kernel1 * kernel2   # Multiplying kernels</span>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">        ```</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">        - The `__call__` method computes the covariance matrix between two sets of locations </span>
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">            (`locs1` and `locs2`) and ensures the result is correctly broadcasted to the appropriate shape.</span>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">        - The `report` method provides a summary of the kernel&#39;s parameters and their values.</span>
@@ -6715,9 +6701,8 @@ the kernels are combined without weighting.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix by either using the specified weights 
     to combine the input kernels or directly combining them when weights are not provided.</li>
 <li>The <code>vars</code> method gathers the parameters from all input kernels, allowing for easy 
@@ -6725,7 +6710,7 @@ the kernels are combined without weighting.</p>
 <li>The <code>Mix</code> kernel is useful for creating complex, multi-faceted covariance structures 
     by blending different types of kernels, providing enhanced modeling flexibility.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1002">1002</a></span>
@@ -6881,7 +6866,7 @@ the kernels are combined without weighting.</p>
 </span><span id="__span-0-1038"><a id="__codelineno-0-1038" name="__codelineno-0-1038"></a><span class="sd">        mixed_kernel_no_weights = Mix(inputs=[kernel1, kernel2])</span>
 </span><span id="__span-0-1039"><a id="__codelineno-0-1039" name="__codelineno-0-1039"></a><span class="sd">        ```</span>
 </span><span id="__span-0-1040"><a id="__codelineno-0-1040" name="__codelineno-0-1040"></a>
-</span><span id="__span-0-1041"><a id="__codelineno-0-1041" name="__codelineno-0-1041"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-1041"><a id="__codelineno-0-1041" name="__codelineno-0-1041"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-1042"><a id="__codelineno-0-1042" name="__codelineno-0-1042"></a><span class="sd">        - The `call` method computes the covariance matrix by either using the specified weights </span>
 </span><span id="__span-0-1043"><a id="__codelineno-0-1043" name="__codelineno-0-1043"></a><span class="sd">            to combine the input kernels or directly combining them when weights are not provided.</span>
 </span><span id="__span-0-1044"><a id="__codelineno-0-1044" name="__codelineno-0-1044"></a><span class="sd">        - The `vars` method gathers the parameters from all input kernels, allowing for easy </span>
@@ -7029,16 +7014,15 @@ of the covariance matrix.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes a diagonal covariance matrix where the diagonal elements are equal 
     to <code>nugget</code>, representing noise at each location. Off-diagonal elements are set to 0.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for <code>nugget</code> using the <code>ppp</code> function.</li>
 <li>The <code>Noise</code> kernel is useful for modeling independent noise in the data, especially when the 
     observations contain measurement error or variability that cannot be explained by the model.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-890">890</a></span>
@@ -7115,7 +7099,7 @@ of the covariance matrix.</p>
 </span><span id="__span-0-914"><a id="__codelineno-0-914" name="__codelineno-0-914"></a><span class="sd">        covariance_matrix = noise_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;nugget&#39;: 0.1})</span>
 </span><span id="__span-0-915"><a id="__codelineno-0-915" name="__codelineno-0-915"></a><span class="sd">        ```</span>
 </span><span id="__span-0-916"><a id="__codelineno-0-916" name="__codelineno-0-916"></a>
-</span><span id="__span-0-917"><a id="__codelineno-0-917" name="__codelineno-0-917"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-917"><a id="__codelineno-0-917" name="__codelineno-0-917"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-918"><a id="__codelineno-0-918" name="__codelineno-0-918"></a><span class="sd">        - The `call` method computes a diagonal covariance matrix where the diagonal elements are equal </span>
 </span><span id="__span-0-919"><a id="__codelineno-0-919" name="__codelineno-0-919"></a><span class="sd">            to `nugget`, representing noise at each location. Off-diagonal elements are set to 0.</span>
 </span><span id="__span-0-920"><a id="__codelineno-0-920" name="__codelineno-0-920"></a><span class="sd">        - The `vars` method returns the parameter dictionary for `nugget` using the `ppp` function.</span>
@@ -7215,15 +7199,14 @@ in a more complex and flexible covariance structure.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the product of all covariance matrices generated by the multiplied kernels.</li>
 <li>The <code>vars</code> method gathers parameters from all input kernels, making them accessible for optimization.</li>
 <li>The <code>Product</code> kernel is useful for building models where the covariance structure results from 
     multiplicative interactions between different kernels, allowing for more complex GP models.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1179">1179</a></span>
@@ -7322,7 +7305,7 @@ in a more complex and flexible covariance structure.</p>
 </span><span id="__span-0-1213"><a id="__codelineno-0-1213" name="__codelineno-0-1213"></a><span class="sd">        combined_product = product_kernel * kernel3</span>
 </span><span id="__span-0-1214"><a id="__codelineno-0-1214" name="__codelineno-0-1214"></a><span class="sd">        ```</span>
 </span><span id="__span-0-1215"><a id="__codelineno-0-1215" name="__codelineno-0-1215"></a>
-</span><span id="__span-0-1216"><a id="__codelineno-0-1216" name="__codelineno-0-1216"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-1216"><a id="__codelineno-0-1216" name="__codelineno-0-1216"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-1217"><a id="__codelineno-0-1217" name="__codelineno-0-1217"></a><span class="sd">        - The `call` method computes the product of all covariance matrices generated by the multiplied kernels.</span>
 </span><span id="__span-0-1218"><a id="__codelineno-0-1218" name="__codelineno-0-1218"></a><span class="sd">        - The `vars` method gathers parameters from all input kernels, making them accessible for optimization.</span>
 </span><span id="__span-0-1219"><a id="__codelineno-0-1219" name="__codelineno-0-1219"></a><span class="sd">        - The `Product` kernel is useful for building models where the covariance structure results from </span>
@@ -7445,16 +7428,15 @@ quickly the covariance decreases with distance.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix using the <code>quadstack</code> function, which applies 
     multiple quadratic functions based on the provided <code>sill</code> and <code>range</code> values for each component.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for both <code>sill</code> and <code>range</code> using the <code>ppp_list</code> function.</li>
 <li>The <code>QuadStack</code> kernel is useful for modeling processes that exhibit multiple levels of variability 
     or changes in smoothness at different scales with a quadratic structure.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-645">645</a></span>
@@ -7545,7 +7527,7 @@ quickly the covariance decreases with distance.</p>
 </span><span id="__span-0-675"><a id="__codelineno-0-675" name="__codelineno-0-675"></a><span class="sd">        covariance_matrix = quad_stack_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;sill&#39;: [1.0, 0.5], &#39;range&#39;: [2.0, 3.0]})</span>
 </span><span id="__span-0-676"><a id="__codelineno-0-676" name="__codelineno-0-676"></a><span class="sd">        ```</span>
 </span><span id="__span-0-677"><a id="__codelineno-0-677" name="__codelineno-0-677"></a>
-</span><span id="__span-0-678"><a id="__codelineno-0-678" name="__codelineno-0-678"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-678"><a id="__codelineno-0-678" name="__codelineno-0-678"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-679"><a id="__codelineno-0-679" name="__codelineno-0-679"></a><span class="sd">        - The `call` method computes the covariance matrix using the `quadstack` function, which applies </span>
 </span><span id="__span-0-680"><a id="__codelineno-0-680" name="__codelineno-0-680"></a><span class="sd">            multiple quadratic functions based on the provided `sill` and `range` values for each component.</span>
 </span><span id="__span-0-681"><a id="__codelineno-0-681" name="__codelineno-0-681"></a><span class="sd">        - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp_list` function.</span>
@@ -7666,16 +7648,15 @@ It is characterized by a sill (variance) and a range (length scale) and can opti
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix using the ramp function:
     <span class="arithmatex">\( C(x, x') = \text{sill} \cdot \text{ramp}\left(\frac{\sqrt{d^2}}{\text{range}}\right) \)</span>,
     where <span class="arithmatex">\(d^2\)</span> is the squared distance between <code>locs1</code> and <code>locs2</code>.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for both <code>sill</code> and <code>range</code> using the <code>ppp</code> function.</li>
 <li>The <code>Ramp</code> kernel can be used in cases where the covariance structure exhibits a linear decay with increasing distance.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-351">351</a></span>
@@ -7757,7 +7738,7 @@ It is characterized by a sill (variance) and a range (length scale) and can opti
 </span><span id="__span-0-379"><a id="__codelineno-0-379" name="__codelineno-0-379"></a><span class="sd">        covariance_matrix = ramp_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;sill&#39;: 1.0, &#39;range&#39;: 2.0})</span>
 </span><span id="__span-0-380"><a id="__codelineno-0-380" name="__codelineno-0-380"></a><span class="sd">        ```</span>
 </span><span id="__span-0-381"><a id="__codelineno-0-381" name="__codelineno-0-381"></a>
-</span><span id="__span-0-382"><a id="__codelineno-0-382" name="__codelineno-0-382"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-382"><a id="__codelineno-0-382" name="__codelineno-0-382"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-383"><a id="__codelineno-0-383" name="__codelineno-0-383"></a><span class="sd">        - The `call` method computes the covariance matrix using the ramp function:</span>
 </span><span id="__span-0-384"><a id="__codelineno-0-384" name="__codelineno-0-384"></a><span class="sd">            \\( C(x, x&#39;) = \\text{sill} \cdot \\text{ramp}\left(\\frac{\sqrt{d^2}}{\\text{range}}\\right) \\),</span>
 </span><span id="__span-0-385"><a id="__codelineno-0-385" name="__codelineno-0-385"></a><span class="sd">            where \\(d^2\\) is the squared distance between `locs1` and `locs2`.</span>
@@ -7875,16 +7856,15 @@ the covariance decreases with distance.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix using the <code>rampstack</code> function, which applies 
     multiple ramp functions based on the provided <code>sill</code> and <code>range</code> values for each component.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for both <code>sill</code> and <code>range</code> using the <code>ppp_list</code> function.</li>
 <li>The <code>RampStack</code> kernel is useful for modeling complex processes that exhibit multiple levels of variability 
     or changes in smoothness at different scales.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-440">440</a></span>
@@ -7975,7 +7955,7 @@ the covariance decreases with distance.</p>
 </span><span id="__span-0-470"><a id="__codelineno-0-470" name="__codelineno-0-470"></a><span class="sd">        covariance_matrix = ramp_stack_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;sill&#39;: [1.0, 0.5], &#39;range&#39;: [2.0, 3.0]})</span>
 </span><span id="__span-0-471"><a id="__codelineno-0-471" name="__codelineno-0-471"></a><span class="sd">        ```</span>
 </span><span id="__span-0-472"><a id="__codelineno-0-472" name="__codelineno-0-472"></a>
-</span><span id="__span-0-473"><a id="__codelineno-0-473" name="__codelineno-0-473"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-473"><a id="__codelineno-0-473" name="__codelineno-0-473"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-474"><a id="__codelineno-0-474" name="__codelineno-0-474"></a><span class="sd">        - The `call` method computes the covariance matrix using the `rampstack` function, which applies </span>
 </span><span id="__span-0-475"><a id="__codelineno-0-475" name="__codelineno-0-475"></a><span class="sd">            multiple ramp functions based on the provided `sill` and `range` values for each component.</span>
 </span><span id="__span-0-476"><a id="__codelineno-0-476" name="__codelineno-0-476"></a><span class="sd">        - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp_list` function.</span>
@@ -8098,16 +8078,15 @@ quickly the covariance decreases with distance.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix using the <code>smooth_convex</code> function, which applies 
     multiple convex functions based on the provided <code>sill</code> and <code>range</code> values for each component.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for both <code>sill</code> and <code>range</code> using the <code>ppp_list</code> function.</li>
 <li>The <code>SmoothConvex</code> kernel is useful for modeling processes that require smooth transitions and convexity 
     in their covariance structure across different scales.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-577">577</a></span>
@@ -8198,7 +8177,7 @@ quickly the covariance decreases with distance.</p>
 </span><span id="__span-0-607"><a id="__codelineno-0-607" name="__codelineno-0-607"></a><span class="sd">        covariance_matrix = smooth_convex_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;sill&#39;: [1.0, 0.5], &#39;range&#39;: [2.0, 3.0]})</span>
 </span><span id="__span-0-608"><a id="__codelineno-0-608" name="__codelineno-0-608"></a><span class="sd">        ```</span>
 </span><span id="__span-0-609"><a id="__codelineno-0-609" name="__codelineno-0-609"></a>
-</span><span id="__span-0-610"><a id="__codelineno-0-610" name="__codelineno-0-610"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-610"><a id="__codelineno-0-610" name="__codelineno-0-610"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-611"><a id="__codelineno-0-611" name="__codelineno-0-611"></a><span class="sd">        - The `call` method computes the covariance matrix using the `smooth_convex` function, which applies </span>
 </span><span id="__span-0-612"><a id="__codelineno-0-612" name="__codelineno-0-612"></a><span class="sd">            multiple convex functions based on the provided `sill` and `range` values for each component.</span>
 </span><span id="__span-0-613"><a id="__codelineno-0-613" name="__codelineno-0-613"></a><span class="sd">        - The `vars` method returns the parameter dictionary for both `sill` and `range` using the `ppp_list` function.</span>
@@ -8321,16 +8300,15 @@ with distance.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix using the squared exponential formula:
     <span class="arithmatex">\( C(x, x') = \text{sill} \cdot \exp\left(-0.5 \frac{d^2}{\text{range}^2}\right) \)</span>,
     where <span class="arithmatex">\(d^2\)</span> is the squared distance between <code>locs1</code> and <code>locs2</code>.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for both <code>sill</code> and <code>range</code> using the <code>ppp</code> function.</li>
 <li>This kernel is appropriate for modeling smooth, continuous processes with no abrupt changes.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-237">237</a></span>
@@ -8416,7 +8394,7 @@ with distance.</p>
 </span><span id="__span-0-267"><a id="__codelineno-0-267" name="__codelineno-0-267"></a><span class="sd">        covariance_matrix = sq_exp_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2, &#39;sill&#39;: 1.0, &#39;range&#39;: 2.0})</span>
 </span><span id="__span-0-268"><a id="__codelineno-0-268" name="__codelineno-0-268"></a><span class="sd">        ```</span>
 </span><span id="__span-0-269"><a id="__codelineno-0-269" name="__codelineno-0-269"></a>
-</span><span id="__span-0-270"><a id="__codelineno-0-270" name="__codelineno-0-270"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-270"><a id="__codelineno-0-270" name="__codelineno-0-270"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-271"><a id="__codelineno-0-271" name="__codelineno-0-271"></a><span class="sd">        - The `call` method computes the covariance matrix using the squared exponential formula:</span>
 </span><span id="__span-0-272"><a id="__codelineno-0-272" name="__codelineno-0-272"></a><span class="sd">            \\( C(x, x&#39;) = \\text{sill} \cdot \exp\left(-0.5 \\frac{d^2}{\\text{range}^2}\\right) \\),</span>
 </span><span id="__span-0-273"><a id="__codelineno-0-273" name="__codelineno-0-273"></a><span class="sd">            where \\(d^2\\) is the squared distance between `locs1` and `locs2`.</span>
@@ -8513,15 +8491,14 @@ contributions from each individual kernel.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the sum of all covariance matrices generated by the stacked kernels.</li>
 <li>The <code>vars</code> method gathers parameters from all input kernels, making them accessible for optimization.</li>
 <li>The <code>Stack</code> kernel is useful for building complex models where multiple covariance structures need to be 
     combined additively, enabling richer and more flexible GP models.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1118">1118</a></span>
@@ -8620,7 +8597,7 @@ contributions from each individual kernel.</p>
 </span><span id="__span-0-1152"><a id="__codelineno-0-1152" name="__codelineno-0-1152"></a><span class="sd">        combined_stack = stacked_kernel + kernel3</span>
 </span><span id="__span-0-1153"><a id="__codelineno-0-1153" name="__codelineno-0-1153"></a><span class="sd">        ```</span>
 </span><span id="__span-0-1154"><a id="__codelineno-0-1154" name="__codelineno-0-1154"></a>
-</span><span id="__span-0-1155"><a id="__codelineno-0-1155" name="__codelineno-0-1155"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-1155"><a id="__codelineno-0-1155" name="__codelineno-0-1155"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-1156"><a id="__codelineno-0-1156" name="__codelineno-0-1156"></a><span class="sd">        - The `call` method computes the sum of all covariance matrices generated by the stacked kernels.</span>
 </span><span id="__span-0-1157"><a id="__codelineno-0-1157" name="__codelineno-0-1157"></a><span class="sd">        - The `vars` method gathers parameters from all input kernels, making them accessible for optimization.</span>
 </span><span id="__span-0-1158"><a id="__codelineno-0-1158" name="__codelineno-0-1158"></a><span class="sd">        - The `Stack` kernel is useful for building complex models where multiple covariance structures need to be </span>
@@ -8738,16 +8715,15 @@ the features used in the trend prior.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix using the features generated by the featurizer
     function and scales it by the <code>alpha</code> parameter.</li>
 <li>The <code>vars</code> method returns the parameter dictionary for <code>alpha</code> using the <code>ppp</code> function.</li>
 <li>The <code>TrendPrior</code> kernel is typically used when the GP model needs to account for linear or 
     polynomial trends in the data.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-112">112</a></span>
@@ -8857,7 +8833,7 @@ the features used in the trend prior.</p>
 </span><span id="__span-0-153"><a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="sd">        #  [ 21.375     46.874996  81.37499  124.875   ]], shape=(3, 4), dtype=float32)</span>
 </span><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a><span class="sd">        ```</span>
 </span><span id="__span-0-155"><a id="__codelineno-0-155" name="__codelineno-0-155"></a>
-</span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-156"><a id="__codelineno-0-156" name="__codelineno-0-156"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-157"><a id="__codelineno-0-157" name="__codelineno-0-157"></a><span class="sd">        - The `call` method computes the covariance matrix using the features generated by the featurizer</span>
 </span><span id="__span-0-158"><a id="__codelineno-0-158" name="__codelineno-0-158"></a><span class="sd">            function and scales it by the `alpha` parameter.</span>
 </span><span id="__span-0-159"><a id="__codelineno-0-159" name="__codelineno-0-159"></a><span class="sd">        - The `vars` method returns the parameter dictionary for `alpha` using the `ppp` function.</span>
@@ -8956,16 +8932,15 @@ from a given point.</p>
 </span></code></pre></div>
 
 
-<details class="notes" open>
-  <summary>Notes</summary>
-  <ul>
+<p><span class="doc-section-title">Notes:</span></p>
+    <ul>
 <li>The <code>call</code> method computes the covariance matrix using the Wiener process formula, which is based 
     on the minimum distance along the specified <code>axis</code> from the <code>start</code> point.</li>
 <li>The <code>vars</code> method returns an empty dictionary since the Wiener kernel does not have tunable parameters.</li>
 <li>The <code>Wiener</code> kernel is suitable for modeling processes that evolve with time or any other 
     ordered dimension, representing a type of random walk or Brownian motion.</li>
 </ul>
-</details>
+
               <details class="quote">
                 <summary>Source code in <code>src/geostat/kernel.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-702">702</a></span>
@@ -9050,7 +9025,7 @@ from a given point.</p>
 </span><span id="__span-0-727"><a id="__codelineno-0-727" name="__codelineno-0-727"></a><span class="sd">        covariance_matrix = wiener_kernel({&#39;locs1&#39;: locs1, &#39;locs2&#39;: locs2})</span>
 </span><span id="__span-0-728"><a id="__codelineno-0-728" name="__codelineno-0-728"></a><span class="sd">        ```</span>
 </span><span id="__span-0-729"><a id="__codelineno-0-729" name="__codelineno-0-729"></a>
-</span><span id="__span-0-730"><a id="__codelineno-0-730" name="__codelineno-0-730"></a><span class="sd">    Notes:</span>
+</span><span id="__span-0-730"><a id="__codelineno-0-730" name="__codelineno-0-730"></a><span class="sd">    Examples: Notes:</span>
 </span><span id="__span-0-731"><a id="__codelineno-0-731" name="__codelineno-0-731"></a><span class="sd">        - The `call` method computes the covariance matrix using the Wiener process formula, which is based </span>
 </span><span id="__span-0-732"><a id="__codelineno-0-732" name="__codelineno-0-732"></a><span class="sd">            on the minimum distance along the specified `axis` from the `start` point.</span>
 </span><span id="__span-0-733"><a id="__codelineno-0-733" name="__codelineno-0-733"></a><span class="sd">        - The `vars` method returns an empty dictionary since the Wiener kernel does not have tunable parameters.</span>
