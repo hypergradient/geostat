@@ -1,4 +1,5 @@
-/* body {
+/*
+body {
     color: black;
     font-family: "Fira Sans", sans-serif;
     font-weight: 500;
@@ -11,16 +12,8 @@ p {
     font-weight: 500;
     font-style: normal;
 }
-
 */
 
-details.notes {
-    color: black;
-    font-family: "Fira Sans", sans-serif;
-    font-weight: 500;
-    font-style: normal;
-    font-size: 17px;
-} 
 
 doc {
     color: black;
@@ -29,6 +22,10 @@ doc {
     font-style: normal;
 }
 
-/* doc-contents {
-    font-size: 16px;
-} */
+details.notes {
+    color: black;
+    font-family: "Fira Sans", sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 18px;
+}
