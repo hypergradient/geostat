@@ -505,21 +505,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Mix">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#src.geostat.kernel.Mix.gather_vars" class="md-nav__link">
-    <span class="md-ellipsis">
-      gather_vars
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -890,21 +875,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Mix">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#src.geostat.kernel.Mix.gather_vars" class="md-nav__link">
-    <span class="md-ellipsis">
-      gather_vars
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -1245,44 +1215,6 @@ the kernels are combined without weighting.</p>
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="src.geostat.kernel.Mix.gather_vars" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">gather_vars</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Make a special version of gather_vars because
-we want to gather variables from <code>inputs</code>
-even when it's not in autoinputs</p>
-
-            <details class="quote">
-              <summary>Source code in <code>src/geostat/kernel.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1062">1062</a></span>
-<span class="normal"><a href="#__codelineno-0-1063">1063</a></span>
-<span class="normal"><a href="#__codelineno-0-1064">1064</a></span>
-<span class="normal"><a href="#__codelineno-0-1065">1065</a></span>
-<span class="normal"><a href="#__codelineno-0-1066">1066</a></span>
-<span class="normal"><a href="#__codelineno-0-1067">1067</a></span>
-<span class="normal"><a href="#__codelineno-0-1068">1068</a></span>
-<span class="normal"><a href="#__codelineno-0-1069">1069</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1062"><a id="__codelineno-0-1062" name="__codelineno-0-1062"></a><span class="k">def</span> <span class="nf">gather_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="__span-0-1063"><a id="__codelineno-0-1063" name="__codelineno-0-1063"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a special version of gather_vars because</span>
-</span><span id="__span-0-1064"><a id="__codelineno-0-1064" name="__codelineno-0-1064"></a><span class="sd">       we want to gather variables from `inputs`</span>
-</span><span id="__span-0-1065"><a id="__codelineno-0-1065" name="__codelineno-0-1065"></a><span class="sd">       even when it&#39;s not in autoinputs&quot;&quot;&quot;</span>
-</span><span id="__span-0-1066"><a id="__codelineno-0-1066" name="__codelineno-0-1066"></a>    <span class="n">vv</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">gather_vars</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
-</span><span id="__span-0-1067"><a id="__codelineno-0-1067" name="__codelineno-0-1067"></a>    <span class="k">for</span> <span class="n">iput</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">:</span>
-</span><span id="__span-0-1068"><a id="__codelineno-0-1068" name="__codelineno-0-1068"></a>        <span class="n">cache</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">|=</span> <span class="n">iput</span><span class="o">.</span><span class="n">gather_vars</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
-</span><span id="__span-0-1069"><a id="__codelineno-0-1069" name="__codelineno-0-1069"></a>    <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
 
 
 
