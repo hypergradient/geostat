@@ -5,7 +5,24 @@ nav:
   - API Reference:
     - Featurizer: featurizer.md
     - GP: gp.md
-    - Kernel: kernel.md
+    - Kernel:
+      - Kernel: kernel_kernel.md
+      - Constant: kernel_constant.md
+      - Delta: kernel_delta.md
+      - GammaExponential: kernel_gammaexponential.md
+      - IntExponential: kernel_intexponential.md
+      - IntSquaredExponential: kernel_intsquaredexponential.md
+      - Mix: kernel_mix.md
+      - Noise: kernel_noise.md
+      - Product: kernel_product.md
+      - QuadStack: kernel_quadstack.md
+      - Ramp: kernel_ramp.md
+      - RampStack: kernel_rampstack.md
+      - SmoothConvex: kernel_smoothconvex.md
+      - SquaredExponential: kernel_squaredexponential.md
+      - Stack: kernel_stack.md
+      - TrendPrior: kernel_trendprior.md
+      - Wiener: kernel_wiener.md
     - Mix: mix.md
     - Model: model.md
     - NormalizingFeaturizer: normalizingfeaturizer.md
