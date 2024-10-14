@@ -26,3 +26,7 @@ doc {
     font-weight: 500;
     font-style: normal;
 }
+
+doc-contents {
+    font-size: 16px;
+}
