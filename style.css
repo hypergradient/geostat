@@ -13,6 +13,7 @@ p {
 }
 
 details {
+    color: red;
     font-family: "Fira Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
