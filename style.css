@@ -19,7 +19,7 @@ details.notes {
     font-family: "Fira Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
-    font-size: 16px;
+    font-size: 18px;
 } 
 
 doc {
@@ -29,6 +29,6 @@ doc {
     font-style: normal;
 }
 
-/* doc-contents {
+doc-contents {
     font-size: 16px;
-} */
+}
