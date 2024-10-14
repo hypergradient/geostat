@@ -12,13 +12,15 @@ p {
     font-style: normal;
 }
 
+*/
+
 details.notes {
     color: black;
     font-family: "Fira Sans", sans-serif;
     font-weight: 500;
     font-style: normal;
-    font-size: ;
-} */
+    font-size: 16px;
+} 
 
 doc {
     color: black;
@@ -27,6 +29,6 @@ doc {
     font-style: normal;
 }
 
-doc-contents {
+/* doc-contents {
     font-size: 16px;
-}
+} */
