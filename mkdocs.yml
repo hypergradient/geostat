@@ -2,8 +2,13 @@ site_name: Geostat Documentation
 
 nav:
   - Home: index.md
-  - API Reference: api.md
-      - Test: test.md
+  - API Reference:
+    - Featurizer: featurizer.md
+    - GP: gp.md
+    - Kernel: kernel.md
+    - Mix: mix.md
+    - Model: model.md
+    - NormalizingFeaturizer: normalizingfeaturizer.md
   - Examples: examples.md
   - About: about.md
 
