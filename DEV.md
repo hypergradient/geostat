@@ -23,6 +23,8 @@ The source folder of the documentation website is the gh-pages branch. Unfortuna
 1 - Install mkdocs
 ```
 pip install mkdocs
+pip install mkdocs-material
+pip install 'mkdocstrings[python]'
 ```
 
 2 - Navigate to the GitHub repository and checkout to the branch the documentation should be build from
@@ -32,9 +34,30 @@ pip install mkdocs
 mkdocs gh-deploy
 ```
 
-To exclude a function named `example_function` from the documentation, add the following two lines to `api.md`
+To exclude a function named `example_function` implemented in `file_name` from the documentation, add a filter to the configuration options (last two lines) in `api.md`:
 ```
+::: src.geostat.file_name
+    options:
+        show_root_heading: True
+        show_source: True
         filters:
           - "!example_function"
 ```
 
+To document a class named `class_name` implemented in `file_name` that is not yet documented, add the following lines to `api.md`
+```
+::: src.geostat.file_name.class_name
+    options:
+        show_root_heading: True
+        show_source: True
+```
+
+To document a function named `function_name` implemented in `file_name` that is not yet documented, add the following lines to `api.md`
+```
+::: src.geostat.file_name.function_name
+    options:
+        show_root_heading: True
+        show_source: True
+```
+
+To add custom CSS to the web page template, just add your code to the file `style.css` in the `docs` directory. Also, make sure that the file `style.css` is mentioned in the `mkdocs.yml` under `extra_css`.

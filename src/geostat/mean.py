@@ -61,7 +61,7 @@ class Trend(Mean):
             e['beta'] = tf.stack(e['beta'])
         return tf.einsum('ab,b->a', x, e['beta']) # [locs1]
 
-class ZeroTrend(Op):
+class ZeroTrend(Mean):
     def __init__(self):
         super().__init__({}, dict(locs1='locs1'))
 
