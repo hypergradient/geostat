@@ -30,7 +30,7 @@ __all__ = ['featurizer', 'GP', 'Mix', 'Model', 'Featurizer', 'NormalizingFeaturi
 
 @dataclass
 class GP:    
-    r"""
+    """
     Gaussian Process (GP) model class with a mean function and a kernel.
 
     This class represents a Gaussian Process with specified mean
