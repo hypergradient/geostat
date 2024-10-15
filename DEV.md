@@ -34,7 +34,7 @@ pip install 'mkdocstrings[python]'
 mkdocs gh-deploy
 ```
 
-To exclude a function named `example_function` implemented in `file_name` from the documentation, add a filter to the configuration options (last two lines) in `api.md`:
+To exclude a function named `example_function` implemented in `file_name` from the documentation, add a filter to the configuration options (last two lines) in the corresponding Markdown file in the `docs` folder.
 ```
 ::: src.geostat.file_name
     options:
@@ -44,7 +44,7 @@ To exclude a function named `example_function` implemented in `file_name` from t
           - "!example_function"
 ```
 
-To document a class named `class_name` implemented in `file_name` that is not yet documented, add the following lines to `api.md`
+To document a class named `class_name` implemented in `file_name` that is not yet documented, add the following lines to a new or an existing Markdown file in the `docs` folder.
 ```
 ::: src.geostat.file_name.class_name
     options:
@@ -52,7 +52,7 @@ To document a class named `class_name` implemented in `file_name` that is not ye
         show_source: True
 ```
 
-To document a function named `function_name` implemented in `file_name` that is not yet documented, add the following lines to `api.md`
+To document a function named `function_name` implemented in `file_name` that is not yet documented, add the following lines to a new or an existing Markdown file in the `docs` folder.
 ```
 ::: src.geostat.file_name.function_name
     options:
