@@ -83,19 +83,19 @@ class Mix(Mean):
             return {}
 
     def call(self, e):
-        M = tf.stack(e['inputs'], axis=-1) # [locs, numinputs].
+        M = jnp.stack(e['inputs'], axis=-1) # [locs, numinputs].
 
         # Transform M with weights, if given.
         if 'weights' in e:
             weights = []
             for row in e['weights']:
                 if isinstance(row, (tuple, list)):
-                    row = tf.stack(row)
+                    row = jnp.stack(row)
                     weights.append(row)
-            weights = tf.stack(weights)
-            M = tf.einsum('lh,sh->ls', M, weights)
+            weights = jnp.stack(weights)
+            M = jnp.einsum('lh,sh->ls', M, weights)
 
-        return tf.gather(M, e['cats1'], batch_dims=1) # [locs]
+        return jnp.take_along_axis(M, e['cats1'][:, None], axis=1)[:, 0] # [locs]
 
 class Stack(Mean):
     def __init__(self, parts: List[Mean]):
@@ -110,7 +110,7 @@ class Stack(Mean):
             return Stack(self.parts + [other])
 
     def call(self, e):
-        return tf.reduce_sum(e['parts'], axis=0)
+        return jnp.sum(jnp.array(e['parts']), axis=0)
 
     def report(self, p):
         return ' '.join(part.report(p) for part in self.parts)

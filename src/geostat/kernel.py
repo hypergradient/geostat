@@ -4,14 +4,7 @@ import numpy as np
 
 import jax
 import jax.numpy as jnp
-
-# # Tensorflow is extraordinarily noisy. Catch warnings during import.
-# import warnings
-# with warnings.catch_warnings():
-#     warnings.filterwarnings("ignore", category=DeprecationWarning)
-#     import tensorflow as tf
-#     from tensorflow.linalg import LinearOperatorFullMatrix as LOFullMatrix
-#     from tensorflow.linalg import LinearOperatorBlockDiag as LOBlockDiag
+from jax.scipy.linalg import block_diag
 
 from .op import Op
 from .metric import Euclidean, PerAxisDist2, ed
@@ -19,10 +12,6 @@ from .param import ppp, upp, bpp, ppp_list
 from .mean import get_trend_coefs
 
 __all__ = ['Kernel']
-
-def block_diag(blocks):
-    """Return a dense block-diagonal matrix."""
-    return LOBlockDiag([LOFullMatrix(b) for b in blocks]).to_dense()
 
 class Kernel(Op):
     """
@@ -1123,26 +1112,26 @@ class Mix(Kernel):
             weights = []
             for row in e['weights']:
                 if isinstance(row, (tuple, list)):
-                    row = tf.stack(row)
+                    row = jnp.stack(row)
                     weights.append(row)
-            weights = tf.stack(weights)
-            C = tf.stack(e['inputs'], axis=-1) # [locs, locs, numinputs].
-            Aaug1 = tf.gather(weights, e['cats1']) # [locs, numinputs].
-            Aaug2 = tf.gather(weights, e['cats2']) # [locs, numinputs].
-            outer = tf.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, numinputs].
-            C = tf.einsum('abc,abc->ab', C, outer) # [locs, locs].
+            weights = jnp.stack(weights)
+            C = jnp.stack(e['inputs'], axis=-1) # [locs, locs, numinputs].
+            Aaug1 = jnp.take(weights, e['cats1'], axis=0) # [locs, numinputs].
+            Aaug2 = jnp.take(weights, e['cats2'], axis=0) # [locs, numinputs].
+            outer = jnp.einsum('ac,bc->abc', Aaug1, Aaug2) # [locs, locs, numinputs].
+            C = jnp.einsum('abc,abc->ab', C, outer) # [locs, locs].
             return C
         else:
             # When weights is not given, exploit the fact that we don't have
             # to compute every element in component covariance matrices.
             N = len(self.inputs)
-            catcounts1 = tf.math.bincount(e['cats1'], minlength=N, maxlength=N)
-            catcounts2 = tf.math.bincount(e['cats2'], minlength=N, maxlength=N)
-            catindices1 = tf.math.cumsum(catcounts1, exclusive=True)
-            catindices2 = tf.math.cumsum(catcounts2, exclusive=True)
-            catdiffs = tf.unstack(catindices2 - catindices1, num=N)
-            locsegs1 = tf.split(e['locs1'], catcounts1, num=N)
-            locsegs2 = tf.split(e['locs2'], catcounts2, num=N)
+            catcounts1 = jnp.bincount(e['cats1'], minlength=N, length=N)
+            catcounts2 = jnp.bincount(e['cats2'], minlength=N, length=N)
+            catindices1 = jnp.cumulative_sum(catcounts1, include_initial=True)
+            catindices2 = jnp.cumulative_sum(catcounts2, include_initial=True)
+            catdiffs = jnp.unstack(catindices2 - catindices1)[:-1]
+            locsegs1 = jnp.split(e['locs1'], jnp.cumsum(catcounts1, axis=0)[:-1])
+            locsegs2 = jnp.split(e['locs2'], jnp.cumsum(catcounts2, axis=0)[:-1])
 
             # TODO: Check that the below is still correct.
             CC = [] # Observation noise submatrices.
@@ -1156,7 +1145,7 @@ class Mix(Kernel):
                 Csub = iput.run(cache)
                 CC.append(Csub)
 
-            return block_diag(CC)
+            return block_diag(*CC)
 
 class Stack(Kernel):
     """
@@ -1279,7 +1268,7 @@ class Product(Kernel):
             return Product(self.parts + [other])
     
     def call(self, e):
-        return tf.reduce_prod(e['parts'], axis=0)
+        return np.prod(e['parts'], axis=0)
 
     def report(self):
         return ' '.join(part.report(p) for part in self.parts)

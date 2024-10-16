@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict
 
 import numpy as np
+import jax
 import jax.numpy as jnp
 
 from .op import Op
@@ -52,23 +53,34 @@ class Poincare(Metric):
         return ppp(self.fa['zoff']) | get_scale_vars(self.fa['scale'])
 
     def __call__(self, e):
-        xlocs1 = tf.stack(self.xform(*tf.unstack(e['locs1'], axis=1)), axis=1)
-        xlocs2 = tf.stack(self.xform(*tf.unstack(e['locs2'], axis=1)), axis=1)
+        xlocs1 = jnp.stack(self.xform(*jnp.unstack(e['locs1'], axis=1)), axis=1)
+        xlocs2 = jnp.stack(self.xform(*jnp.unstack(e['locs2'], axis=1)), axis=1)
         zoff = e['zoff']
+        print('---- zoff')
+        jax.debug.print('{zoff}', zoff=zoff)
 
         # Maybe scale locations and zoff.
         if e['scale'] is not None:
-            xlocs1 *= e['scale']
-            xlocs2 *= e['scale']
-            zoff *= e['scale'][0]
-
+            scale = jnp.array(e['scale'])
+            print('---- scale')
+            jax.debug.print('{scale}', scale=scale)
+            xlocs1 *= scale
+            xlocs2 *= scale
+            zoff *= scale[0]
+        
         z1 = xlocs1[:, 0] + zoff
         z2 = xlocs2[:, 0] + zoff
         zz = ed(z1, -1) * z2
+        print('---- zz')
+        jax.debug.print('z1 {a} {b}', a=z1.min(), b=z1.max())
+        jax.debug.print('z2 {a} {b}', a=z2.min(), b=z2.max())
+        jax.debug.print('zz {a} {b}', a=zz.min(), b=zz.max())
 
-        d2 = tf.reduce_sum(tf.square(ed(xlocs1, 1) - ed(xlocs2, 0)), axis=-1)
-        d2 = tf.asinh(0.5 * tf.sqrt(d2 / zz))
-        d2 = tf.square(2.0 * zoff * d2)
+        d2 = jnp.sum(jnp.square(ed(xlocs1, 1) - ed(xlocs2, 0)), axis=-1)
+        d2 = jnp.arcsinh(0.5 * jnp.sqrt(d2 / zz))
+        d2 = jnp.square(2.0 * zoff * d2)
+
+        jax.debug.print('d2 {a} {b}', a=d2.min(), b=d2.max())
 
         return d2
 

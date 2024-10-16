@@ -1,16 +1,15 @@
 import numpy as np
+import jax.numpy as jnp
 from geostat import GP, Model, Mix, Parameters, Trend
 import geostat
 import geostat.kernel as krn
 import numpy as np
-import tensorflow as tf
 from argparse import Namespace
 
 
 def test_delta():
     # Create 100 random locations in a square centered on the origin.
     np.random.seed(123)
-    tf.random.set_seed(123)
 
     counts = np.array([100, 150, 200, 200]) * 3
     locs1 = np.random.uniform(-1., 1., [sum(counts) // 3, 4]) * [10., 10., 1., 1.]
@@ -60,12 +59,12 @@ def test_delta():
                  + krn.SquaredExponential(sill=p.st1, range=p.rt1, scale=[1., 1., p.zt, p.tt]))
 
     @geostat.featurizer()
-    def unit_featurizer(x, y, z, t): return (1,)
+    def unit_featurizer(x, y, z, t): return (jnp.ones_like(x),)
 
     @geostat.featurizer()
     def neg_transformed_natural_gradient(x, y, z, t):
         degF = 62.2 + 57.1 * (0.15 - z)
-        return -(tf.math.log(degF + 6.77) - tf.math.log(75 + 6.77))
+        return -(jnp.log(degF + 6.77) - jnp.log(75 + 6.77))
 
     o_u = GP(0, krn.Noise(nugget=p.nu) + krn.Delta(sill=p.wu, axes=[0, 1]))
     o_p = GP(0, krn.Noise(nugget=p.np) + krn.Delta(sill=p.wp, axes=[0, 1]))

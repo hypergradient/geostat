@@ -440,14 +440,16 @@ class Featurizer:
         if self.featurization is None:  # No features.
             return jnp.ones([locs.shape[0], 0], dtype=jnp.float32)
 
-        feats = self.featurization(*jnp.split(locs, locs.shape[1], axis=1))
+        # feats = self.featurization(*jnp.split(locs, locs.shape[1], axis=1))
+        feats = self.featurization(*jnp.unstack(locs, axis=1))
         if isinstance(feats, tuple):  # One or many features.
             if len(feats) == 0:
                 return jnp.ones([locs.shape[0], 0], dtype=jnp.float32)
             else:
-                feats = self.featurization(*jnp.split(locs, locs.shape[1], axis=1))
-                feats = [jnp.broadcast_to(jnp.squeeze(jnp.array(f, dtype=jnp.float32)), [locs.shape[0]]) for f in feats]
-                return jnp.stack(feats, axis=1)
+                # feats = self.featurization(*jnp.split(locs, locs.shape[1], axis=1))
+                # feats = [jnp.broadcast_to(jnp.squeeze(jnp.array(f, dtype=jnp.float32)), [locs.shape[0]]) for f in feats]
+                feats = [jnp.broadcast_to(jnp.array(f, dtype=jnp.float32), locs.shape[:1]) for f in feats]
+                return jnp.stack(feats, axis=-1)
         else: # One feature.
             return e(feats)
 

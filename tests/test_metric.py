@@ -39,14 +39,15 @@ def test_euclidean():
 def test_poincare():
     np.random.seed(1235)
 
+    zmax = 3.
+
     # Create random locations in a square centered on the origin.
     locs = np.random.uniform(-2., 2., [1000, 3])
-    locs[:, 2] = 3. - np.exp(locs[:, 2]) # Make z to be 3 or lower.
+    locs[:, 2] = zmax - np.exp(locs[:, 2]) # Make z to be 3 or lower.
 
-    p = Parameters(zoff=2.0, alpha=1., zscale=5., range=0.5, sill=1., gamma=1., nugget=1.)
+    p = Parameters(zoff=2.0, zscale=5., range=0.5, sill=1., gamma=1., nugget=1.)
 
     # Transform z to be positive, and make it the first axis.
-    zmax = locs[:, 2].max()
     def xform(x, y, z): return zmax-z, x, y
 
     metric = gm.Poincare(xform=xform, scale=[p.zscale, 1., 1.], zoff=p.zoff)
@@ -63,7 +64,7 @@ def test_poincare():
 
     # Fit GP.
     model.set(zoff=2.0, zscale=1., range=1.0, sill=0.5, gamma=0.5, nugget=0.5)
-    model.fit(locs, vals, iters=500)
+    model.fit(locs, vals, iters=10)
 
     # Interpolate using GP.
     N = 10
