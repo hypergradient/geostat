@@ -1,6 +1,5 @@
 from types import SimpleNamespace
-from dataclasses import dataclass, replace
-from typing import Dict
+from dataclasses import dataclass
 import tensorflow as tf
 import numpy as np
 from scipy.special import logit

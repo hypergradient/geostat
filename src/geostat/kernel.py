@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Callable, List, Union
+from typing import List
 import numpy as np
 
 # Tensorflow is extraordinarily noisy. Catch warnings during import.

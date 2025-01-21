@@ -1,5 +1,4 @@
 from .op import Op
-from .param import get_parameter_values
 
 
 __all__ = ['function']
@@ -23,6 +22,6 @@ def function(f):
       * g, where it is introduced into the graph.
     """
     def g(*args):
-      # Assume for now that all arguments are Parameters
-      return CustomOp(f, **{p.name: p for p in args})
+        # Assume for now that all arguments are Parameters
+        return CustomOp(f, **{p.name: p for p in args})
     return g

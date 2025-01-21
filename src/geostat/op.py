@@ -73,7 +73,7 @@ class Op:
                 return op.run(cache)
        
         if id(self) not in cache:
-            e = tf.nest.map_structure(lambda op: eval(op), self.autoinputs)
+            e = tf.nest.map_structure(eval, self.autoinputs)
             e |= get_parameter_values(self.fa)
             cache[id(self)] = self(e)
 

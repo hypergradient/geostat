@@ -1,9 +1,7 @@
 import time
-from collections import defaultdict
 from dataclasses import dataclass, replace
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, Optional
 import numpy as np
-from scipy.special import expit, logit
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
@@ -14,14 +12,13 @@ with warnings.catch_warnings():
     import tensorflow as tf
     import tensorflow_probability as tfp
     tfd = tfp.distributions
-    from tensorflow.core.function.trace_type import default_types
 
 from . import mean as mn
 from . import kernel as krn
 from .metric import Euclidean, PerAxisDist2
 from .op import Op
 from .op import SingletonTraceType
-from .param import get_parameter_values, ppp, upp, bpp
+from .param import get_parameter_values, bpp
 from .param import Parameter
 
 MVN = tfp.distributions.MultivariateNormalTriL
@@ -519,21 +516,21 @@ class Model():
             return samples, results, final_results
         
         def new_state_fn(scale, dtype):
-          direction_dist = tfd.Normal(loc=dtype(0), scale=dtype(1))
-          scale_dist = tfd.Exponential(rate=dtype(1/scale))
-          pick_dist = tfd.Bernoulli(probs=move_prob)
+            direction_dist = tfd.Normal(loc=dtype(0), scale=dtype(1))
+            scale_dist = tfd.Exponential(rate=dtype(1/scale))
+            pick_dist = tfd.Bernoulli(probs=move_prob)
 
-          def _fn(state_parts, seed):
-            next_state_parts = []
-            part_seeds = tfp.random.split_seed(
-                seed, n=len(state_parts), salt='rwmcauchy')
-            for sp, ps in zip(state_parts, part_seeds):
-                pick = tf.cast(pick_dist.sample(sample_shape=sp.shape, seed=ps), tf.float32)
-                direction = direction_dist.sample(sample_shape=sp.shape, seed=ps)
-                scale_val = scale_dist.sample(seed=ps)
-                next_state_parts.append(sp + tf.einsum('a...,a->a...', pick * direction, scale_val))
-            return next_state_parts
-          return _fn
+            def _fn(state_parts, seed):
+                next_state_parts = []
+                part_seeds = tfp.random.split_seed(
+                    seed, n=len(state_parts), salt='rwmcauchy')
+                for sp, ps in zip(state_parts, part_seeds):
+                    pick = tf.cast(pick_dist.sample(sample_shape=sp.shape, seed=ps), tf.float32)
+                    direction = direction_dist.sample(sample_shape=sp.shape, seed=ps)
+                    scale_val = scale_dist.sample(seed=ps)
+                    next_state_parts.append(sp + tf.einsum('a...,a->a...', pick * direction, scale_val))
+                return next_state_parts
+            return _fn
 
         inv_temps = 0.5**np.arange(chains, dtype=np.float32)
 
@@ -828,15 +825,10 @@ class Model():
             m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, pair)
         elif reduce == 'median':
             raise NotImplementedError
-            p = tf.nest.map_structure(lambda x: np.quantile(x, 0.5, axis=0).astype(np.float32), self.parameters)
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair)
         elif reduce == 'mean':
             raise NotImplementedError
-            p = tf.nest.map_structure(lambda x: x.mean(axis=0).astype(np.float32), self.parameters)
-            m, v = interpolate(self.locs, self.vals, self.cats, locs2, cats2, p, pair)
         else:
             raise NotImplementedError
-            samples = self.parameter_sample_size
 
             if subsample is not None:
                 assert subsample <= samples, '`subsample` may not exceed sample size'

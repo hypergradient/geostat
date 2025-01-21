@@ -26,7 +26,8 @@ dependencies = [
     "scipy >= 1.5",
     "shapely >= 1.8",
     "tensorflow >= 2.14",
-    "tensorflow_probability >= 0.22.1"]
+    "tensorflow_probability >= 0.22.1",
+    "tf-keras >= 2.18.0"]
 
 [project.urls]
 Homepage = "https://github.com/whdc/geostat"

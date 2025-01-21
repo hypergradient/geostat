@@ -1,6 +1,4 @@
-from dataclasses import dataclass
-from typing import Callable, List, Union
-import numpy as np
+from typing import List
 
 import warnings
 with warnings.catch_warnings():
@@ -8,7 +6,7 @@ with warnings.catch_warnings():
     import tensorflow as tf
 
 from .op import Op
-from .param import Parameter, ppp, upp, bpp
+from .param import Parameter, upp
 
 __all__ = ['Mean', 'Trend']
 

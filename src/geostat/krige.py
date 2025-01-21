@@ -4,7 +4,6 @@ from scipy.spatial.distance import cdist, pdist
 from scipy.stats import binned_statistic
 import scipy.stats as stats
 from scipy.optimize import curve_fit
-import pandas as pd
 
 __all__ = ['Krige']
 
@@ -97,13 +96,9 @@ class Krige():
                     Example below.
                     Default is None.
                     
-                project : function, opt
+                projection : function, opt
                     A function that takes multiple vectors, and returns
                     a tuple of projected vectors.
-
-                epsg_proj : str
-                    The projected coordinate system to use. Ignored if project=False.
-                    Default is 'EPSG:3310' (California Albers).
 
                 show_plots : boolean, optional
                     Whether or not to show variogram plots.
@@ -126,8 +121,8 @@ class Krige():
         
         '''
 
-        super().__init__(projection=projection)
-        
+        self.projection = projection
+
         # Save original x1 for stats function.
         self.x1_original = x1
         
@@ -140,7 +135,7 @@ class Krige():
             raise ValueError("Check dimensions of 'u1'.")
             
         # Projection.
-        self.x1 = self.project(x1)
+        self.x1 = self.projection(x1)
 
         # Variogram.
         if variogram_func == 'gaussian':
@@ -193,7 +188,7 @@ class Krige():
                 # Variogram cloud plot.
                 plt.figure(dpi=100)
                 plt.scatter(dist, gamma, ec='C0', fc='none', alpha=0.3)
-                plt.ylabel('$\gamma(h)$')
+                plt.ylabel('$\\gamma(h)$')
                 plt.xlabel('$h$')
                 plt.grid(alpha=0.4)
                 plt.show()
@@ -205,7 +200,7 @@ class Krige():
                 plt.scatter(dist, gamma, ec='C0', fc='none', alpha=0.3)
                 plt.hlines(bin_means, bin_edges[:-1], bin_edges[1:], zorder=1, color='k')
                 plt.scatter(bin_centers, bin_means, ec='k', lw=0.5)
-                plt.ylabel('$\gamma(h)$')
+                plt.ylabel('$\\gamma(h)$')
                 plt.xlabel('$h$')
                 plt.grid(alpha=0.4)
                 plt.show()
@@ -261,7 +256,7 @@ class Krige():
 
                         plt.figure(dpi=100)
                         plt.pcolormesh(xi, yi, z, cmap=plt.cm.Blues, shading='auto')
-                        plt.ylabel('$\gamma(h)$')
+                        plt.ylabel('$\\gamma(h)$')
                         plt.xlabel('$h$')
                         plt.grid(alpha=0.4)
                         plt.show()
@@ -271,7 +266,7 @@ class Krige():
                         plt.figure(dpi=100)
                         plt.scatter(dist_cut, gamma_cut, fc='none', ec='C1', lw=0.5, alpha=0.3)
                         plt.plot(xnew, self.variogram_func(xnew, *popt), color='k')
-                        plt.ylabel('$\gamma(h)$')
+                        plt.ylabel('$\\gamma(h)$')
                         plt.xlabel('$h$')
                         plt.grid(alpha=0.4)
                         plt.show()
@@ -325,7 +320,7 @@ class Krige():
 
                         plt.figure(dpi=100)
                         plt.pcolormesh(xi, yi, z, cmap=plt.cm.Blues, shading='auto')
-                        plt.ylabel('$\gamma(h)$')
+                        plt.ylabel('$\\gamma(h)$')
                         plt.xlabel('$h$')
                         plt.grid(alpha=0.4)
                         plt.show()
@@ -335,7 +330,7 @@ class Krige():
                         plt.figure(dpi=100)
                         plt.scatter(dist_cut, gamma_cut, fc='none', ec='C1', lw=0.5, alpha=0.3)
                         plt.plot(xnew, self.variogram_func(xnew, *popt), color='k')
-                        plt.ylabel('$\gamma(h)$')
+                        plt.ylabel('$\\gamma(h)$')
                         plt.xlabel('$h$')
                         plt.grid(alpha=0.4)
                         plt.show()
@@ -375,7 +370,7 @@ class Krige():
                         plt.figure(dpi=100)
                         plt.scatter(bin_centers, bin_means, c='C1', ec='k', lw=0.5)
                         plt.plot(bin_centers, self.variogram_func(bin_centers, *popt), color='k')
-                        plt.ylabel('$\gamma(h)$')
+                        plt.ylabel('$\\gamma(h)$')
                         plt.xlabel('$h$')
                         plt.grid(alpha=0.4)
                         plt.show()
@@ -412,7 +407,7 @@ class Krige():
                         plt.figure(dpi=100)
                         plt.scatter(bin_centers, bin_means, c='C1', ec='k', lw=0.5)
                         plt.plot(bin_centers, self.variogram_func(bin_centers, *popt), color='k')
-                        plt.ylabel('$\gamma(h)$')
+                        plt.ylabel('$\\gamma(h)$')
                         plt.xlabel('$h$')
                         plt.grid(alpha=0.4)
                         plt.show()
@@ -458,7 +453,7 @@ class Krige():
 
                     plt.figure(dpi=100)
                     plt.pcolormesh(xi, yi, z, cmap=plt.cm.Blues, shading='auto')
-                    plt.ylabel('$\gamma(h)$')
+                    plt.ylabel('$\\gamma(h)$')
                     plt.xlabel('$h$')
                     plt.grid(alpha=0.4)
                     plt.show()
@@ -468,7 +463,7 @@ class Krige():
                     plt.figure(dpi=100)
                     plt.scatter(dist_cut, gamma_cut, fc='none', ec='C1', lw=0.5, alpha=0.3)
                     plt.plot(xnew, self.variogram_func(xnew, *self.parameter_vals), color='k')
-                    plt.ylabel('$\gamma(h)$')
+                    plt.ylabel('$\\gamma(h)$')
                     plt.xlabel('$h$')
                     plt.grid(alpha=0.4)
                     plt.show()
@@ -479,7 +474,7 @@ class Krige():
                     plt.figure(dpi=100)
                     plt.scatter(bin_centers, bin_means, fc='C1', ec='k', lw=0.5)
                     plt.plot(bin_centers, self.variogram_func(bin_centers, *self.parameter_vals), color='k')
-                    plt.ylabel('$\gamma(h)$')
+                    plt.ylabel('$\\gamma(h)$')
                     plt.xlabel('$h$')
                     plt.grid(alpha=0.4)
                     plt.show()
@@ -531,7 +526,7 @@ class Krige():
         
         '''
         
-        self.x2 = self.project(x2_pred)
+        self.x2 = self.projection(x2_pred)
         
         n1 = len(self.x1)
         n2 = len(self.x2)

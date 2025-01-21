@@ -1,8 +1,7 @@
 from dataclasses import dataclass, replace
 import numpy as np
 import pandas as pd
-from scipy.spatial import ConvexHull
-from shapely.geometry import MultiPoint, Point, Polygon, shape
+from shapely.geometry import MultiPoint, Point
 
 __all__ = ['Mesh']
 

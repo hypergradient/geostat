@@ -1,6 +1,6 @@
+import numpy as np
 import pandas as pd
 from geostat import Krige
-import pyproj
 
 def featurization(x1):
     return x1[:, 0], x1[:, 1]
@@ -18,15 +18,16 @@ def test_krige():
 
     u1 = df[['u']].to_numpy()
 
-    # Projection
-    p1 = pyproj.Proj(proj='latlong', datum='NAD83')
-    p2 = pyproj.Proj('EPSG:3310')
-    project = pyproj.Transformer.from_proj(p1, p2)
-    to_km = lambda x, y: (x * 1e-3, y * 1e-3)
+    # A silly projection for this unit test.
+    def projection(x):
+        lon, lat = np.moveaxis(x, -1, 0)
+        x1 = np.cos(lat / 180 * np.pi) * lon / 360 * 40000
+        x2 = lat / 360 * 40000
+        return np.stack([x1, x2], axis=-1)
 
     krige = Krige(x1, u1, 2,
             variogram_func='linear',
-            projection=lambda x, y: to_km(*project.transform(x, y)),
+            projection=projection,
             featurization=featurization,
             show_plots=False,
             verbose=True)
