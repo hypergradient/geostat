@@ -5,7 +5,14 @@ from .mean import *
 from .param import *
 from .custom_op import *
 
-__version__ = '0.11.1'
+from . import krige
+from . import mesh
+from . import model
+from . import mean
+from . import param
+from . import custom_op
+
+__version__ = '0.11.2'
 
 __all__ = []
 __all__.extend(mean.__all__)

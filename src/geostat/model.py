@@ -46,7 +46,7 @@ class GP:
 
 def Mix(inputs, weights=None):
     return GP(
-        mn.Mix([i.mean for i in inputs], weights), 
+        mn.Mix([i.mean for i in inputs], weights),
         krn.Mix([i.kernel for i in inputs], weights))
 
 class Warp:
@@ -133,7 +133,7 @@ def relax(s, t, distort):
         zh = tf.pad(h, [[0, 0], [1, 0]])
         hz = tf.pad(h, [[0, 0], [0, 1]])
         halfhess = tf.stack([-hz, hz + zh + xi, -zh], axis=-2)
-        
+
         # Newton's method.
         x -= tf.linalg.tridiagonal_solve(halfhess, halfgrad)
 
@@ -417,7 +417,7 @@ class Model():
                 parameters[name].value = v
                 parameters[name].create_tf_variable()
             else:
-                raise ValueError(f"{k} is not a parameter")
+                raise ValueError(f"{name} is not a parameter")
         return self
 
     def fit(self, locs, vals, cats=None, step_size=0.01, iters=100, reg=None):
@@ -514,7 +514,7 @@ class Model():
                 trace_fn=lambda _, results: results)
 
             return samples, results, final_results
-        
+
         def new_state_fn(scale, dtype):
             direction_dist = tfd.Normal(loc=dtype(0), scale=dtype(1))
             scale_dist = tfd.Exponential(rate=dtype(1/scale))
@@ -555,7 +555,7 @@ class Model():
 
             if self.verbose and (i == 0 or i == burnin_bursts):
                 print('BURNIN\n' if is_burnin else '\nSAMPLING')
-            
+
             t0 = time.time()
             states, results, final_results = run_chain(current_state, final_results, kernel, report_interval)
 
@@ -571,7 +571,7 @@ class Model():
                 acc_states.append(tf.nest.map_structure(lambda x: x.numpy(), states))
                 all_states = [np.concatenate(x, 0) for x in zip(*acc_states)]
                 up = tf.nest.pack_sequence_as(initial_up, all_states)
-                sp = self.parameter_space.get_surface(up, numpy=True) 
+                sp = self.parameter_space.get_surface(up, numpy=True)
 
                 # Reporting
                 if self.verbose == True:
@@ -588,7 +588,7 @@ class Model():
             revperm = np.argsort(perm)
             locs, vals, cats = locs[revperm], vals[revperm], cats[revperm]
 
-        return replace(self, 
+        return replace(self,
             parameters=posterior,
             parameter_sample_size=samples,
             locs=locs, vals=vals, cats=cats)

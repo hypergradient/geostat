@@ -71,7 +71,7 @@ class Op:
                 return cache[op]
             else:
                 return op.run(cache)
-       
+
         if id(self) not in cache:
             e = tf.nest.map_structure(eval, self.autoinputs)
             e |= get_parameter_values(self.fa)
@@ -109,6 +109,6 @@ class SingletonTraceType(TraceType):
 
     def __eq__(self, other):
         return self.value is other.value
-        
+
     def __hash__(self):
         return hash(id(self.value))

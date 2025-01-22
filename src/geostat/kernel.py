@@ -56,6 +56,8 @@ class Kernel(Op):
         return C
 
     def report(self):
+        import sys
+        sys.exit(1)
         string = ', '.join('%s %4.2f' % (v.name, p[v.name]) for v in self.vars())
         return '[' + string + ']'
 

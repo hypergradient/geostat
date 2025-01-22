@@ -12,7 +12,7 @@ class CustomOp(Op):
         return self.f(*e.values())
     def vars(self):
         # Assume for now that all arguments are Parameters
-        return {p.name: p for p in fa.values()}
+        return {p.name: p for p in self.fa.values()}
 
 
 def function(f):
