@@ -12,7 +12,7 @@ from . import mean
 from . import param
 from . import custom_op
 
-__version__ = '0.11.2'
+__version__ = '0.11.3'
 
 __all__ = []
 __all__.extend(mean.__all__)
