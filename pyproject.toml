@@ -9,7 +9,6 @@ requires-python = ">=3.8"
 description = "Model spatial data with Gaussian processes"
 readme = "README.md"
 authors = [
-  {name="Michael J. Stephens", email="mjstephens@usgs.gov"},
   {name="Will Chang", email="will@hypergradient.ai"}
 ]
 license = { file = "LICENSE" }
