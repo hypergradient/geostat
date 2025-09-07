@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from geostat.kernel import quadstack, quadstack1
+from geostat.kernel import quadstack
 from geostat.metric import ed
 
 def vanilla_quadstack(x, sills, ranges):

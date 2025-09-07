@@ -230,7 +230,7 @@ class Constant(Kernel):
         return e['sill']
 
 class SquaredExponential(Kernel):
-    """
+    r"""
     SquaredExponential kernel class for Gaussian Processes (GPs).
 
     The `SquaredExponential` class defines a widely used kernel that models smooth and continuous 
@@ -284,7 +284,7 @@ class SquaredExponential(Kernel):
         return e['sill'] * jnp.exp(-0.5 * e['d2'] / jnp.square(e['range']))
 
 class GammaExponential(Kernel):
-    """
+    r"""
     GammaExponential kernel class for Gaussian Processes (GPs).
 
     The `GammaExponential` class defines a kernel that generalizes the Squared Exponential kernel by introducing
@@ -348,7 +348,7 @@ def ramp(x):
     return tf.maximum(0., 1. - ax), grad
 
 class Ramp(Kernel):
-    """
+    r"""
     Ramp kernel class for Gaussian Processes (GPs).
 
     The `Ramp` class defines a kernel that produces a covariance structure resembling a "ramp" function.

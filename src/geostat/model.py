@@ -104,7 +104,7 @@ class GP:
         return self.mean.gather_vars() | self.kernel.gather_vars()
 
 def Mix(inputs, weights=None):
-    """
+    r"""
     Linearly combines multiple Gaussian Processes (GPs) into a single GP using specified weights.
 
     Parameters:
