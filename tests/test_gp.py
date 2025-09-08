@@ -126,7 +126,7 @@ def test_gp3d():
     np.random.seed(2)
 
     # Create random locations in a square centered on the origin.
-    locs1 = np.random.normal(size=[600, 3])
+    locs1 = np.random.normal(size=[2000, 3])
     locs1 = np.concatenate([locs1, locs1 * [1., 1., 0.8], locs1 * [1., 1., 1.1]])
 
     # Create parameters.
